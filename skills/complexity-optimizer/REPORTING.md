@@ -71,10 +71,10 @@ Rule 4: document every bug and tell the developer. Never fix one on purpose. Bug
 ### BUG-<N>. <Short title>
 
 - **Location:** `path/to/File.kt:123`
-- **What happens:** The incorrect behavior, with a concrete input and output.
+- **What happens:** The incorrect behavior, with a concrete input and output, and whether it was reproduced by running the original (reproduced | suspected, not reproduced). Only a reproduced bug can be marked fixed as a side effect (rule 4).
 - **Expected:** What appears to be intended, and why you think so.
 - **Impact:** Who or what is affected.
-- **Status:** Left as is (code not optimized: already optimal, or equivalence could not be guaranteed) | Preserved in optimized code (item <ID>) | Fixed as a side effect of item <ID> (marked `BEHAVIOR-CHANGE`).
+- **Status:** Left as is (code not optimized: already optimal, or equivalence could not be guaranteed) | Preserved in optimized code (item <ID>) | Fixed as a side effect of item <ID> (marked `BEHAVIOR-CHANGE`; requires the failing input below, run against the original).
 - **Suggested fix:** Optional, described only. Not applied (unless fixed as a side effect).
 ```
 

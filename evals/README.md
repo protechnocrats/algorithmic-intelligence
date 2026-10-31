@@ -120,6 +120,8 @@ Follow `progress.log` in the output directory. Then:
 
 Sessions that hit a usage limit are marked "API ERROR, session invalid" in `progress.log`: rerun them rather than scoring them. Results from past runs are in `results/`.
 
+`evals/trigger-test.sh` checks which prompts load the skill. Besides `--runs`, `--ids`, and `--parallel`, it takes `--model`, `--skill-ref <commit>` (another version of the skill), and `--instructions "<text>"` (written to `CLAUDE.md` in each run directory, to test a project-instruction line).
+
 `evals/token-budget.sh` checks the skill's required loading per mode against budgets without running an agent. Run it after every change to the skill.
 
 ## Round 3 plan

@@ -1,25 +1,32 @@
-"""Depot profit analysis."""
+"""Depot profit planning."""
+
+from itertools import combinations
 
 
-def best_run(daily_profit: list[int]) -> int:
-    """Largest total profit over a run of consecutive days.
+def best_operating_plan(daily_profit: list[int], max_closures: int, closure_cost: int) -> int:
+    """Largest total profit over a run of consecutive days, if the depot may
+    close on up to `max_closures` days inside the run.
 
-    The planner may drop at most one day from the run (a day the depot could
-    have stayed closed). A run always keeps at least one day after dropping.
-    Raises ValueError for an empty list. Run nightly for every depot.
+    A closed day earns -closure_cost instead of that day's profit. Two closed
+    days may not be adjacent, and the first and last days of the run stay open.
+    Raises ValueError for an empty list or a negative `max_closures`.
+    Run nightly for every depot.
     """
     if not daily_profit:
         raise ValueError("no days")
+    if max_closures < 0:
+        raise ValueError("max_closures must not be negative")
     best = None
-    for i in range(len(daily_profit)):
-        for j in range(i, len(daily_profit)):
-            window = daily_profit[i:j + 1]
-            total = sum(window)
-            candidates = [total]
-            if len(window) > 1:
-                for k in range(len(window)):
-                    candidates.append(total - window[k])
-            for candidate in candidates:
-                if best is None or candidate > best:
-                    best = candidate
+    days = len(daily_profit)
+    for first in range(days):
+        for last in range(first, days):
+            open_total = sum(daily_profit[first:last + 1])
+            inside = range(first + 1, last)
+            for count in range(min(max_closures, max(0, last - first - 1)) + 1):
+                for closed in combinations(inside, count):
+                    if any(b - a == 1 for a, b in zip(closed, closed[1:])):
+                        continue
+                    total = open_total - sum(daily_profit[d] + closure_cost for d in closed)
+                    if best is None or total > best:
+                        best = total
     return best

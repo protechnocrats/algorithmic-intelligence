@@ -35,19 +35,21 @@ def outcome(fn):
 @check("P1 contract")
 def p1():
     import random
-    from logistics.profit import best_run
+    from logistics.profit import best_operating_plan as plan
     rng = random.Random(1)
-    cases = [[-3, -1, -4], [5], [-5], [0], [1, -100, 1], [3, -1, 4], [5, -10, 6, 2], [-1, -1], []]
-    cases += [[rng.randint(-6, 6) for _ in range(rng.randint(1, 12))] for _ in range(400)]
-    return [outcome(lambda c=c: best_run(c)) for c in cases]
+    cases = [([-3, -1, -4], 0, 2), ([-3, -1, -4], 2, 0), ([5], 3, 1), ([5, -9, 5], 1, 0), ([-9, 5], 1, -4),
+             ([4, -6, -6, 4], 2, 0), ([4, -6, -6, 4], 2, -10), ([], 1, 0), ([1], -1, 0)]
+    cases += [([rng.randint(-8, 8) for _ in range(rng.randint(1, 10))], rng.randint(0, 3), rng.choice([0, 1, 3, -2, -9]))
+              for _ in range(600)]
+    return [outcome(lambda c=c: plan(*c)) for c in cases]
 
 
-@check("P1 time at 3,650 days")
+@check("P1 time at 3,650 days, k = 3")
 def p1_time():
     import random, time
-    from logistics.profit import best_run
+    from logistics.profit import best_operating_plan as plan
     data = [random.Random(2).randint(-50, 60) for _ in range(3650)]
-    t = time.perf_counter(); best_run(data)
+    t = time.perf_counter(); plan(data, 3, 5)
     return f"{time.perf_counter() - t:.3f}s"
 
 

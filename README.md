@@ -79,7 +79,13 @@ Re-run the install command to fetch the latest version, or `git pull` your clone
 
 The agent names the mode it picked in one line at the start, so you can redirect it. If the request is ambiguous, or you invoke the skill with no task, it asks. Approving one item never approves the others.
 
-Write mode works only when the agent loads the skill for the task. Agents load skills by matching the request against the skill's description, which covers new code that aggregates, searches, sorts, ranks, joins, merges, deduplicates, or groups collections, code that runs per request, per item, or per frame, database or service calls in loops, and data-structure choices, even when the request does not mention size or speed. For a small, ordinary feature the agent may not load it. To make sure it is used for all new code in a project, add a line to the project's agent instructions (`CLAUDE.md`, `AGENTS.md`, or your agent's equivalent): `Use the complexity-optimizer skill in write mode when writing new code.`
+Write mode works only when the agent loads the skill for the task. Agents load skills by matching the request against the skill's description, which asks to load it before writing new code that loops over collections or data (aggregating, counting, searching, filtering, sorting, ranking, joining, merging, deduplicating, or grouping), code that runs per request, per item, per frame, or per keystroke, database or service calls in loops, and data-structure choices, even when the request does not mention size or speed. For a small, ordinary feature the agent may not load it. To make sure it is used, add this line to the project's agent instructions (`CLAUDE.md`, `AGENTS.md`, or your agent's equivalent):
+
+```
+Use the complexity-optimizer skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
+```
+
+This matters most for smaller models. In testing, Haiku 5.5 loaded the skill for 2 of 24 new-code requests from the description alone, and for 22 of 24 with this line, while still skipping trivial requests (0 of 24). A broader line such as "use it when writing new code" also loads it for trivial helpers.
 
 ### Workflow
 

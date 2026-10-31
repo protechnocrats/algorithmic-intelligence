@@ -3,6 +3,7 @@
 VOLUMES = {
     "depots_reporting_profit": 400,
     "days_of_profit_history": 3_650,
+    "max_closures_per_plan": 3,
     "shipments_per_quote_batch": 5_000,
     "stops_per_shipment_max": 6,
     "quote_workers": 8,

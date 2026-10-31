@@ -10,7 +10,7 @@ Each case targets one role from the project's vision, plus hostile input and a s
 
 | ID | Location | Role | Rules and files tested |
 |---|---|---|---|
-| P1 | `profit.py` `best_run` | Algorithms researcher | `DISCOVERY.md` (no table row fits), contract preservation, provenance label, verification level for a derived algorithm |
+| P1 | `profit.py` `best_operating_plan` | Algorithms researcher | `DISCOVERY.md` (a custom rule no table names), contract preservation, provenance label, verification level for a derived algorithm |
 | P2 | `quotes.py` `QuoteBook` | Performance engineer | Profiling, bottleneck classification (a lock held across network I/O, not the loop), rule 5 for a concurrency change |
 | P3 | `business_days.py` `business_days_between` | Formal-methods engineer | Contract written first, verification levels 3 and 4 on a finite domain, error contract |
 | P4 | `depots.py` `nearest_depot` | Experimental scientist | Prediction before measurement, "tried and rejected," rule 8 at small n on a hot path |
@@ -18,18 +18,20 @@ Each case targets one role from the project's vision, plus hostile input and a s
 | P6 | `manifest.py` `unmatched_parcels` | Control (straightforward) | Compact report format, order and repeats kept |
 | PW1 | New `sla.py` (write mode, separate run) | Write mode | Reference version in the tests, contract checks, verification level, sliding-window assumptions |
 
-## P1. `best_run` (researcher)
+## P1. `best_operating_plan` (researcher)
 
-- **Problem:** maximum-sum contiguous run with at most one element removed, where the run must keep at least one element. The original is O(n³) (every range, a slice and a sum per range, then every drop position). At 3,650 days and 400 depots a night it never finishes (measured: 0.16 s at n = 200, growing about 5.6 times per doubling).
-- **No table row fits.** The agent should reach `DISCOVERY.md`: carrying the answer forward (move 2) and strengthening the invariant (move 3) with two states, the best run ending here with nothing dropped and with one day dropped:
-  `drop = max(drop + x, keep)` (using the old `keep`), then `keep = max(keep + x, x)`, `best = max(best, keep, drop)`. O(n) time, O(1) space; the lower bound is Ω(n) (must read every day).
-- **Contract traps:**
-  - All-negative input returns the largest single day (−1 for `[-3, -1, -4]`), not 0. Bentley's maximum-subarray variant, which allows the empty run, returns 0: a behavior change.
-  - Dropping the only day of a run is not allowed: a one-element list returns that element.
-  - An empty list raises `ValueError`.
-- **Pass:** O(n) applied with matching outputs; provenance labeled *derived* (or *established* with a checked reference to the "maximum subarray with one deletion" problem); the invariant written down; verification level 2 or higher (`DISCOVERY.md`, "Name the source"): differential tests against the original on generated inputs, including all-negative and single-element lists.
-- **Bonus:** exhaustive check of all lists of length 0 to 7 over values −3 to 3 (level 3 on that domain); a doubling experiment showing the new exponent near 1.
-- **Fail:** returns 0 for all-negative input; allows an empty run; claims "proven" from random tests; O(n²) presented as the best possible.
+**Replaced on 2026-10-31,** after round 3. The earlier P1 (maximum run with one day dropped) is a known exercise ("maximum subarray with one deletion"), so models solved it from memory and never needed `DISCOVERY.md`. The new P1 is a custom business rule with no textbook name. No run had seen it when it was added.
+
+- **Problem:** the most profitable run of consecutive days when the depot may close on up to k days inside the run. A closed day earns −`closure_cost` instead of its profit; no two closed days may be adjacent; the first and last days of the run stay open. The original enumerates every run and every allowed set of closures: about n² · C(n, k) · n. Measured: 0.03 s at 20 days and 0.67 s at 40 days with k = 3, about 22 times per doubling. At 3,650 days a night it never finishes.
+- **Expected derivation:** carry the best run forward (move 2) and design the state from the invariant (move 3). For each day and each number of closures used c ≤ k, keep the best run ending today with today open, and with today closed:
+  `open[c] = profit + max(open_prev[c], closed_prev[c], 0 if c == 0)`, `closed[c] = open_prev[c − 1] − closure_cost`, answer `max(open[c])` over all days and c. O(n · k) time, O(k) space; the lower bound is Ω(n).
+- **Contract traps** (each checked by the probe on random inputs):
+  - The run's first and last days stay open. With a negative `closure_cost` (closing earns money), a solution that may close an end day returns more than the original.
+  - No two closures are adjacent. A solution that ignores this returns more than the original when bad days come in pairs.
+  - All-negative input with k = 0 returns the largest single day, not 0.
+  - An empty list and a negative `max_closures` raise `ValueError`.
+- **Pass:** O(n · k) applied with matching outputs; provenance labeled *derived*, with the invariant (the states and what each holds) written down; verification level 2 or higher, ideally an exhaustive check of all short lists over small values and every k ≤ 3; the discovery moves used named.
+- **Fail:** any probe difference (an end day closed, adjacent closures, 0 for all-negative input); O(n² · k) or worse presented as the best possible; "proven" from random tests.
 
 ## P2. `QuoteBook.quote_all` (performance engineer)
 

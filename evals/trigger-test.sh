@@ -6,7 +6,7 @@
 # Start it detached: nohup setsid evals/trigger-test.sh > /dev/null 2>&1 &
 set -uo pipefail
 
-runs=1; parallel=4; budget=1; out=""; ids=""
+runs=1; parallel=4; budget=1; out=""; ids=""; model=""; skill_ref=""; instructions=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --runs) runs="$2"; shift 2 ;;
@@ -14,7 +14,10 @@ while [ $# -gt 0 ]; do
     --budget) budget="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --ids) ids=",$2,"; shift 2 ;;
-    -h|--help) echo "Usage: evals/trigger-test.sh [--runs N] [--parallel P] [--budget USD] [--out DIR] [--ids S1,W2,...]"; exit 0 ;;
+    --model) model="$2"; shift 2 ;;
+    --skill-ref) skill_ref="$2"; shift 2 ;;
+    --instructions) instructions="$2"; shift 2 ;;
+    -h|--help) echo "Usage: evals/trigger-test.sh [--runs N] [--parallel P] [--budget USD] [--out DIR] [--ids S1,W2,...] [--model MODEL] [--skill-ref REF] [--instructions TEXT]"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -22,21 +25,28 @@ done
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 out="${out:-$HOME/complexity-optimizer-evals/trigger-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$out/logs"
+skill_src="$repo/skills/complexity-optimizer"
+if [ -n "$skill_ref" ]; then
+  mkdir -p "$out/skill" && git -C "$repo" archive "$skill_ref" skills/complexity-optimizer | tar -x -C "$out/skill" || exit 1
+  skill_src="$out/skill/skills/complexity-optimizer"
+fi
 progress="$out/progress.log"
 note() { echo "$(date '+%F %T') $*" >> "$progress"; }
 
 one() {  # one <id> <run number> <prompt>
   local id="$1" n="$2" prompt="$3" dest="$out/$1-$2"
-  "$repo/evals/new-run.sh" ts-shop --skill .claude/skills --dest "$dest" > /dev/null || { note "$id-$n: setup failed"; return; }
-  (cd "$dest" && timeout 900 claude -p "$prompt" --allowedTools Read Glob Grep Skill \
+  "$repo/evals/new-run.sh" ts-shop --skill .claude/skills --skill-src "$skill_src" --dest "$dest" > /dev/null || { note "$id-$n: setup failed"; return; }
+  # Optional project instructions, as a developer would add them (CLAUDE.md).
+  [ -n "$instructions" ] && printf '%s\n' "$instructions" > "$dest/CLAUDE.md"
+  (cd "$dest" && timeout -k 60 900 claude -p "$prompt" ${model:+--model "$model"} --allowedTools Read Glob Grep Skill \
      --max-budget-usd "$budget" --output-format stream-json --verbose > "$out/logs/$id-$n.jsonl" 2> "$out/logs/$id-$n.err")
   note "$id-$n: exit=$?"
   rm -rf "$dest"
 }
 export -f one note
-export out repo budget progress
+export out repo budget progress model skill_src instructions
 
-note "trigger test started: runs=$runs budget=\$$budget, skill commit $(git -C "$repo" rev-parse --short HEAD)"
+note "trigger test started: runs=$runs budget=\$$budget model=${model:-default} skill=${skill_ref:-working tree} instructions=${instructions:+yes}, skill commit $(git -C "$repo" rev-parse --short HEAD)"
 tail -n +2 "$repo/evals/trigger-prompts.tsv" | while IFS=$'\t' read -r id expect kind prompt; do
   [ -n "$ids" ] && [[ "$ids" != *",$id,"* ]] && continue
   for n in $(seq 1 "$runs"); do printf '%s\t%s\t%s\0' "$id" "$n" "$prompt"; done

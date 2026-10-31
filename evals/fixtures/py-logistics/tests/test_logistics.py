@@ -7,7 +7,7 @@ from logistics.bulk import repeated_ids
 from logistics.business_days import business_days_between, observed_holidays
 from logistics.depots import nearest_depot
 from logistics.manifest import unmatched_parcels
-from logistics.profit import best_run
+from logistics.profit import best_operating_plan
 from logistics.quotes import QuoteBook, Shipment
 
 
@@ -27,14 +27,18 @@ class FakeCarrier:
 
 
 class ProfitTest(unittest.TestCase):
-    def test_best_run(self):
-        self.assertEqual(best_run([3, -1, 4]), 7)
-        self.assertEqual(best_run([5, -10, 6, 2]), 13)
-        self.assertEqual(best_run([-3, -1, -4]), -1)
+    def test_without_closures(self):
+        self.assertEqual(best_operating_plan([3, -1, 4], 0, 2), 6)
+        self.assertEqual(best_operating_plan([-3, -1, -4], 0, 2), -1)
 
-    def test_empty(self):
+    def test_closing_a_bad_day(self):
+        self.assertEqual(best_operating_plan([5, -10, 6, 2], 1, 1), 12)
+
+    def test_invalid(self):
         with self.assertRaises(ValueError):
-            best_run([])
+            best_operating_plan([], 1, 0)
+        with self.assertRaises(ValueError):
+            best_operating_plan([1], -1, 0)
 
 
 class QuotesTest(unittest.TestCase):
