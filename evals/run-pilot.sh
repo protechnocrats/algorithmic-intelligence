@@ -97,10 +97,14 @@ session() {
     [ -e "$out/LIMIT_REACHED" ] && { note "$name: turn $label skipped, usage limit reached"; return; }
     [ "$turn" -gt 0 ] && resume=(--resume "$id")
     turn=$((turn + 1))
-    (cd "$dest" && timeout 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
+    (cd "$dest" && timeout -k 60 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
        --allowedTools "${allowed[@]}" --max-budget-usd "$budget" \
        --output-format stream-json --verbose > "$log.$turn-$label.jsonl" 2> "$log.$turn-$label.err")
     note "$name: turn $turn ($label) exit=$?"
+    # A turn without a final result line stalled or was killed: the session is invalid.
+    if ! tail -1 "$log.$turn-$label.jsonl" 2>/dev/null | grep -q '"type":"result"'; then
+      note "$name: turn $turn ($label) INCOMPLETE (no result line), session invalid"
+    fi
     # A turn that ended on an API error (usage limit, overload) did no work: the session is invalid.
     if tail -1 "$log.$turn-$label.jsonl" 2>/dev/null | grep -q '"is_error":true'; then
       note "$name: turn $turn ($label) API ERROR, session invalid: $(tail -1 "$log.$turn-$label.jsonl" | grep -o '"result":"[^"]*"')"
@@ -119,7 +123,7 @@ session() {
     ask write "$write_prompt"
     ask decline "$decline"
   fi
-  (cd "$dest" && { echo "## git status"; git status --porcelain; echo "## git log"; git log --oneline; echo "## $test_cmd"; $test_cmd 2>&1 | tail -8; }) > "$log.final" 2>&1
+  (cd "$dest" && { echo "## git status"; git status --porcelain; echo "## git log"; git log --oneline; echo "## $test_cmd"; timeout 600 $test_cmd 2>&1 | tail -8 || echo "(test run timed out or failed)"; }) > "$log.final" 2>&1
   note "$name: done"
 }
 export -f session note
