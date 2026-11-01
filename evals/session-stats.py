@@ -38,9 +38,9 @@ def summarize(files):
                     if c.get("type") != "tool_use":
                         continue
                     text = json.dumps(c.get("input", {}))
-                    if c["name"] == "Skill" and "complexity-optimizer" in text:
+                    if c["name"] == "Skill" and ("algorithmic-intelligence" in text or "complexity-optimizer" in text):
                         skill_loaded = True
-                    for path in re.findall(r"complexity-optimizer/([A-Za-z/_-]+\.md)", text):
+                    for path in re.findall(r"(?:algorithmic-intelligence|complexity-optimizer)/([A-Za-z/_-]+\.md)", text):
                         reads[path] += 1
             elif e.get("type") == "result":
                 turns += e.get("num_turns") or 0

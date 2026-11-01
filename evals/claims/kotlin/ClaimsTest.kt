@@ -1,4 +1,4 @@
-// Checks the claims in skills/complexity-optimizer/languages/KOTLIN.md that the
+// Checks the claims in skills/algorithmic-intelligence/languages/KOTLIN.md that the
 // official documentation does not settle. Pending claims use IDs K-P*; once a run
 // confirms one and KOTLIN.md states it, it moves to the confirmed checks (K-C*),
 // which stay as regression checks. None are pending as of 2026-11-01.

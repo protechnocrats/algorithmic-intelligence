@@ -8,7 +8,7 @@
 # Estimates use about 4 characters per token; compare trends, not exact counts.
 # Usage: evals/token-budget.sh [skill directory]
 set -euo pipefail
-skill="${1:-$(cd "$(dirname "$0")/.." && pwd)/skills/complexity-optimizer}"
+skill="${1:-$(cd "$(dirname "$0")/.." && pwd)/skills/algorithmic-intelligence}"
 python3 -I - "$skill" <<'PY'
 import sys
 from pathlib import Path

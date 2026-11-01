@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs evals/claims/kotlin/ClaimsTest.kt, which checks claims in
-# skills/complexity-optimizer/languages/KOTLIN.md that the docs do not settle.
+# skills/algorithmic-intelligence/languages/KOTLIN.md that the docs do not settle.
 # Builds in a temporary copy of the kotlin-shop fixture (same Kotlin and JUnit versions).
 # Needs a full JDK 17+; set JAVA_HOME if the default Java has no compiler.
 # Usage: evals/claims/kotlin-claims.sh

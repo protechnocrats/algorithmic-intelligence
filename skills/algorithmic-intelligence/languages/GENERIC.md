@@ -4,7 +4,7 @@ Use this file for any language without a dedicated companion file in this skill:
 
 ## Look for a saved profile first
 
-An earlier session may already have built this language's profile and saved it in the project. Before building one, look for it at `.complexity-optimizer/languages/<LANGUAGE>.md` in the project's root directory: the top of the repository, the directory that holds the version-control metadata (for example `.git`). `<LANGUAGE>` is the language's name in capital letters with spaces and symbols written as words or removed: `ERLANG.md`, `ELIXIR.md`, `GO.md`, `CPP.md` for C++, `FSHARP.md` for F#, `RUBY.md`.
+An earlier session may already have built this language's profile and saved it in the project. Before building one, look for it at `.algorithmic-intelligence/languages/<LANGUAGE>.md` in the project's root directory: the top of the repository, the directory that holds the version-control metadata (for example `.git`). `<LANGUAGE>` is the language's name in capital letters with spaces and symbols written as words or removed: `ERLANG.md`, `ELIXIR.md`, `GO.md`, `CPP.md` for C++, `FSHARP.md` for F#, `RUBY.md`.
 
 If the file exists:
 
@@ -44,7 +44,7 @@ Save the profile in the project, so that it is not lost when the session ends an
 
 **Ask first, once per session.** In Phase 1 (or write mode step 1), when no saved profile exists, or when the saved one needs an update, ask the developer:
 
-> This project uses <language>, which has no companion file in the complexity-optimizer skill. I am building a profile of <language>'s data structures, their costs, hidden costs, and behavior traps for this analysis. May I save it to `.complexity-optimizer/languages/<LANGUAGE>.md`? Future sessions will load it instead of rebuilding it, so every developer and agent working on this project uses the same checked facts. Commit it with the project; edit it if anything in it is wrong.
+> This project uses <language>, which has no companion file in the algorithmic-intelligence skill. I am building a profile of <language>'s data structures, their costs, hidden costs, and behavior traps for this analysis. May I save it to `.algorithmic-intelligence/languages/<LANGUAGE>.md`? Future sessions will load it instead of rebuilding it, so every developer and agent working on this project uses the same checked facts. Commit it with the project; edit it if anything in it is wrong.
 
 If the need for an update only appears later in the session (a claim turns out wrong during analysis), ask at that point. Ask it together with the other setup questions (such as the commit question in `WORKFLOW.md`, Phase 1) when the platform allows several at once. If the project's agent instructions already authorize or forbid saving it, follow them without asking. Apply the answer for the rest of the session. **The question never blocks the work:** do not stop and wait for the answer. Continue the analysis (or the new code) with the profile held in the session, put the question in your reply, and save the file when the developer allows it. Until then, nothing is written.
 
@@ -56,9 +56,9 @@ If the need for an update only appears later in the session (a claim turns out w
 **Template.** Use the same sections as the skill's own companion files, so the file can later be contributed to the skill:
 
 ```markdown
-# <Language>: language profile for the complexity-optimizer skill
+# <Language>: language profile for the algorithmic-intelligence skill
 
-<!-- Purpose: the complexity-optimizer skill has no companion file for <language>.
+<!-- Purpose: the algorithmic-intelligence skill has no companion file for <language>.
 This profile was built by an agent using that skill and is loaded by later sessions
 instead of being rebuilt. Commit it with the project so that every developer and
 agent uses the same facts. Correct anything that is wrong; keep each claim's basis.

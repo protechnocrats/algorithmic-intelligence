@@ -23,12 +23,15 @@ while [ $# -gt 0 ]; do
 done
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-out="${out:-$HOME/complexity-optimizer-evals/trigger-$(date +%Y%m%d-%H%M%S)}"
+out="${out:-$HOME/algorithmic-intelligence-evals/trigger-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$out/logs"
-skill_src="$repo/skills/complexity-optimizer"
+skill_src="$repo/skills/algorithmic-intelligence"
 if [ -n "$skill_ref" ]; then
-  mkdir -p "$out/skill" && git -C "$repo" archive "$skill_ref" skills/complexity-optimizer | tar -x -C "$out/skill" || exit 1
-  skill_src="$out/skill/skills/complexity-optimizer"
+  # The skill moved from skills/complexity-optimizer to skills/algorithmic-intelligence on 2026-11-01.
+  ref_path=skills/algorithmic-intelligence
+  git -C "$repo" cat-file -e "$skill_ref:$ref_path" 2>/dev/null || ref_path=skills/complexity-optimizer
+  mkdir -p "$out/skill" && git -C "$repo" archive "$skill_ref" "$ref_path" | tar -x -C "$out/skill" || exit 1
+  skill_src="$out/skill/$ref_path"
 fi
 progress="$out/progress.log"
 note() { echo "$(date '+%F %T') $*" >> "$progress"; }
@@ -66,7 +69,7 @@ for r in rows:
             except ValueError: continue
             if e.get("type") == "assistant":
                 for c in e["message"].get("content", []):
-                    if c.get("type") == "tool_use" and c["name"] == "Skill" and "complexity-optimizer" in str(c["input"].get("skill", "")):
+                    if c.get("type") == "tool_use" and c["name"] == "Skill" and any(n in str(c["input"].get("skill", "")) for n in ("algorithmic-intelligence", "complexity-optimizer")):
                         loaded = True
             if e.get("type") == "result":
                 cost = e.get("total_cost_usd") or 0

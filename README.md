@@ -4,7 +4,7 @@
 
 **Make AI agents think beyond code generation.**
 
-Algorithmic Intelligence is a skill for AI coding agents, installed as `complexity-optimizer`. It teaches an agent to reason about code the way an algorithms researcher, a performance engineer, a verification engineer, and an experimental scientist would: understand the computational problem, find the best achievable approach (or derive one when no known technique fits), prove that the change keeps behavior, and measure the result.
+Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding agents. It teaches an agent to reason about code the way an algorithms researcher, a performance engineer, a verification engineer, and an experimental scientist would: understand the computational problem, find the best achievable approach (or derive one when no known technique fits), prove that the change keeps behavior, and measure the result.
 
 - **In existing code, it never changes behavior without your approval.** Every change is backed by differential tests that run the original and the optimized code on the same inputs and compare the results, and anything that would behave differently is listed for your decision first.
 - **In new code, it chooses efficient algorithms and data structures from the first version,** sized for the inputs the code will really see.
@@ -17,7 +17,7 @@ Sometimes the best engineering decision is to leave the code alone, and the skil
 ```bash
 # 1. Install into the project you want to optimize
 cd path/to/your-project
-npx skills add https://github.com/protechnocrats/complexity-optimizer-skill --skill complexity-optimizer
+npx skills add https://github.com/protechnocrats/algorithmic-intelligence --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
@@ -74,15 +74,15 @@ The [Skills CLI](https://skills.sh) installs the skill into the right place for 
 Per project (only active in this project; can be committed so your team gets it too):
 
 ```bash
-npx skills add https://github.com/protechnocrats/complexity-optimizer-skill \
-  --skill complexity-optimizer
+npx skills add https://github.com/protechnocrats/algorithmic-intelligence \
+  --skill algorithmic-intelligence
 ```
 
 For your user account (active in every project):
 
 ```bash
-npx skills add https://github.com/protechnocrats/complexity-optimizer-skill \
-  --skill complexity-optimizer \
+npx skills add https://github.com/protechnocrats/algorithmic-intelligence \
+  --skill algorithmic-intelligence \
   --global
 ```
 
@@ -90,11 +90,11 @@ Run `npx skills --help` to choose a specific agent or run non-interactively. Req
 
 ### Option 2: Manual install
 
-Copy the `skills/complexity-optimizer/` folder (the folder that contains `SKILL.md`) into your agent's skills directory:
+Copy the `skills/algorithmic-intelligence/` folder (the folder that contains `SKILL.md`) into your agent's skills directory:
 
 ```bash
-git clone https://github.com/protechnocrats/complexity-optimizer-skill.git
-cp -r complexity-optimizer-skill/skills/complexity-optimizer <your-agent-skills-dir>/
+git clone https://github.com/protechnocrats/algorithmic-intelligence.git
+cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
 ```
 
 For example, Claude Code reads skills from `.claude/skills/` in a project or `~/.claude/skills/` for your user. For other agents, check their documentation for the skills directory. Keep the folder intact: `SKILL.md` links to the other files by relative path.
@@ -104,7 +104,7 @@ For example, Claude Code reads skills from `.claude/skills/` in a project or `~/
 If your agent does not support skills but reads a project instructions file (such as `AGENTS.md`), copy the folder into your repository and add a line to that file:
 
 ```markdown
-For performance, time complexity, or data-structure work, follow skills/complexity-optimizer/SKILL.md and the files it links to.
+For performance, time complexity, or data-structure work, follow skills/algorithmic-intelligence/SKILL.md and the files it links to.
 ```
 
 ### Make sure it loads for new code
@@ -112,14 +112,14 @@ For performance, time complexity, or data-structure work, follow skills/complexi
 Agents load a skill by matching your request against the skill's description. Requests about speed or complexity match easily. Requests for new code match only when the code loops over data (aggregating, counting, searching, filtering, sorting, ranking, joining, merging, deduplicating, or grouping), runs per request, item, frame, or keystroke, calls databases or services in loops, or needs a data-structure choice; for a small, ordinary feature the agent may not load it. To make sure it is used, add this line to the project's agent instructions (`CLAUDE.md`, `AGENTS.md`, or your agent's equivalent):
 
 ```
-Use the complexity-optimizer skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
+Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
 ```
 
-This matters most for smaller models. In testing, Haiku 5.5 loaded the skill for 2 of 24 new-code requests from the description alone, and for 22 of 24 with this line, while still skipping trivial requests (0 of 24). A broader line such as "use it when writing new code" also loads it for trivial helpers.
+This matters most for smaller models. In testing, Haiku 5.5 loaded the skill for 2 of 24 new-code requests from the description alone, and for 22 of 24 with this line, while still skipping trivial requests (0 of 24). (Measured before the skill was renamed from `complexity-optimizer` on 2026-11-01; the description is unchanged.) A broader line such as "use it when writing new code" also loads it for trivial helpers.
 
 ### Verify and update
 
-Ask your agent: "Which skills do you have for optimizing time complexity?" It should name `complexity-optimizer`. Or ask it to "explain the complexity-optimizer rules" and check that it lists the mandatory rules.
+Ask your agent: "Which skills do you have for optimizing time complexity?" It should name `algorithmic-intelligence`. Or ask it to "explain the algorithmic-intelligence rules" and check that it lists the mandatory rules.
 
 To update, re-run the install command, or `git pull` your clone and copy the folder again.
 
@@ -138,11 +138,12 @@ Write mode: estimates input sizes and call frequency for each part of the new co
 
 ## What you get
 
-- **`OPTIMIZATION-REPORT.md`:** opens with the test-suite baseline (including tests that were already failing), the scope and what was not inspected, behavior changes awaiting your decision, and changes marked as needing testing. Then, for each item: the location, its contract, the entry point it is reached from, the limiting resource, exposure, current complexity, lower bound and its basis, the candidates considered with their sources, the recommendation and why nothing better was chosen, the kind of win (asymptotic, constant-factor, or work avoided), memory impact across all copies, dependency needs, behavior risks, the prediction, the verification level reached, benchmark results against the prediction with the end-to-end share, how to reproduce them, and the files changed. Changes that were tried and rejected are listed with their measurements. Straightforward items use a short format, so the report stays proportional.
+- **`OPTIMIZATION-REPORT.md`:** written once, at the end of report mode, and never edited afterward. It opens with the test-suite baseline (including tests that were already failing), the scope and what was not inspected, and behavior changes awaiting your decision. Then, for each item: the location, its contract, the entry point it is reached from, the limiting resource, exposure, current complexity, lower bound and its basis, the candidates considered with their sources, the recommendation and why nothing better was chosen, the kind of win (asymptotic, constant-factor, or work avoided), memory impact across all copies, dependency needs, behavior risks, the prediction, and the planned verification. Changes that were tried and rejected are listed with their measurements. Each field is one line unless you have a decision to make about it, and straightforward items use a shorter format, so the report stays proportional.
+- **`APPLY-RESULTS.md`** (apply mode): written once at the end, so the analysis report stays exactly as you reviewed it. For each item you approved: the verification level, inputs and properties checked, the planted differences the tests caught, the tests and tools run, what remains unverified, measurements against the prediction with the end-to-end share, how to reproduce them, and the files changed. Also changes marked as needing testing, behavior-change decisions, changes tried and rejected while applying, and bugs found while applying.
 - **`BUGS-FOUND.md`:** bugs noticed during analysis, with inputs, whether the bug was reproduced or only suspected, impact, a suggested fix (not applied), and whether an optimization removed it as a side effect.
 - **Differential tests** in your test sources, with the original implementation kept as a reference. You decide whether to keep them as regression tests.
 - **One commit per applied optimization, if you authorize commits,** with the before and after complexity and benchmark numbers. Without authorization nothing is committed, and the report lists each item's changed files.
-- **`.complexity-optimizer/languages/<LANGUAGE>.md`** (only for a language without a companion file, and only if you allow it): the language profile the agent built, for later sessions to reuse. Commit it. See "Languages."
+- **`.algorithmic-intelligence/languages/<LANGUAGE>.md`** (only for a language without a companion file, and only if you allow it): the language profile the agent built, for later sessions to reuse. Commit it. See "Languages."
 
 For small results, the report is shown in the conversation instead of written to files. For larger ones, the agent asks where to write it (suggesting `optimization-report/`).
 
@@ -208,7 +209,7 @@ The skill exists to help agents make better decisions, not to encourage optimiza
 13. **Respect the project's idioms** and comment any non-obvious trick.
 14. **Prefer the language's own data structures** over its host platform's (for example, Kotlin's `ArrayDeque` over `java.util.ArrayDeque`).
 
-The full wording is in [`SKILL.md`](skills/complexity-optimizer/SKILL.md).
+The full wording is in [`SKILL.md`](skills/algorithmic-intelligence/SKILL.md).
 
 ## Languages
 
@@ -226,7 +227,7 @@ Algorithmic reasoning is independent of the programming language, but costs and 
 | Rust | `languages/RUST.md` |
 | Any other language | `languages/GENERIC.md`: the agent builds the same profile before analyzing, and saves it in your project |
 
-**Languages without a companion file.** For a language such as Erlang, Elixir, Go, or C++, the agent builds a language profile and asks whether to save it to `.complexity-optimizer/languages/<LANGUAGE>.md` in your project, for example `.complexity-optimizer/languages/ERLANG.md`. Commit that file: later sessions load it instead of starting from scratch, so every developer and agent on the project works from the same facts, and updating the skill never overwrites it. Each claim in it is marked as documented (with its source), measured, or unverified, and unverified claims are not relied on until checked. You can correct the file by hand, and because it uses the same structure as the skill's companion files, it can be contributed back to the skill.
+**Languages without a companion file.** For a language such as Erlang, Elixir, Go, or C++, the agent builds a language profile and asks whether to save it to `.algorithmic-intelligence/languages/<LANGUAGE>.md` in your project, for example `.algorithmic-intelligence/languages/ERLANG.md`. Commit that file: later sessions load it instead of starting from scratch, so every developer and agent on the project works from the same facts, and updating the skill never overwrites it. Each claim in it is marked as documented (with its source), measured, or unverified, and unverified claims are not relied on until checked. You can correct the file by hand, and because it uses the same structure as the skill's companion files, it can be contributed back to the skill.
 
 Companion files cover the language and its standard library only. Frameworks and platforms (UI toolkits, ORMs, web frameworks, game engines) are deliberately not covered; the general rules (N+1 queries, main-thread blocking, I/O in loops) apply to them.
 
@@ -274,7 +275,7 @@ Contributions are welcome, particularly:
 
 When contributing algorithmic or language-specific knowledge, document assumptions, complexity, behavioral considerations, and authoritative references, and judge each addition by whether it changes how the agent thinks, verifies, or measures, not by coverage alone.
 
-**Language companion files:** use [`languages/GENERIC.md`](skills/complexity-optimizer/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. A profile that the skill saved in your project (`.complexity-optimizer/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
+**Language companion files:** use [`languages/GENERIC.md`](skills/algorithmic-intelligence/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. A profile that the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
 
 **Changes to the skill itself:** put each instruction in the file where it belongs, written so that any agent, from the smallest model to the largest, can follow it without guessing. Then run `evals/token-budget.sh`: budgets make growth visible and are raised when a needed instruction exceeds them, never met by trimming instructions. New eval cases follow "Adding a case" in [`evals/README.md`](evals/README.md).
 
