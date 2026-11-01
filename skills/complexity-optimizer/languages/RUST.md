@@ -74,6 +74,7 @@ Shifting by a count greater than or equal to the bit width panics in debug build
 - **Tests:** `cargo test`; doc tests count as tests.
 - **Property-based testing and fuzzing, if already present:** `proptest`, `quickcheck`, `cargo fuzz`. Otherwise use a small seeded generator in test code; adding `rand` as a dev-dependency is still a dependency, so ask.
 - **Undefined behavior checks:** run tests under Miri (`cargo +nightly miri test`) whenever `unsafe` code is involved.
+- **Profiling:** `perf` with `cargo flamegraph` or samply (installs), or Instruments on macOS; set `debug = true` (or `debug = "line-tables-only"`) under `[profile.release]` for symbols, without changing optimization.
 - **Benchmarks:** use `criterion` or `divan` if already present (both are dependencies otherwise; ask). Without them, write a timing harness with `std::time::Instant` and `std::hint::black_box` (stable since 1.66) to stop the compiler from removing work. Always benchmark with `--release`.
 - **Memory:** `dhat` (a dependency), heaptrack, or Valgrind Massif for peak heap and allocation counts.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; dependencies or installs, so ask unless present): Kani for bounded model checking with `#[kani::proof]` harnesses, including equivalence of the old and new function over bounded inputs; loom to run concurrent code under every thread interleaving up to a bound; Verus, Prusti, or Creusot for proofs of contracts.

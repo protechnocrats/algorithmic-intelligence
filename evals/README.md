@@ -32,7 +32,7 @@ evals/
 - **swift-shop:** Swift 5.9 or newer (Xcode on macOS, or a Swift toolchain on Linux). This fixture has not been run yet; see the status note in `answers/swift-shop.md`.
 - **c-shop:** a C11 compiler (`cc`, `gcc`, or `clang`; set `CC` to choose). `./test.sh sanitize` builds with AddressSanitizer and UBSan where supported.
 - **rust-shop:** Rust 1.80 or newer with Cargo.
-- **py-logistics:** Python 3.10 or newer; standard library only. No language companion file covers Python, so this fixture also tests `languages/GENERIC.md`.
+- **py-logistics:** Python 3.10 or newer; standard library only. Since `languages/PYTHON.md` was added (after round 3), runs load it; rounds 1 to 3 ran with `languages/GENERIC.md`. No fixture now exercises `GENERIC.md`.
 
 Check that the fixture is green before you start:
 

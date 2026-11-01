@@ -4,7 +4,7 @@ Do not copy this file into a run directory. The agent must not see it.
 
 **Held-out fixture.** Use it only to measure the skill, never to tune its wording. If a result here leads to a change in the skill, the change must be checked on the tuned fixtures, and this fixture stops being held out for the next round: build a new one.
 
-Python with the standard library only, so no language companion file applies: the run also tests `languages/GENERIC.md`. Sizes come from `logistics/volumes.py`. Tests: `./test.sh`. Grading probe: `evals/probes/py-logistics.py`.
+Python with the standard library only. Rounds 1 to 3 ran before `languages/PYTHON.md` existed and so tested `languages/GENERIC.md`; later runs load `PYTHON.md`, which states CPython's integer hashing (P5) and negative-index wraparound (P3) as general facts, so P3 and P5 results are not comparable across that change. Sizes come from `logistics/volumes.py`. Tests: `./test.sh`. Grading probe: `evals/probes/py-logistics.py`.
 
 Each case targets one role from the project's vision, plus hostile input and a straightforward control.
 

@@ -177,8 +177,10 @@ The rules, workflow, algorithm arsenal, differential testing, and behavior traps
 
 | Language | Companion file |
 |---|---|
-| Kotlin (JVM, Android, Multiplatform) | `languages/KOTLIN.md` |
+| Kotlin (JVM, server, Multiplatform) | `languages/KOTLIN.md` |
 | Java | `languages/JAVA.md` |
+| Android (Kotlin or Java) | `languages/ANDROID.md`, in addition to the Kotlin or Java file |
+| Python | `languages/PYTHON.md` |
 | Swift | `languages/SWIFT.md` |
 | JavaScript and TypeScript | `languages/JAVASCRIPT-TYPESCRIPT.md` |
 | C# | `languages/CSHARP.md` |
@@ -186,7 +188,7 @@ The rules, workflow, algorithm arsenal, differential testing, and behavior traps
 | Rust | `languages/RUST.md` |
 | Any other language | `languages/GENERIC.md`: the agent builds the same language profile before analyzing |
 
-Each language file covers built-in data structures and their costs, which structures need a dependency, hidden costs, platform hot spots (Android, iOS, web, .NET, native), bit-manipulation APIs, language-specific behavior traps, and test and benchmark tooling.
+Each language file covers built-in data structures and their costs, which structures need a dependency, hidden costs, platform hot spots (Android, iOS, web, server, .NET, native, data-science libraries), bit-manipulation APIs, language-specific behavior traps, and test, profiling, benchmark, and verification tooling.
 
 ## Files
 

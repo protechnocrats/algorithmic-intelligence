@@ -1,6 +1,6 @@
 # Other Languages
 
-Use this file for any language without a dedicated companion file: Python, Go, C++, Dart, Ruby, PHP, Scala, F#, Haskell, or anything else. The skill applies fully to every language. Build the missing language knowledge before analyzing any candidate, and state any uncertainty in the report.
+Use this file for any language without a dedicated companion file: Go, C++, Dart, Ruby, PHP, Scala, F#, Haskell, or anything else. The skill applies fully to every language. Build the missing language knowledge before analyzing any candidate, and state any uncertainty in the report.
 
 ## Build a language profile first
 

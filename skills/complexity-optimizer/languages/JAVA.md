@@ -67,7 +67,8 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 
 - **Tests:** JUnit 5 (or 4), AssertJ, Mockito.
 - **Property-based testing, if already present:** jqwik, junit-quickcheck.
-- **Benchmarks, if already present:** JMH. Otherwise use a timing harness with warmup in test code; note that JIT warmup, dead-code elimination, and GC make naive timings unreliable.
+- **Profiling:** async-profiler (CPU, allocation, and lock flame graphs) or Java Flight Recorder (`-XX:StartFlightRecording`, viewed in JDK Mission Control); VisualVM if nothing else is available. On Android, see `ANDROID.md`.
+- **Benchmarks, if already present:** JMH (`-prof gc` reports allocation per operation). Otherwise use a timing harness with warmup in test code; note that JIT warmup, dead-code elimination, and GC make naive timings unreliable.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): JBMC for bounded model checking of bytecode, including equivalence harnesses; jcstress for concurrency outcomes under the Java memory model; Java PathFinder for model checking thread interleavings; OpenJML for checking JML contracts.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `MessageDigest.isEqual`, never `Arrays.equals` or `String.equals` on secrets.
 

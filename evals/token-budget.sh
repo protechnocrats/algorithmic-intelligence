@@ -17,6 +17,9 @@ BUDGETS = [  # (what, tokens now, budget)
     ("Apply mode, added files", tok("DIFFERENTIAL-TESTING.md", "BEHAVIOR-TRAPS.md", "BENCHMARKING.md"), 8_500),
     ("Write mode, required files", tok("SKILL.md", "WRITING-NEW-CODE.md", "ALGORITHM-ARSENAL.md", "languages/INDEX.md", lang), 14_000),
 ]
+langs = [p for p in (skill / "languages").glob("*.md") if p.name not in ("INDEX.md", "GENERIC.md")]
+big = max(langs, key=lambda p: len(p.read_text()))
+BUDGETS.append((f"Largest language companion ({big.relative_to(skill)})", len(big.read_text()) // 4, 3_000))
 largest = max((p for p in skill.rglob("*.md")), key=lambda p: len(p.read_text()))
 BUDGETS.append((f"Largest single file ({largest.relative_to(skill)})", len(largest.read_text()) // 4, 7_000))
 failed = False

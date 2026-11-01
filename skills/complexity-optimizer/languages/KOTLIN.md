@@ -1,8 +1,10 @@
 # Kotlin
 
-Load this file for Kotlin projects. On Kotlin/JVM and Android, every `java.util` structure is also available, and `JAVA.md` documents them; consult it only for structures Kotlin does not provide.
+Load this file for Kotlin projects. First determine the target, which decides what exists and what it costs:
 
-First determine the target: **Kotlin/JVM or Android** (full Java standard library), or **Kotlin Multiplatform common code** (only `kotlin.collections`; no `TreeMap`, `PriorityQueue`, `BitSet`, or `java.util.*`).
+- **Kotlin/JVM** (server, desktop, tooling) and **Android**: the full Java standard library is available. `JAVA.md` documents it; consult it only for structures Kotlin lacks. For Android, also load `ANDROID.md`.
+- **Multiplatform common code**: only `kotlin.collections`. No sorted map or set, priority queue, bitset, or `java.util.*`. Options: `expect`/`actual` wrappers over platform types, a small in-project implementation with tests, or a dependency (ask first, rule 7).
+- **Kotlin/Native, JS, or Wasm**: `kotlin.collections` has its own implementations, without the JVM's treeified hash buckets. On Kotlin/JS, `Long` may be emulated in software; check before using it in a hot loop.
 
 ## Kotlin first (rule 14)
 
@@ -15,72 +17,55 @@ When Kotlin provides an equivalent, use the Kotlin structure or factory, not the
 | Hash map / set | `hashMapOf()`, `hashSetOf()`, `toHashSet()` | `java.util.HashMap()`, `java.util.HashSet()` |
 | Insertion-ordered map / set | `mutableMapOf()`, `linkedMapOf()`, `mutableSetOf()`, `buildMap { }` | `java.util.LinkedHashMap()`, `java.util.LinkedHashSet()` |
 | Sorted map / set | `sortedMapOf()`, `sortedSetOf()`, `toSortedMap()` | `java.util.TreeMap()`, `java.util.TreeSet()` |
-| Primitive arrays | `IntArray`, `LongArray`, ... | `java.util.Arrays` helpers where Kotlin extensions exist (`sort()`, `binarySearch()`, `fill()`, `copyOf()`) |
-| Sorting and searching lists | `sort()`, `sortBy { }`, `sortedWith()`, `binarySearch()` | `Collections.sort`, `Collections.binarySearch` |
-| Read-only views | `List`, `Map`, `Set` interfaces | `Collections.unmodifiableList` |
-| String building | `buildString { }`, `joinToString()` | `java.lang.StringBuilder` used directly (acceptable inside `buildString`) |
-| Random numbers | `kotlin.random.Random` | `java.util.Random` |
+| Sorting and searching | `sort()`, `sortBy { }`, `sortedWith()`, `binarySearch()`, `IntArray.sort()` | `Collections.sort`, `Arrays.sort`, `Collections.binarySearch` |
+| String building | `buildString { }`, `joinToString()` | `StringBuilder` used directly (fine inside `buildString`) |
 
-Use Java classes only when Kotlin has no equivalent, and state this in the report:
+Use Java classes only when Kotlin has no equivalent, and state this in the report: `PriorityQueue`, `BitSet`, `EnumSet`, `EnumMap`, `java.util.concurrent` collections, `LinkedHashMap` with access order and `removeEldestEntry` (a bounded LRU cache), and `TreeMap`/`TreeSet` navigation (`floorKey`, `ceilingKey`, `headMap`, `pollFirst`): `sortedMapOf` is typed as `SortedMap`, which lacks these, so declare a `TreeMap` or `NavigableMap` when navigation is needed.
 
-- `java.util.PriorityQueue` (no Kotlin heap)
-- `java.util.BitSet`, `EnumSet`, `EnumMap`
-- `TreeMap`/`TreeSet` navigation (`floorKey`, `ceilingKey`, `headMap`, `pollFirst`): `sortedMapOf` returns a `SortedMap`, which lacks these, so declare a `java.util.TreeMap` or `NavigableMap` when navigation is needed
-- `LinkedHashMap` with access order and `removeEldestEntry` for a bounded LRU cache (Android also has `android.util.LruCache`)
-- `java.util.concurrent` collections
-
-Only new code follows this preference. Do not replace existing Java structures just to make them Kotlin-native. Behavior can differ: for example, `java.util.ArrayDeque` throws on `null` elements while Kotlin's `ArrayDeque` accepts them.
+Only new code follows this preference; do not swap existing Java structures, since behavior can differ (`java.util.ArrayDeque` throws on `null`; Kotlin's `ArrayDeque` accepts it).
 
 ## Built-in structures
 
 | Structure | Kotlin API | Key costs | Notes |
 |---|---|---|---|
-| Dynamic array | `mutableListOf`, `ArrayList` | get/set O(1), append amortized O(1), insert/remove at front O(n), `contains` O(n) | `listOf` returns a read-only list, not an immutable one |
-| Hash set | `hashSetOf`, `HashSet` | add/contains/remove O(1) average | No iteration-order guarantee |
-| Insertion-ordered set | `mutableSetOf`, `setOf`, `LinkedHashSet` | O(1) average | **`mutableSetOf` is a `LinkedHashSet`**, not a `HashSet` |
-| Hash map | `hashMapOf`, `HashMap` | O(1) average | No order guarantee |
-| Insertion-ordered map | `mutableMapOf`, `mapOf`, `LinkedHashMap` | O(1) average | **`mutableMapOf` is a `LinkedHashMap`** |
-| Double-ended queue | `kotlin.collections.ArrayDeque` | add/remove at both ends O(1) amortized, indexed get O(1) | Available in common code; use it for queues and BFS |
-| Sorted set / map | `sortedSetOf`, `sortedMapOf` (`TreeSet`, `TreeMap`) | O(log n) | JVM only |
-| Priority queue | `java.util.PriorityQueue` | offer/poll O(log n), peek O(1) | JVM only |
-| Primitive arrays | `IntArray`, `LongArray`, `BooleanArray`, `CharArray`, `DoubleArray` | O(1) access, no boxing | Prefer over `List<Int>` in hot numeric code |
-| Bitset | `java.util.BitSet` | O(1) per bit, O(n/64) bulk ops | JVM only |
-| Enum set / map | `EnumSet`, `EnumMap` | O(1), bit-vector backed | JVM only |
-| String builder | `buildString { }`, `StringBuilder` | append amortized O(1) | |
-| Lazy pipeline | `asSequence()` | Avoids intermediate lists | Changes evaluation order (see traps) |
-
-### Android-specific structures
-
-`SparseArray`, `SparseIntArray`, `SparseBooleanArray`, `LongSparseArray`, and `ArrayMap` avoid boxing and use less memory, but lookups are binary search, **O(log n)**, and insertion is O(n). By rule 2, do not replace a `HashMap` with one of these to save memory when it makes lookups slower. They are a good choice only for small collections (hundreds of entries) where a benchmark shows they are at least as fast. Do not apply Android Lint's "use SparseArray" suggestion blindly.
-
-### Not in common code (Multiplatform)
-
-No sorted map/set, priority queue, or bitset in `kotlin.collections`. Options: `expect`/`actual` wrappers over platform types, a small in-project implementation with tests, or a dependency (ask first, rule 7).
+| Dynamic array | `mutableListOf`, `ArrayList` | get/set O(1), append amortized O(1), insert/remove at front O(n), `contains` O(n) | `listOf` is read-only, not immutable |
+| Hash set / map | `hashSetOf`, `hashMapOf` | O(1) expected; on the JVM, O(log n) worst case per bucket only for `Comparable` keys | No order guarantee |
+| Insertion-ordered set / map | `mutableSetOf`, `setOf`, `mutableMapOf`, `mapOf`, `toSet()`, `associate*`, `groupBy` | O(1) expected | **These all return `LinkedHashSet`/`LinkedHashMap`** |
+| Double-ended queue | `kotlin.collections.ArrayDeque` | both ends O(1) amortized, indexed get O(1) | Common code; use for queues and BFS |
+| Sorted set / map | `sortedSetOf`, `sortedMapOf` | O(log n) | JVM only |
+| Priority queue | `java.util.PriorityQueue` | offer/poll O(log n), peek O(1), `remove(x)` O(n) | JVM only |
+| Primitive arrays | `IntArray`, `LongArray`, `BooleanArray`, `DoubleArray` | O(1), no boxing | Prefer over `List<Int>` in hot numeric code (see the data-class trap) |
+| Bitset, enum set / map | `java.util.BitSet`, `EnumSet`, `EnumMap` | O(1) per bit, O(n/64) bulk | JVM only |
+| Lazy pipeline | `asSequence()` | No intermediate lists | Changes evaluation order (traps); can be slower on small inputs |
+| Persistent collections | `kotlinx.collections.immutable` | Near-constant `add` with structural sharing | A dependency: ask. Replaces copy-on-every-update state (`state = state + item`) |
 
 ## Hidden costs
 
 | Pattern | Cost | Fix |
 |---|---|---|
-| `result = result + item` or `list += item` on a read-only `var list: List<T>` in a loop | Each step copies the list: O(n²) | `mutableListOf` and `add`, or `buildList { }` |
-| `if (item in list)` inside a loop | O(n) per check | Build a `HashSet` once (`toHashSet()`), preserving order separately if needed |
-| `list.first { it.id == x }` or `find` inside a loop | O(n) per lookup | `associateBy { it.id }` once (note: last duplicate wins) |
-| `list.removeAt(0)` on an `ArrayList` as a queue | O(n) per removal | `ArrayDeque.removeFirst()` |
-| `sortedBy` or `sorted()` inside a loop | O(n log n) per iteration | Sort once outside, or maintain a `TreeMap`/heap |
-| Long chains of `map`/`filter`/`flatMap` on large lists | One intermediate list per step | `asSequence()` (check laziness trap) or a single loop |
-| `filter { }.size`, `filter { }.isNotEmpty()` | Allocates a filtered list | `count { }`, `any { }` |
-| `string += x` in a loop | O(n²) character copying | `buildString { }` or `joinToString` |
-| `Regex("...")` or `toRegex()` inside a loop or hot function | Recompiles the pattern each time | Hoist to a `val` in a companion or top level |
-| `List<Int>`, `Map<Int, Int>`, `Set<Long>` in hot numeric code | Boxing, poor cache locality, GC pressure | `IntArray`, primitive counting arrays, or bitsets |
-| `distinct()` then `contains` | Fine for one call; wasteful if repeated | Keep the set |
-| `subList` on a list that is later modified | `ConcurrentModificationException` or stale views | Copy only when needed |
+| `list = list + item` or `+=` on a `var` of read-only `List` in a loop | Copies each step: O(n²) | `mutableListOf` and `add`, `buildList { }`, or a persistent list for shared state |
+| `item in list`, `indexOf`, `first { }`, `find` inside a loop | O(n) per call | `toHashSet()` or `associateBy { }` once (traps: last duplicate wins, exception type) |
+| `list - other`, `removeAll(other)`, `retainAll(other)` where `other` is a `List` | Linear search per element on current Kotlin versions: O(n·m) | Pass a `Set` |
+| `set.elementAt(i)`, `Iterable.last()`, `count()` on a non-`List` in a loop | O(n) per call | Index a list, or keep the value |
+| `list.removeAt(0)` as a queue; `remove` inside an index loop | O(n) per removal, O(n²) total | `ArrayDeque.removeFirst()`; `removeAll { }` or `retainAll { }`, which filter in place in O(n) |
+| `windowed(k)` then aggregating each window | Allocates n lists of k: O(n·k) | Sliding aggregate in one loop: O(n) |
+| `sorted()`, `sortedBy`, `maxBy` inside a loop | O(n log n) or O(n) per iteration | Sort once, or keep a `TreeMap` or heap |
+| `groupBy { }.mapValues { it.value.size }` | Builds every group's list | `groupingBy { }.eachCount()` |
+| `containsKey(k)` then `get(k)` or `put` | Two lookups | `getOrPut`, or `get` with a null check when `null` values are not meaningful |
+| A sequence consumed by two terminal operations | Re-runs the whole chain each time | Materialize once with `toList()` |
+| `filter { }.size`, `map { }.sum()` | Allocates a list | `count { }`, `sumOf { }` |
+| `Pair(a, b)` or a `data class` as a hash key in hot code | Allocation and boxing per lookup; data classes do not cache `hashCode`, so a key holding a large list rehashes it on every lookup | Pack two `Int`s into a `Long`, or precompute a key |
+| `List<Int>`, `Map<Int, Int>`, a `value class` in a generic or nullable position | Boxing, GC pressure, poor locality | `IntArray`, counting arrays, bitsets |
+| `foo(*array)` in a loop | Spread copies the array | Pass the array |
+| `string += x` in a loop; `Regex(...)` or `toRegex()` in a hot function | O(n²) copying; recompilation | `buildString { }`; hoist the `Regex` to a top-level or companion `val` |
 
-## Android performance hot spots
+## Coroutines and server-side Kotlin
 
-- **Main thread.** Anything over a few milliseconds on the main thread is a time problem regardless of Big-O. Move it to `Dispatchers.Default` (CPU) or `Dispatchers.IO` (I/O) only if the call is already asynchronous, or ask before changing threading (rule 11).
-- **Jetpack Compose.** Expensive computation in a composable runs on every recomposition. Use `remember(keys) { }` for derived values and `derivedStateOf` for values derived from frequently changing state. Provide stable `key`s in `LazyColumn` items.
-- **Views.** No allocation or heavy work in `onDraw`, `onMeasure`, `onLayout`, or `onBindViewHolder`. Use `DiffUtil`/`ListAdapter` instead of `notifyDataSetChanged()`.
-- **Room and SQLite.** Queries inside loops (N+1): replace with one query using `IN (:ids)`, a `@Relation`, or a join. Add indexes for filtered and joined columns; that is a schema change, so ask.
-- **Coroutines and Flow.** Sequential `await` in a loop can become `awaitAll`, but that changes ordering of side effects, error behavior, and concurrency (behavior trap); ask first.
+- **N+1 queries.** Lazy JPA/Hibernate associations (`JOIN FETCH`, `@EntityGraph`) or Exposed DAO references (`.with(...)`) read in a loop issue one query per item.
+- **Blocking inside coroutines.** JDBC, file I/O, or `Thread.sleep` on `Dispatchers.Default` or a request dispatcher starves its threads; `runBlocking` inside a coroutine can deadlock. Moving the call to `Dispatchers.IO` changes threading (rule 11): ask.
+- **Per-item context switches.** `withContext` inside a loop over small items: switch once around the loop.
+- **Sequential `await` in a loop → `awaitAll`.** Changes ordering of side effects, error behavior (the first failure cancels the scope), and load on the callee. Unbounded `async` per item can overwhelm a service; bound it with `Semaphore`, `limitedParallelism`, or `flatMapMerge(concurrency)`. Always a behavior change for review.
+- **Flow operators.** `conflate` and `collectLatest` drop values; `buffer` changes producer-consumer interleaving. Adding them needs approval.
 
 ## Bit manipulation
 
@@ -88,32 +73,39 @@ No sorted map/set, priority queue, or bitset in `kotlin.collections`. Options: `
 |---|---|
 | And, or, xor, not | `a and b`, `a or b`, `a xor b`, `a.inv()` |
 | Shift left, arithmetic right, logical right | `a shl n`, `a shr n`, `a ushr n` |
-| Popcount | `x.countOneBits()` |
-| Trailing / leading zeros | `x.countTrailingZeroBits()`, `x.countLeadingZeroBits()` |
+| Popcount, trailing / leading zeros | `x.countOneBits()`, `x.countTrailingZeroBits()`, `x.countLeadingZeroBits()` |
 | Lowest / highest set bit | `x.takeLowestOneBit()`, `x.takeHighestOneBit()` |
-| 64 flags | `Long` with `1L shl i` (using `1 shl i` with `Int` silently overflows at 32) |
+| 64 flags | `Long` with `1L shl i` (`1 shl i` is an `Int` and wraps at 32) |
 
-Shifts use only the low 5 bits (`Int`) or 6 bits (`Long`) of the shift count, so `1 shl 32 == 1`. For flag sets with an enum, `EnumSet` is usually clearer than a raw mask on the JVM.
+Shifts use only the low 5 bits (`Int`) or 6 bits (`Long`) of the count, so `1 shl 32 == 1`. `%` is the remainder (sign of the dividend); `mod()` is the floor modulus. On the JVM, `EnumSet` is usually clearer than a raw enum mask.
 
 ## Kotlin-specific traps
 
-- **`mutableSetOf`/`mutableMapOf` preserve insertion order.** Replacing them with `HashSet`/`HashMap` changes iteration order.
-- **`associateBy` and `toMap` keep the last value for duplicate keys;** a `first { }` search returned the first.
-- **`groupBy` returns a `LinkedHashMap`** in first-key-appearance order.
-- **`sortedBy`, `sortedWith`, and `sort` on lists are stable** (they use the JVM's stable object sort). `IntArray.sort()` sorts primitives, where stability is not observable.
-- **Sequences are lazy.** `asSequence()` evaluates element by element, interleaving `map` and `filter` lambdas, and evaluates nothing until a terminal operation. This changes the order and number of lambda calls when they have side effects.
-- **Structural versus reference equality.** `==` calls `equals`; `===` compares references. A `data class` with `var` properties used as a hash key breaks when mutated.
-- **Silent `Int` overflow.** Arithmetic wraps without error; a closed-form formula may overflow where an incremental loop did not. Use `Long` or `Math.multiplyExact` when the original never overflowed in practice and the new form might.
-- **Read-only is not immutable.** `listOf` results can be cast or may be backed by a mutable list; returning an internal `MutableList` typed as `List` lets Java callers mutate it.
+- **Ordered by default.** `mutableSetOf`, `mutableMapOf`, `toSet`, `associateBy`, and `groupBy` preserve insertion order; switching to `HashSet`/`HashMap` changes iteration order.
+- **Duplicates:** `associateBy` and `toMap` keep the last value for a key; a `first { }` search returned the first.
+- **Exception types.** `first { }` throws `NoSuchElementException`; `map[k]!!` throws `NullPointerException`; `getValue(k)` throws `NoSuchElementException` with a different message. Replacing a search with a lookup must keep the original's exception, or it is a behavior change.
+- **Floating-point equality depends on the static type.** `a == b` on values typed `Double` or `Float` follows IEEE 754 (`NaN != NaN`, `-0.0 == 0.0`). Inside collections, generics, and `Any`, equality uses `equals`: `NaN` equals itself and `-0.0 != 0.0`. Moving a `==` loop over doubles into a `Set`, `Map`, or `contains` changes results for `NaN` and `-0.0`. `sorted()` on doubles puts `NaN` last; `maxOrNull()` returns `NaN` if any value is `NaN`; a manual `>` loop skips it.
+- **Data classes with array properties** compare arrays by reference in `equals` and `hashCode`. Replacing a `List<Int>` property with `IntArray` silently changes equality, hashing, and `toString`.
+- **Mutable keys.** A `data class` with `var` properties used as a hash key breaks when mutated.
+- **Stable sorts.** `sort`, `sortBy`, `sortedWith`, and `Array<T>.sortWith` are stable on every target. `binarySearch` may return any index among equal elements.
+- **`maxBy`/`maxOf` return the first maximal element;** `sortedBy { }.last()` returns the last one.
+- **Sequences are lazy.** They interleave `map` and `filter` lambdas element by element and run nothing until a terminal operation, changing the order and number of lambda calls.
+- **`split` differs from Java's.** Kotlin's `split(",")` is literal and keeps trailing empty strings; Java's `String.split` takes a regex and drops them.
+- **Silent `Int` overflow.** A closed form can overflow where the loop did not; `sum()` on `List<Int>` wraps. Use `Long`, `sumOf { it.toLong() }`, or `Math.multiplyExact`.
+- **Non-atomic `getOrPut`.** On a `ConcurrentHashMap` it can run the default more than once; use `computeIfAbsent` when that matters.
+- **Read-only is not immutable.** An internal `MutableList` returned as `List` can be mutated by Java callers.
 
-## Testing and benchmarking
+## Testing, profiling, and benchmarking
 
-- **Tests:** JUnit 4 or 5, `kotlin.test`, Kotest; Robolectric for Android framework code; Turbine for Flow.
+- **Tests:** JUnit 4 or 5, `kotlin.test`, Kotest; `kotlinx-coroutines-test` (`runTest`, virtual time); Turbine for Flow.
 - **Property-based testing, if already present:** Kotest property testing (`kotest-property`), jqwik.
-- **Benchmarks, if already present:** Jetpack Microbenchmark (`androidx.benchmark`) on device, kotlinx-benchmark or JMH on the JVM. Otherwise use a timing harness in test code with `System.nanoTime()` and warmup iterations, and note that JIT and debug builds distort results.
-- **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Lincheck checks concurrent data structures for linearizability, with a model-checking mode that enumerates interleavings; on JVM targets, jcstress and JBMC from `JAVA.md` also apply.
-- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): on the JVM, `java.security.MessageDigest.isEqual`, never `contentEquals` or `==` on secrets.
+- **Profiling:** on the JVM, async-profiler (CPU, allocation, and lock profiles as flame graphs) or Java Flight Recorder (`-XX:StartFlightRecording`); IntelliJ's profiler wraps both. Kotlin/Native: `perf` or Instruments.
+- **Benchmarks, if already present:** kotlinx-benchmark or JMH (`-prof gc` reports allocation per operation). Otherwise a timing harness with `System.nanoTime()`, warmup iterations, and medians; JIT warmup and dead-code elimination distort naive timings.
+- **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Lincheck checks concurrent structures for linearizability, with a model-checking mode that enumerates interleavings; on JVM targets, jcstress and JBMC from `JAVA.md` also apply.
+- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): on the JVM, `java.security.MessageDigest.isEqual`, never `contentEquals` or `==`.
 
 ## References (for verifying claims; not required reading)
 
 - Kotlin collections: kotlinlang.org/docs/collections-overview.html; API reference: kotlinlang.org/api/core/kotlin-stdlib/
+- Floating-point comparison: kotlinlang.org/docs/numbers.html#floating-point-numbers-comparison
+- Coroutines: kotlinlang.org/docs/coroutines-guide.html
