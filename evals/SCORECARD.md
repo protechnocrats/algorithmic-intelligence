@@ -5,7 +5,7 @@ Copy this file for each evaluation session. Score each case **P** (pass), **F** 
 - **Date:**
 - **Agent and model:**
 - **Skill version (commit):**
-- **Fixture:** kotlin-shop | ts-shop | swift-shop | c-shop | rust-shop | py-logistics (held out)
+- **Fixture:** kotlin-shop | ts-shop | swift-shop | c-shop | rust-shop | java-clinic (tuning) | py-logistics (held out) | rb-clinic (held out)
 - **Skill installed:** yes | no (baseline)
 
 ## Workflow checks

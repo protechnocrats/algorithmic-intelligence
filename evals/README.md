@@ -14,7 +14,9 @@ evals/
 │   ├── swift-shop/    ← 10 cases (Swift Package Manager, XCTest); not yet verified on a toolchain
 │   ├── c-shop/        ← 10 cases (C11, plain asserts, optional sanitizers)
 │   ├── rust-shop/     ← 12 cases (Cargo, no dependencies)
-│   └── py-logistics/  ← 6 cases + 1 write-mode case (Python standard library); held out, never used for tuning
+│   ├── py-logistics/  ← 6 cases + 1 write-mode case (Python standard library); held out, never used for tuning
+│   ├── java-clinic/   ← 10 cases + 1 write-mode case (Java standard library, javac); tuning set, twin of rb-clinic
+│   └── rb-clinic/     ← 9 cases + 1 write-mode case (Ruby standard library, minitest); held out; tests languages/GENERIC.md
 ├── claims/            ← checks of language-file claims the docs do not settle (no agent)
 ├── answers/           ← answer keys; never let the agent see these
 ├── probes/            ← grading scripts: trap inputs run against the original and a run's final code
@@ -33,7 +35,9 @@ evals/
 - **swift-shop:** Swift 5.9 or newer (Xcode on macOS, or a Swift toolchain on Linux). This fixture has not been run yet; see the status note in `answers/swift-shop.md`.
 - **c-shop:** a C11 compiler (`cc`, `gcc`, or `clang`; set `CC` to choose). `./test.sh sanitize` builds with AddressSanitizer and UBSan where supported.
 - **rust-shop:** Rust 1.80 or newer with Cargo.
-- **py-logistics:** Python 3.10 or newer; standard library only. Since `languages/PYTHON.md` was added (after round 3), runs load it; rounds 1 to 3 ran with `languages/GENERIC.md`. No fixture now exercises `GENERIC.md`.
+- **py-logistics:** Python 3.10 or newer; standard library only. Since `languages/PYTHON.md` was added (after round 3), runs load it; rounds 1 to 3 ran with `languages/GENERIC.md`.
+- **java-clinic:** a full JDK 17 or newer, with `javac` on `PATH` or `JAVA_HOME` pointing at it (export `JAVA_HOME` before starting the agent or `run-pilot.sh`). No build tool and no dependencies: `test.sh` compiles with `javac` and runs a minimal test runner.
+- **rb-clinic:** Ruby 3.2 or newer; standard library only (minitest ships with Ruby). There is no Ruby companion file, so this fixture exercises `languages/GENERIC.md`.
 
 Check that the fixture is green before you start:
 
@@ -44,6 +48,8 @@ cd evals/fixtures/swift-shop && swift test
 cd evals/fixtures/c-shop && ./test.sh && ./test.sh sanitize
 cd evals/fixtures/rust-shop && cargo test
 cd evals/fixtures/py-logistics && ./test.sh
+cd evals/fixtures/java-clinic && ./test.sh
+cd evals/fixtures/rb-clinic && ./test.sh
 ```
 
 ## Running one evaluation
@@ -101,7 +107,7 @@ Write-mode cases (IDs ending in `W1`, `W2`, and so on) test new code, not existi
 
 `evals/run-pilot.sh` runs a fixture's report flow (report, "apply all", decline every approval) and its write-mode case through `claude -p`, and keeps every transcript, the git state, and the test results under `~/complexity-optimizer-evals/`. It limits tools to file reads and edits plus the fixture's test command and `git`, and caps spending per turn. Options:
 
-- `--fixture ts-shop | py-logistics`
+- `--fixture ts-shop | py-logistics | java-clinic | rb-clinic`
 - `--cases report,write` and `--conditions skill,baseline`
 - `--skill-ref <commit>` installs the skill as it was at that commit, to compare versions
 - `--model <model>` runs another model
@@ -116,7 +122,7 @@ nohup setsid evals/run-pilot.sh --fixture py-logistics --runs 3 > /dev/null 2>&1
 Follow `progress.log` in the output directory. Then:
 
 1. `python3 -I evals/session-stats.py <out>` for cost, tokens, and the skill files each session opened.
-2. The fixture's probe for each session's final code: `python3 -I evals/probes/py-logistics.py <session directory>`, or `node evals/probes/ts-shop.ts evals/fixtures/ts-shop/src <session directory>/src`.
+2. The fixture's probe for each session's final code: `python3 -I evals/probes/py-logistics.py <session directory>`, `node evals/probes/ts-shop.ts evals/fixtures/ts-shop/src <session directory>/src`, `JAVA_HOME=<jdk> python3 -I evals/probes/java-clinic.py <session directory>`, or `python3 -I evals/probes/rb-clinic.py <session directory>`. The clinic probes run the whole check list against the original and the session's code and take several minutes (the original's slow cases are part of it).
 3. Score each session in a copy of `SCORECARD.md`, using the answer key and the probe's output.
 
 Sessions that hit a usage limit are marked "API ERROR, session invalid" in `progress.log`: rerun them rather than scoring them. Results from past runs are in `results/`.
@@ -150,8 +156,13 @@ Run steps 2 to 4 in separate time windows, or with `--parallel 1`, to stay insid
 
 ## Adding a case
 
+Tuning fixtures (`ts-shop`, `java-clinic`, and the four never-run shop fixtures) are for finding where the skill's wording fails and fixing it. Held-out fixtures (`py-logistics`, `rb-clinic`) only measure: a change made because of a held-out result must be checked on a tuning fixture, and the held-out fixture is then replaced for the next round. `java-clinic` and `rb-clinic` are twins: each category has a case in both, with a different surface, so an improvement found on one can be checked on the other.
+
+A case earns its place only if it can tell the skill apart from no skill. Before any run, its answer key states why an agent without the skill is likely to fail it and which instruction should prevent that; a case every condition passes is a control or a regression check, and the answer key labels it so. Invented problems are welcome (models cannot recall their answers), but the key's own answer must then be checked: compare the intended solution with a brute-force reference on every small input, and state the lower bound with its basis or say that none is known.
+
 1. Add the code to a fixture, written as ordinary project code. Do not hint at the answer in names or comments.
 2. Keep the fixture's existing tests green. Planted bugs must not be caught by the existing tests.
 3. Verify that the trap actually triggers (for example, that the recursion really overflows, or that the alternative really changes output).
    If the trap depends on the platform or library version (for example, `qsort` stability or stack depth), record where you verified it in the answer key.
-4. Add the case to the answer key with the expected outcome, pass criteria, and failure signals.
+4. Add the case to the answer key with the expected outcome, pass criteria, failure signals, and why a baseline is likely to fail.
+5. If the fixture has a probe, add a check, and confirm it on two rewrites of your own: a correct one (the probe must report no difference) and the tempting wrong one (the probe must catch it).

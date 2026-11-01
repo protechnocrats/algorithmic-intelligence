@@ -11,7 +11,8 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
                           [--skill-ref REF] [--model MODEL] [--runs N] [--parallel P]
                           [--budget USD] [--out DIR]
 
-  --fixture NAME     ts-shop (default) or py-logistics
+  --fixture NAME     ts-shop (default), py-logistics, java-clinic, or rb-clinic
+                     (java-clinic needs JAVA_HOME set to a full JDK, or javac on PATH)
   --cases LIST       report (report, apply all, decline) and write (the write-mode case);
                      default both. The older names ts and tw1 still work.
   --conditions LIST  skill, baseline, or both (default both)
@@ -64,6 +65,14 @@ case "$fixture" in
     test_cmd="./test.sh"
     fixture_tools=("Bash(./test.sh)" "Bash(./test.sh:*)" "Bash(python3:*)")
     write_prompt="Add a function longest_on_time_streak(deliveries, budget_minutes) in a new file logistics/sla.py. deliveries is one driver's deliveries in order, each a (promised, delivered) pair of datetimes. Return the length of the longest run of consecutive deliveries whose total late minutes is at most budget_minutes. A delivery's late minutes are the whole minutes after its promised time; early or on-time deliveries count as 0. Add tests." ;;
+  java-clinic)
+    test_cmd="./test.sh"
+    fixture_tools=("Bash(./test.sh)" "Bash(./test.sh:*)" "Bash(java:*)" "Bash(javac:*)" "Bash(${JAVA_HOME:-/usr}/bin/java:*)" "Bash(${JAVA_HOME:-/usr}/bin/javac:*)")
+    write_prompt="Add a class CoverageReport in src/main/java/com/example/clinic/CoverageReport.java. Its constructor takes an Availability. Its method List<LocalDate> uncoveredDays(List<Long> doctorIds, LocalDate from, LocalDate to, int minDoctors) returns, in date order, each day from \`from\` to \`to\` inclusive on which fewer than minDoctors of the given doctors are available. Add tests." ;;
+  rb-clinic)
+    test_cmd="./test.sh"
+    fixture_tools=("Bash(./test.sh)" "Bash(./test.sh:*)" "Bash(ruby:*)")
+    write_prompt="Add a method Clinic::LabAlerts.repeat_tests(results, window_days) in a new file lib/clinic/lab_alerts.rb. results is an array of lab results in the order they arrived; each responds to patient_id, test_code and taken_on (a Date). Return, in arrival order, the results for which an earlier-arrived result has the same patient_id and test_code and a taken_on within window_days days of this one's, before or after. Add tests." ;;
   *) echo "No pilot configuration for fixture: $fixture" >&2; exit 1 ;;
 esac
 

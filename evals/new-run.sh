@@ -7,7 +7,8 @@ usage() {
   cat <<'EOF'
 Usage: evals/new-run.sh <fixture> [--skill <dir>] [--skill-src <path>] [--dest <path>]
 
-  <fixture>       kotlin-shop, ts-shop, swift-shop, c-shop, rust-shop, or py-logistics
+  <fixture>       kotlin-shop, ts-shop, swift-shop, c-shop, rust-shop, py-logistics,
+                  java-clinic, or rb-clinic
   --skill <dir>   Also copy the skill into <dir> inside the run directory,
                   relative to its root (for example .claude/skills).
                   Omit it for a baseline run without the skill.

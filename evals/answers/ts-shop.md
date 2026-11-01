@@ -20,6 +20,8 @@ Sizes come from `src/volumes.ts`. Bug planted: T5.
 | T12 | `invoices.ts` `monthlyStatements` | Cost along the call chain through a callback and a class, first-match duplicates, aliasing |
 | TW1 | New `valuation.ts` (write mode, separate run) | Mode selection, workload sizing, cost of existing code called from new code, no silent changes to existing code, per-call cache scope, object key trap |
 
+**Cases with no lift so far.** In round 2 (Opus 5.5, 3 runs per condition), T1, T4, T7, T9, and T11 passed in every run with and without the skill. T7 and T9 are controls (the right answer is to leave the code alone) and T1 is the straightforward control for the compact format; T4 and T11 test traps the model already avoids on its own. Keep them as regression checks, but do not count them as evidence of what the skill adds.
+
 ## T1. `shortestHops`
 
 - **Expected:** replace `queue.shift()` with a head index (or a ring buffer). O(V²) worst case → O(V + E).
