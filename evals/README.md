@@ -15,6 +15,7 @@ evals/
 │   ├── c-shop/        ← 10 cases (C11, plain asserts, optional sanitizers)
 │   ├── rust-shop/     ← 12 cases (Cargo, no dependencies)
 │   └── py-logistics/  ← 6 cases + 1 write-mode case (Python standard library); held out, never used for tuning
+├── claims/            ← checks of language-file claims the docs do not settle (no agent)
 ├── answers/           ← answer keys; never let the agent see these
 ├── probes/            ← grading scripts: trap inputs run against the original and a run's final code
 ├── SCORECARD.md       ← copy per session and fill in
@@ -123,6 +124,8 @@ Sessions that hit a usage limit are marked "API ERROR, session invalid" in `prog
 `evals/trigger-test.sh` checks which prompts load the skill. Besides `--runs`, `--ids`, and `--parallel`, it takes `--model`, `--skill-ref <commit>` (another version of the skill), and `--instructions "<text>"` (written to `CLAUDE.md` in each run directory, to test a project-instruction line).
 
 `evals/token-budget.sh` checks the skill's required loading per mode against budgets without running an agent. Run it after every change to the skill.
+
+`evals/claims/kotlin-claims.sh` checks claims in `languages/KOTLIN.md` that the official documentation does not settle (IDs `K-P*`, pending), plus claims already confirmed by a run (`K-C*`, regression checks). It prints one `CLAIM` line per check and fails when a claim is wrong. After each run, update `KOTLIN.md` from the `K-P*` results: state confirmed behavior plainly (noting it is undocumented where that matters) and move the check to the confirmed section. No agent is involved and it costs nothing, so run it whenever the Kotlin version or `KOTLIN.md` changes.
 
 ## Round 3 plan
 

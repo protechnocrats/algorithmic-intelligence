@@ -9,7 +9,7 @@ Load this file for Java projects. Kotlin projects consult it only for JVM struct
 | Dynamic array | `ArrayList` | get/set O(1), add amortized O(1), add/remove at index 0 O(n), `contains` O(n) | |
 | Linked list | `LinkedList` | add/remove at ends O(1), **`get(i)` O(n)** | Rarely the right choice; prefer `ArrayDeque` or `ArrayList` |
 | Double-ended queue | `ArrayDeque` | push/pop/offer/poll at both ends O(1) amortized | Rejects `null`; faster than `Stack` and `LinkedList` |
-| Hash map / set | `HashMap`, `HashSet` | O(1) average; Java 8+ bins degrade to O(log n) worst case for `Comparable` keys | No order guarantee |
+| Hash map / set | `HashMap`, `HashSet` | O(1) average; for `Comparable` keys, colliding entries may be ordered by comparison (OpenJDK: O(log n) per crowded bucket); otherwise O(n) worst case | No order guarantee |
 | Insertion-ordered | `LinkedHashMap`, `LinkedHashSet` | O(1) average | Preserves insertion order |
 | Access-ordered bounded cache | `LinkedHashMap(cap, 0.75f, true)` + override `removeEldestEntry` | O(1) get/put | A built-in bounded LRU cache (rule 1) |
 | Sorted map / set | `TreeMap`, `TreeSet` | O(log n); `floorKey`, `ceilingKey`, `headMap`, `subMap` | Red-black tree |
@@ -70,7 +70,7 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 - **Profiling:** async-profiler (CPU, allocation, and lock flame graphs) or Java Flight Recorder (`-XX:StartFlightRecording`, viewed in JDK Mission Control); VisualVM if nothing else is available.
 - **Benchmarks, if already present:** JMH (`-prof gc` reports allocation per operation). Otherwise use a timing harness with warmup in test code; note that JIT warmup, dead-code elimination, and GC make naive timings unreliable.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): JBMC for bounded model checking of bytecode, including equivalence harnesses; jcstress for concurrency outcomes under the Java memory model; Java PathFinder for model checking thread interleavings; OpenJML for checking JML contracts.
-- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `MessageDigest.isEqual`, never `Arrays.equals` or `String.equals` on secrets.
+- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `MessageDigest.isEqual` (time depends only on the first argument's length), never `Arrays.equals` or `String.equals` on secrets.
 
 ## References (for verifying claims; not required reading)
 
