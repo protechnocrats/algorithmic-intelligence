@@ -69,17 +69,9 @@ Find the row for the candidate's current cost, measured along the call chain (se
 | Latency high while each step's own work is small (time spent waiting in queues, pools, locks, or for remote replies), or tail latency far above the median | Utilization near capacity, head-of-line blocking, fan-out, or unbounded queues, not the algorithm | `techniques/queues-and-latency.md` |
 | Cost dominated by page or disk I/O, cache misses, branch misses, or cache hit rate rather than operation count | Data layout, storage structure, or eviction policy, not the algorithm | "Storage and indexing" in `techniques/data-at-scale.md`, "Memory locality" in `techniques/hardware-and-concurrency.md`, and "Caching and eviction" in `techniques/data-structures.md` |
 
-## Required enumeration
+## Recording the analysis
 
-For each candidate, write down:
-
-1. The abstract problem statement.
-2. The lower bound and its reason.
-3. Every matching signal from the tables in `CORE-TECHNIQUES.md` and the domain files routed by `ADVANCED-TECHNIQUES.md`.
-4. Candidate approaches in proportion to difficulty (rule 6). If the strongest candidate reaches the lower bound, needs no new dependency (the standard library, or a structure the project already has), and has no behavior risks, name it and briefly explain why alternatives are unnecessary. Otherwise, at least three plausible approaches, including at least one combination when the problem has more than one dimension. Never invent alternatives to meet a quota.
-5. For each approach: the assumptions it needs and the evidence from the code that they hold.
-6. Whether the approach changes any observable behavior (see "Behavior-changing techniques" below).
-7. The chosen approach, and why the others lost.
+In report and apply mode, record each candidate's analysis in the fields of Phase 3 in `WORKFLOW.md`; in write mode, follow step 4 of `WRITING-NEW-CODE.md`. The sections below supply the lower bound, the reformulations, and the behavior-changing techniques those fields ask for.
 
 ## Lower bounds
 

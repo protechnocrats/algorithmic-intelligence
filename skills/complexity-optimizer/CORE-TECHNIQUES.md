@@ -173,22 +173,20 @@ Watch for: signed versus unsigned shifts, integer width (JavaScript bitwise oper
 
 ## Combinations
 
-The best solution often connects two techniques. Check these whenever a problem has two dimensions (for example, order and lookup).
+The best solution often connects two techniques. Check these whenever a problem has two dimensions (for example, order and lookup). Combinations that already have their own row above (difference array then prefix sums, monotonic deque for window extremes, patience sorting with binary search) are not repeated here.
 
 | Combination | Solves | Result |
 |---|---|---|
 | Hash map + prefix sum | Count or find subarrays with a given sum, values of any sign | O(n²) → O(n) expected |
 | Hash map + prefix XOR | Count subarrays with a given XOR | O(n²) → O(n) expected |
-| Difference array + prefix sum | Many range updates, then read the final values | O(n·q) → O(n + q) |
 | Sort + two pointers | Pair/triple sums, closest pairs, merging | O(n²) or O(n³) → O(n log n) or O(n²) |
 | Sort + binary search | Many lookups against a fixed collection when hashing is not possible (ranges, nearest value) | O(n·m) → O((n + m) log n) |
 | Binary search + monotonic predicate (often a greedy check) | Minimize the maximum, minimum feasible capacity, splitting into groups | O(range · check) → O(log range · check) |
 | Heap + hash map | LRU/LFU caches, Dijkstra with decrease-key, top-k frequent | O(n) operations → O(log n) or O(1) |
-| Monotonic deque + sliding window | Window maximum/minimum, DP with window constraints | O(n·k) → O(n) |
+| Monotonic deque + DP | DP whose transition takes the minimum or maximum over a sliding window of earlier states | O(n·k) → O(n) |
 | Sort + union-find | Kruskal MST; offline connectivity under edge-weight thresholds | Repeated traversal → O(E log E) |
 | Trie + DFS | Word search in a grid, prefix enumeration | Per-word search → shared prefix search |
 | DP + bitmask | Small-set assignment and ordering problems | Factorial → exponential with small base |
-| DP + binary search | Longest increasing subsequence | O(n²) → O(n log n) |
 | Prefix sums + binary search | Weighted random choice, "first index where the cumulative total exceeds x" | O(n) per query → O(log n) |
 | Hash map + doubly linked list | O(1) ordered cache with eviction | Bounded memory and O(1) operations |
 | Sweep line + heap | Meeting rooms, skyline, interval scheduling with resources | O(n²) → O(n log n) |
@@ -196,7 +194,7 @@ The best solution often connects two techniques. Check these whenever a problem 
 | Coordinate compression + segment tree | Changing rank and range queries over large values | Avoids structures indexed by raw values |
 | Sweep line + coordinate compression + Fenwick tree | Counting overlaps, inversions, or active values | O(n²) → O(n log n) |
 
-More combinations are in the "Combinations" sections of `techniques/graphs-and-trees.md` (Euler tour, tree rerooting, heavy-light decomposition), `techniques/sequences-dp-search.md` (meet-in-the-middle), and `techniques/strings-and-text.md` (Aho-Corasick with DP).
+More combinations are in the "Combinations" sections of `techniques/sequences-dp-search.md` (meet-in-the-middle) and `techniques/strings-and-text.md` (Aho-Corasick with DP), and in the "Trees" table of `techniques/graphs-and-trees.md` (Euler tour with a range structure, tree rerooting, heavy-light decomposition).
 
 ## References (for verifying claims; not required reading)
 

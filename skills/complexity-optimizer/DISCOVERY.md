@@ -100,12 +100,11 @@ For parallel code, the obstacle is usually not the total work but the longest ch
 
 ### 10. Prove a lower bound (Knuth, CLRS)
 
-A lower bound says when to stop and keeps the search honest. Three ways to get one:
+A lower bound says when to stop and keeps the search honest. Four ways to get one:
 
 - **Adversary:** if any unread input element could change the answer, every element must be read: Ω(n).
 - **Counting (information theory):** an algorithm that only compares elements must distinguish every possible answer. With L possible outcomes it needs at least log₂ L comparisons. Sorting has n! outcomes, so Ω(n log n) comparisons.
 - **Reduction:** if a problem with a known bound reduces to yours (element distinctness is Ω(n log n) in the comparison model; 3SUM is conjectured to need about n²), yours inherits that bound.
-
 - **Conditional (fine-grained complexity):** for many polynomial problems no unconditional bound beyond Ω(n) is known, but a widely believed conjecture rules out improvements. If edit distance or longest common subsequence could be computed in O(n^(2−ε)) time for some ε > 0, the Strong Exponential Time Hypothesis (SETH) would be false (Backurs and Indyk, 2015). The 3SUM and all-pairs-shortest-paths conjectures play the same role for many geometric and graph problems. Such a bound is not a proof, so report it as "no O(n^(2−ε)) algorithm unless SETH is false," and then look for the structure in the actual inputs that the conjecture does not cover (small alphabets, bounded distances, few differences, approximate answers).
 
 Each bound holds in a model. Leaving the model (hashing instead of comparing, bounded integer keys, preprocessing reused across queries) can beat it, which is often exactly the improvement. State the model with the bound, as in the "Lower bound" field of `REPORTING.md`.

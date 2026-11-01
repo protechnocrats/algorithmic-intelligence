@@ -133,30 +133,14 @@ Sessions that hit a usage limit are marked "API ERROR, session invalid" in `prog
 
 `evals/claims/kotlin-claims.sh` checks claims in `languages/KOTLIN.md` that the official documentation does not settle (IDs `K-P*`, pending), plus claims already confirmed by a run (`K-C*`, regression checks). It prints one `CLAIM` line per check and fails when a claim is wrong. After each run, update `KOTLIN.md` from the `K-P*` results: state confirmed behavior plainly (noting it is undocumented where that matters) and move the check to the confirmed section. No agent is involved and it costs nothing, so run it whenever the Kotlin version or `KOTLIN.md` changes.
 
-## Round 3 plan
-
-Round 3 measures the discovery, verification, systems, and hostile-input work (commit `8054142`) against the skill before it (`3e73373`) and against no skill.
-
-| Step | Command | Sessions |
-|---|---|---|
-| 1. Static budget | `evals/token-budget.sh` | — |
-| 2. Regression on the tuned fixture | `run-pilot.sh --fixture ts-shop --cases report --conditions skill --runs 3`, once with the current skill and once with `--skill-ref 3e73373` | 6 |
-| 3. Held-out fixture | `run-pilot.sh --fixture py-logistics --runs 3`, once with the current skill and baseline, once with `--skill-ref 3e73373 --conditions skill` | 18 |
-| 4. Second model | `run-pilot.sh --fixture py-logistics --model <another model> --runs 3` | 12 |
-| 5. Grade | `session-stats.py`, the probes, and `SCORECARD.md` per session | — |
-
-Run steps 2 to 4 in separate time windows, or with `--parallel 1`, to stay inside usage limits. Round 2 costs suggest about $3.30 per report-flow session with the skill, $1 without it, and under $0.50 per write-mode session: roughly $60 for the whole round on the default model.
-
 ## Getting meaningful results
 
 - **Run each fixture three times.** Agents vary between runs; one run proves little.
 - **Compare with and without the skill.** Cases that pass either way show where the skill adds nothing. Cases that fail even with the skill show where its wording needs work. Record the difference in the "Skill lift" table of `SCORECARD.md`.
 - **Compare agents.** The skill is meant to be agent-neutral. A case that passes in one agent but fails in another usually points to an ambiguous rule.
-- **Fix the skill, not the fixture.** When a case fails, change the skill's wording, then rerun. Change a fixture only if the case itself is wrong.
+- **Fix the skill, not the fixture, and only on tuning fixtures.** When a case fails, change the skill's wording, then rerun. Change a fixture only if the case itself is wrong. Tuning fixtures (`ts-shop`, `java-clinic`, and the four never-run shop fixtures) are for finding where the wording fails. Held-out fixtures (`py-logistics`, `rb-clinic`) only measure: a change made because of a held-out result must be checked on a tuning fixture, and the held-out fixture is then replaced for the next round. `java-clinic` and `rb-clinic` are twins: each category has a case in both, with a different surface, so an improvement found on one can be checked on the other.
 
 ## Adding a case
-
-Tuning fixtures (`ts-shop`, `java-clinic`, and the four never-run shop fixtures) are for finding where the skill's wording fails and fixing it. Held-out fixtures (`py-logistics`, `rb-clinic`) only measure: a change made because of a held-out result must be checked on a tuning fixture, and the held-out fixture is then replaced for the next round. `java-clinic` and `rb-clinic` are twins: each category has a case in both, with a different surface, so an improvement found on one can be checked on the other.
 
 A case earns its place only if it can tell the skill apart from no skill. Before any run, its answer key states why an agent without the skill is likely to fail it and which instruction should prevent that; a case every condition passes is a control or a regression check, and the answer key labels it so. Invented problems are welcome (models cannot recall their answers), but the key's own answer must then be checked: compare the intended solution with a brute-force reference on every small input, and state the lower bound with its basis or say that none is known.
 

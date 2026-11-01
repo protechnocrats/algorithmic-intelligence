@@ -52,16 +52,6 @@ Program analyses are graph problems over the control-flow graph. A faster analys
 | Path queries and updates between arbitrary nodes | Heavy-light decomposition + segment tree | Tree shape does not change | O(n) per query → O(log² n) |
 | Distance-based counting over all pairs of nodes | Centroid decomposition | — | O(n²) → O(n log n) or O(n log² n) |
 
-## Combinations
-
-| Combination | Solves | Result |
-|---|---|---|
-| Euler tour + range structure | Subtree sums, counts, or updates | Per-query traversal → O(log n) |
-| Tree DP + rerooting | An answer for every root | O(n²) → O(n) |
-| Euler tour + sparse table | Lowest common ancestor queries | O(1) per query after O(n log n) setup |
-| Offline sorting + union-find | Connectivity queries under thresholds | Repeated traversal → sorted processing |
-| Heavy-light decomposition + segment tree | Path queries and updates on trees | O(n) per query → O(log² n) |
-
 ## References (for verifying claims; not required reading)
 
 - Robert E. Tarjan, *Data Structures and Network Algorithms* (1983).
