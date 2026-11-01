@@ -1,6 +1,6 @@
 # Python
 
-Load this file for Python projects. Record the interpreter and version (`requires-python`, `.python-version`, CI matrix): CPython is the default, but PyPy's JIT, GraalPy, and the free-threaded CPython builds (3.13+, no global interpreter lock) change which costs matter. Several APIs below are version-specific. Note which of NumPy, pandas, an ORM, or `sortedcontainers` the project already depends on.
+Load this file for Python projects. Record the interpreter and version (`requires-python`, `.python-version`, CI matrix): CPython is the default, but PyPy's JIT, GraalPy, and the free-threaded CPython builds (3.13+, no global interpreter lock) change which costs matter. Several APIs below are version-specific.
 
 ## Built-in structures
 
@@ -40,13 +40,9 @@ Load this file for Python projects. Record the interpreter and version (`require
 | CPU-bound threads on a build with the global interpreter lock | No parallel speedup | Processes (pickling and side-effect order change), vectorization, or a free-threaded build; all need approval |
 | Global and attribute lookups, small function calls in tight loops | Constant factor only | Change only with a measurement; leave idiomatic code alone otherwise (rule 13) |
 
-## NumPy, pandas, and ORMs (when already present)
+## asyncio
 
-- **Python loops over arrays or DataFrames** (`for` over a NumPy array, `iterrows`, `apply(axis=1)`) run per element in the interpreter. Vectorized operations run in compiled loops, often 10–100× faster. Vectorizing changes integer overflow (NumPy fixed-width integers wrap silently; Python's never overflow) and floating-point results (`np.sum` uses pairwise summation): check both.
-- **Growing arrays or frames in a loop** (`np.append`, `np.concatenate`, `pd.concat` per row) copies everything each time: O(n²). Collect in a list, then build once.
-- **Boolean masks and `isin`** instead of `x in` loops; `searchsorted` for sorted lookups; `merge` or `map` instead of row-by-row lookups.
-- **ORM N+1.** Django: related objects accessed in a loop issue one query each; `select_related` (joins) and `prefetch_related` (one extra query) fix it. Also `len(queryset)` loads every row where `.count()` or `.exists()` does not. SQLAlchemy: `selectinload` or `joinedload` instead of lazy loading. These can change query count, locking, and memory: say so in the report.
-- **asyncio.** A blocking call (`time.sleep`, `requests`, synchronous database drivers, heavy CPU work) inside a coroutine stalls the whole event loop. `await` in a loop over independent items → `asyncio.gather` or a `TaskGroup` (3.11+) changes ordering, error behavior (cancellation of siblings), and load on the callee: a behavior change for review, bounded with a `Semaphore`.
+A blocking call (`time.sleep`, synchronous network, file, or database calls, heavy CPU work) inside a coroutine stalls the whole event loop. `await` in a loop over independent items → `asyncio.gather` or a `TaskGroup` (3.11+) changes ordering, error behavior (cancellation of siblings), and load on the callee: a behavior change for review, bounded with a `Semaphore`.
 
 ## Bit manipulation
 

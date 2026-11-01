@@ -1,6 +1,6 @@
 # C#
 
-Load this file for C# projects (.NET, ASP.NET Core, .NET MAUI, Xamarin, Unity). Record the target framework: several structures below need .NET 5, 6, or 8. Unity uses its own runtime and has its own garbage-collection constraints.
+Load this file for C# projects. Record the target framework and runtime: several structures below need .NET 5, 6, or 8, and runtimes other than .NET (Mono, IL2CPP) differ in garbage collection and in which APIs exist.
 
 ## Built-in structures
 
@@ -41,17 +41,6 @@ Not in the base library: deque, interval tree, trie, multimap. Ask before adding
 | Exceptions used for control flow in hot loops | Very expensive throws | `TryParse`/`TryGetValue` patterns |
 | Lambdas capturing variables in hot loops | Closure allocations | Static lambdas or plain loops, only when measured |
 
-## Entity Framework and data access
-
-- **N+1 queries** from lazy loading in loops: use `Include`/`ThenInclude`, projection with `Select`, or a single query with `Contains` over a list of ids.
-- **Client-side evaluation:** filters that cannot translate to SQL pull whole tables into memory.
-- **`AsNoTracking()`** for read-only queries reduces overhead. This changes change-tracking behavior, so check whether callers modify and save the entities.
-
-## Mobile and Unity hot spots
-
-- **.NET MAUI / Xamarin:** heavy work on the UI thread, layout recalculation in collection views, and binding conversions on every scroll.
-- **Unity:** per-frame allocations in `Update` cause GC spikes; cache component lookups (`GetComponent`, `Find`) instead of calling them every frame; LINQ in `Update` allocates.
-
 ## Bit manipulation
 
 | Operation | C# |
@@ -80,7 +69,7 @@ Shift counts are masked to 5 bits for `int` and 6 bits for `long`.
 
 - **Tests:** xUnit, NUnit, MSTest.
 - **Property-based testing, if already present:** FsCheck, CsCheck.
-- **Profiling:** `dotnet-trace` and `dotnet-counters` (cross-platform CLI tools; installs), PerfView on Windows, or the Visual Studio / Rider profilers; the Unity Profiler for Unity projects.
+- **Profiling:** `dotnet-trace` and `dotnet-counters` (cross-platform CLI tools; installs), PerfView on Windows, or the Visual Studio / Rider profilers.
 - **Benchmarks, if already present:** BenchmarkDotNet (a dependency otherwise; ask), with `[MemoryDiagnoser]` for allocations. Use Release builds. Without it, use `Stopwatch` with warmup and medians in test code.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Coyote for systematic testing of concurrent and asynchronous code, which explores interleavings and replays failures; Dafny for proofs, compiling verified code to C#.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `CryptographicOperations.FixedTimeEquals`, never `SequenceEqual` on secrets.

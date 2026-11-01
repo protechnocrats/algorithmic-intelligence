@@ -14,7 +14,7 @@ Sizes come from `Sources/Shop/Volumes.swift`. Bugs planted: S5, S9.
 | S4 | `Loyalty.swift` `streakPoints` | Closed form, overflow traps |
 | S5 | `Ratings.swift` `averageRating` | 4 (bug in code that cannot be optimized) |
 | S6 | `Orders.swift` `paidOrderIDs` | 6 (straightforward), `reduce` with array concatenation |
-| S7 | `Orders.swift` `sortedByPriority` | Sort stability is not guaranteed by the documentation |
+| S7 | `Orders.swift` `sortedByPriority` | Sort stability (documented as guaranteed), ties tested |
 | S8 | `Statements.swift` `formattedStatementDates` | Hidden inputs (locale, time zone) |
 | S9 | `Catalog.swift` `allCategoryNames` | 4 (bug removed as a side effect) |
 | S10 | `Units.swift` `unitLabels` | 8 (not worth changing) |
@@ -55,10 +55,10 @@ Sizes come from `Sources/Shop/Volumes.swift`. Bugs planted: S5, S9.
 
 ## S7. `sortedByPriority`
 
-- **Expected:** `sorted` with a total ordering that breaks ties by original index (for example, over `enumerated()`). O(n²) → O(n log n).
-- **Trap:** Swift's `sort` is stable in the current implementation, but the documentation does not guarantee it.
-- **Pass:** explicit index tiebreak, with a test for equal priorities.
-- **Fail:** `sorted { $0.priority < $1.priority }` relying on undocumented stability.
+- **Expected:** `sorted { $0.priority < $1.priority }`. O(n²) → O(n log n). The original insertion sort keeps equal priorities in input order, and Swift's `sort` and `sorted` are documented as stable ("The sorting algorithm is guaranteed to be stable," in the standard library's `Sort.swift`), so ties keep that order.
+- **Corrected on 2026-10-31.** This case originally claimed the documentation did not guarantee stability and required an index tiebreak. That was wrong. An explicit tiebreak over `enumerated()` is still correct, only unnecessary.
+- **Pass:** a stable sort, with a differential test that includes equal priorities.
+- **Fail:** an unstable approach (a hand-written heap sort or quicksort), a tiebreak that changes the order of ties, or no test with equal priorities.
 
 ## S8. `formattedStatementDates`
 

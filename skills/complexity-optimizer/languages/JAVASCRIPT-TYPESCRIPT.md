@@ -1,6 +1,6 @@
 # JavaScript and TypeScript
 
-Load this file for JavaScript and TypeScript projects. Record the runtime (Node version, browsers, React Native, Deno, Bun) and the ECMAScript target. TypeScript types are erased at runtime, so all runtime costs below apply to both.
+Load this file for JavaScript and TypeScript projects. Record the runtime (Node version, browsers, Deno, Bun, Hermes) and the ECMAScript target. TypeScript types are erased at runtime, so all runtime costs below apply to both.
 
 ## Built-in structures
 
@@ -40,12 +40,6 @@ Load this file for JavaScript and TypeScript projects. Record the runtime (Node 
 | `await` inside a loop over independent items | Sequential latency | `Promise.all` / bounded concurrency, which changes ordering and error behavior; ask first |
 | `string += x` in a loop | Usually fine in modern engines (ropes) | Do not "optimize" without a benchmark; `join` when building from an array |
 
-## Front-end and React Native hot spots
-
-- **Layout thrashing.** Reading layout (`offsetHeight`, `getBoundingClientRect`) after writes inside a loop forces a layout each iteration. Batch reads, then writes.
-- **React.** Expensive computation in render runs on every render: `useMemo` with correct dependencies. Unstable props (new arrays, objects, and functions each render) defeat `React.memo`. Lists need stable `key`s. Avoid storing derived data in state.
-- **Large lists.** Virtualize (`FlatList` in React Native, windowing libraries on the web; the latter are dependencies).
-
 ## Bit manipulation
 
 | Operation | JavaScript |
@@ -72,9 +66,9 @@ Load this file for JavaScript and TypeScript projects. Record the runtime (Node 
 
 ## Testing and benchmarking
 
-- **Tests:** Jest, Vitest, Mocha, `node:test`; React Testing Library for components.
+- **Tests:** Jest, Vitest, Mocha, `node:test`.
 - **Property-based testing, if already present:** fast-check.
-- **Profiling:** `node --cpu-prof` or `--heap-prof`; the DevTools Performance panel; React DevTools Profiler.
+- **Profiling:** `node --cpu-prof` or `--heap-prof`; the DevTools Performance panel.
 - **Benchmarks, if already present:** Vitest `bench`, tinybench, Benchmark.js. Otherwise `performance.now()` with warmup and medians, keeping results observable so the JIT cannot discard work.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`): fast-check reaches level 2 with shrinking, and its model-based testing (`fc.commands`) checks stateful structures against a simple model. Reach level 3 by enumerating small domains exhaustively in tests. TypeScript's type checker proves type-level facts only, never equivalence.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `crypto.timingSafeEqual` in Node.js; in browsers, verify message authentication codes with Web Crypto's `crypto.subtle.verify` rather than comparing bytes.
