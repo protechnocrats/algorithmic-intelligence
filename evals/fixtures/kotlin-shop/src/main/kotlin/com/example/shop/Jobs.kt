@@ -44,4 +44,6 @@ class NightlyJobs(
     fun cratePlanning(items: List<CrateItem>) = maxCrateValue(items, Volumes.CRATE_CAPACITY_KG)
 
     fun bundleSuggestions(pricesCents: IntArray, budgetCents: Long) = countBundles(pricesCents, budgetCents)
+
+    fun pluginReports(orders: List<Order>, customers: List<Customer>) = runReportPlugins(orders, customers)
 }

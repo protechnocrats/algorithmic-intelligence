@@ -11,6 +11,13 @@ import java.time.ZoneOffset
 class ShopTest {
 
     @Test
+    fun pluginReportsRunRegisteredPlugins() {
+        val customers = listOf(Customer("c2", "B", 1), Customer("c1", "A", 1), Customer("c3", "C", 1))
+        val orders = listOf(Order("o1", "c1", 500))
+        assertEquals(listOf("c2", "c3"), runReportPlugins(orders, customers)["dormant-customers"])
+    }
+
+    @Test
     fun blockedUsersKeepsUserOrder() {
         val users = listOf(User("3", "C"), User("1", "A"), User("2", "B"))
         assertEquals(listOf(User("3", "C"), User("2", "B")), blockedUsers(users, listOf("2", "3")))

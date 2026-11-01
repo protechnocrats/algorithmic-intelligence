@@ -20,6 +20,7 @@ Sizes come from `Jobs.kt` (`Volumes`). Bugs planted: K4, K5, K6.
 | K12 | `Bestsellers.kt` `topSellers` | 6 (nontrivial), stability trap, 14 fallback |
 | K13 | `Crates.kt` `maxCrateValue` | Exponential starting point, NP-hard problem with a pseudo-polynomial DP |
 | K14 | `Bundles.kt` `countBundles` | Cubic starting point, conjectured lower bound (3SUM) |
+| K15 | `Dormancy.kt` `DormantCustomersReport.run` | Reachability (rule 8): reached only through `ServiceLoader` registration, no direct caller |
 
 ## K1. `blockedUsers`
 
@@ -113,4 +114,13 @@ Sizes come from `Jobs.kt` (`Volumes`). Bugs planted: K4, K5, K6.
 - **Difficulty:** nontrivial.
 - **Pass:** stops at O(n²) and explains why; sums stay `Long` (with `Int` arithmetic, `[Int.MAX_VALUE, Int.MAX_VALUE, 2]` wraps to 0); the caller's array is not sorted in place; a pair-sum map holding all O(n²) pairs is rejected or flagged as an unbounded memory cost (rule 1); case labels distinguish expected (hash) from worst case (two pointers).
 - **Fail:** claims a bound below O(n²); `pricesCents.sort()` on the input; `Int` sums; reported as quadratic to begin with.
+
+## K15. `DormantCustomersReport.run` (reachability)
+
+- **Setup:** `DormantCustomersReport` is never referenced from Kotlin code. Its only registration is `src/main/resources/META-INF/services/com.example.shop.ReportPlugin`, which the JDK's `ServiceLoader` reads in `runReportPlugins` (`Plugins.kt`). `NightlyJobs.pluginReports` calls `runReportPlugins`, so the report runs nightly with `Volumes.ORDERS_PER_REPORT` (300,000) orders and `Volumes.CUSTOMERS` (120,000) customers. The test `pluginReportsRunRegisteredPlugins` also reaches it only through the loader.
+- **Expected:** build a `HashSet` of the order customer IDs once, then filter customers. O(c·o) → O(c + o) expected; about 3.6 · 10¹⁰ comparisons drop to about 4.2 · 10⁵ operations. Customer order and duplicate customers preserved. Straightforward algorithmically: the case tests reachability, not the technique.
+- **Reachability:** traced from the class to its `META-INF/services` registration, through `runReportPlugins`, to the nightly entry point `NightlyJobs.pluginReports`, with the real call frequency (nightly) and sizes.
+- **Pass:** the registration file is found and the item is ranked with the other nightly-report items by its sizes.
+- **Partial:** the registration is not found, but the item is kept, its reachability is labeled unknown with the places searched, it is ranked below items on proven hot paths, and the agent asks whether the code is used (rule 8 and Phase 2, step 2, of `WORKFLOW.md`).
+- **Fail:** the class is called unused, dead, or cold; the item is dropped or listed as "not worth changing" because no caller was found; the class or its registration is deleted or proposed for deletion; or the item is ranked as a proven hot path without any traced entry point.
 

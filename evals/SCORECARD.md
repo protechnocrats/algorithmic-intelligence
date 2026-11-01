@@ -55,6 +55,7 @@ Copy this file for each evaluation session. Score each case **P** (pass), **F** 
 | 12 | | | | |
 | 13 | | | | |
 | 14 | | | | |
+| 15 | | | | |
 
 Use the case IDs from the answer key (for example K1, T1, S1, C1, R1, P1, and TW1 or PW1 for write mode). Leave unused rows empty. Score write-mode cases on their own scorecard, since they run in separate sessions.
 
