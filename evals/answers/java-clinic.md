@@ -6,7 +6,7 @@ Do not copy this file into a run directory. The agent must not see it.
 
 Java 17 or newer, standard library only, no build tool: `./test.sh` compiles with `javac` and runs a minimal runner (`src/test/java/com/example/clinic/testing`). Needs a full JDK (`javac` on `PATH`, or `JAVA_HOME`). Sizes come from `Volumes.java`. Grading probe: `JAVA_HOME=<jdk> python3 -I evals/probes/java-clinic.py <run-directory>`. All measurements below: OpenJDK 25.0.4 (JetBrains Runtime), Linux x86-64, 2026-11-01.
 
-**Citations** in this key were written from memory on 2026-11-01 and have not been rechecked against the sources. Check them before quoting them in results.
+**Citations** in this key were checked on 2026-11-01 against publisher, library, and author records (titles, venues, volumes, and the results cited). Where only secondary sources state a result, the key says so.
 
 No case here has a textbook name that gives the answer away. Every case states why an agent without the skill is likely to fail it; that is the case's reason to exist.
 
@@ -78,10 +78,10 @@ No case here has a textbook name that gives the answer away. Every case states w
 
 ## J6. `RoomPlanner.weeklyRoomsNeeded` (discovery: honesty about hardness)
 
-- **The twin of J5:** the same backtracking, but slots recur weekly and may run past Sunday midnight into Monday. The conflict graph is a circular-arc graph. Coloring circular-arc graphs is NP-complete (Garey, Johnson, Miller, and Papadimitriou, "The complexity of coloring circular arcs and chords," *SIAM Journal on Algebraic and Discrete Methods* 1(2), 1980). The maximum overlap is only a lower bound: five slots in an odd cycle never overlap more than two at a time, but need three rooms.
+- **The twin of J5:** the same backtracking, but slots recur weekly and may run past Sunday midnight into Monday. The conflict graph is a circular-arc graph. Coloring circular-arc graphs is NP-complete (Garey, Johnson, Miller, and Papadimitriou, "The complexity of coloring circular arcs and chords," *SIAM Journal on Algebraic and Discrete Methods* 1(2):216–227, 1980). The maximum overlap is only a lower bound: five slots in an odd cycle never overlap more than two at a time, but need three rooms.
 - **Expected:**
   - Say that the J5 sweep does not carry over and why; report the lower bound honestly: no polynomial algorithm is known (NP-complete), so the bound is unknown beyond Ω(n).
-  - Keep an exact algorithm and improve it: start the search at the maximum overlap instead of 1 (every smaller count is infeasible), order slots by start or by degree, and prune with the current best (branch and bound, DSatur-style). Or an exact exponential method (Lawler's dynamic program over subsets, O(3ⁿ), or inclusion-exclusion in O*(2ⁿ), Björklund, Husfeldt, and Koivisto, 2009), stated with its limit: 60 slots per clinic (`Volumes`) is far too many for either.
+  - Keep an exact algorithm and improve it: start the search at the maximum overlap instead of 1 (every smaller count is infeasible), order slots by start or by degree, and prune with the current best (branch and bound, DSatur-style). Or an exact exponential method (Lawler's dynamic program over subsets and their maximal independent sets, O(2.4423ⁿ), 1976; or inclusion-exclusion in 2ⁿ · n^O(1), Björklund, Husfeldt, and Koivisto, *SIAM Journal on Computing* 39(2), 2009), stated with its limit: 60 slots per clinic (`Volumes`) is far too many for either.
   - If a heuristic is proposed, it changes results and goes under "Behavior changes for review." A simple one with a guarantee: cut the week at one minute, give each slot that crosses it its own room (at most the maximum overlap), and solve the rest as intervals with the J5 sweep: at most 2 × the optimum.
 - **Measured:** the interval greedy applied to arcs was wrong on 47 of 3,000 random small weeks (1.6%), and "maximum overlap" was wrong on 2 of 3,000 random weeks, so random testing alone may miss the hardness; the probe adds two odd cycles (5 and 7 slots) where it is always wrong.
 - **Pass:** probe `J6` same; the hardness stated with its basis (or "no polynomial algorithm known," with the reason); any applied improvement labeled *derived* or *established* with a source and verified at level 2 or higher (exhaustive over small inputs is cheap here).

@@ -9,10 +9,11 @@ For a small result (one or two items), present the report in the conversation. O
 
 ## Report header
 
-Start `OPTIMIZATION-REPORT.md` (or the in-conversation report) with these two sections, before any items:
+Start `OPTIMIZATION-REPORT.md` (or the in-conversation report) with these sections, before any items:
 
 - **Test suite baseline:** pass and fail counts from the run before analysis. If any tests failed, list them by name, and say which items they could affect (rule 12). In report mode the analysis continued despite them; in apply mode nothing was changed until the developer decided.
 - **Scope:** what the developer asked to cover; what was inspected; and every part of that scope that was **not** inspected (modules, directories, languages, generated code), with the reason (size, time, no access, toolchain missing). Write "Everything in scope was inspected" only when that is true. Code outside the scope that was read only to trace a cost along the call chain is listed separately.
+- **Language profile** (only for a language without a companion file in the skill): whether a profile saved in the project was loaded (its path and recorded version) or one was built in this session; whether it was saved or updated, at which path, and how many claims are still unverified. If the developer did not allow saving it, include the profile here in full, so the facts the analysis relied on are visible.
 
 ## Optimization item format
 
@@ -143,4 +144,5 @@ End every run with a short summary in the conversation:
 - Items whose reachability is unknown, with the question for the developer about each: is this code used?
 - Which performance numbers are measured and which are estimated, predictions that the measurements contradicted, and any verification that could not be completed.
 - Changes tried and rejected.
+- For a language without a companion file: the saved profile's path and what changed in it this session, with the reminder to commit it (later sessions load it instead of rebuilding it), or that it was not saved.
 - Regression guards left in place (benchmarks or tests the developer chose to keep), and how to run them.

@@ -90,6 +90,15 @@ Before changing a function, turn its contract (rule 3) into checks that run in t
 
 These checks hold the new code to the contract, not just to the old code's outputs on the inputs that happened to run.
 
+## Check the check
+
+A differential test that passes is evidence only if it could have failed. Before you count it, show that it can:
+
+- **Plant a difference (mutation testing).** In a temporary copy of the code under test (the original, before the new version exists; the new version, once it does), make one small change at a time that the test must catch: an off-by-one at a boundary, a reversed tie order, a dropped edge case (empty input, a duplicate, `NaN`), a changed exception type, a skipped side effect. Also try the tempting wrong rewrite you rejected during analysis (for example the unstable sort, or the version without the wraparound). Run the differential test against each mutant. A mutant it does not catch marks a property the test cannot verify: add inputs or comparisons until it is caught, or report that property as unverified. Mutants are never committed; delete them when done.
+- **Compare the original with itself (an A/A run).** Run the differential test with the original on both sides. It must pass. If it fails, something nondeterministic (time, randomness, hash order, concurrency) is being compared: control it (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison until it passes.
+
+Record which mutants were caught in "Reporting verification."
+
 ## When equivalence counts as verified
 
 Treat an optimization as verified (level 1 or higher) only when all of these hold:
@@ -98,6 +107,7 @@ Treat an optimization as verified (level 1 or higher) only when all of these hol
 2. Edge cases and generated inputs both pass.
 3. The existing test suite passes, run on the final version of the code.
 4. Every trap in `BEHAVIOR-TRAPS.md` that could apply is either covered by a test or ruled out by analysis you can state in one sentence.
+5. The test passed its own checks ("Check the check"): the A/A run passes, and for each observable compared, at least one planted difference was caught.
 
 If any part cannot be checked at any level (real database ordering, platform rendering, timing, hardware, or thread interleavings with no concurrency checker available), it is not verified. Follow rule 5: ask the developer, and if they accept, add the `NEEDS-TESTING` marker from `REPORTING.md`. If a differential test shows that the outputs differ and the difference is intended, it is a behavior change, not a test to relax: document it for review and use the `BEHAVIOR-CHANGE` marker only after approval.
 
@@ -108,6 +118,7 @@ For every applied item, report:
 - **Level reached:** 1 to 4 from "Verification levels," with the domain and bounds for level 3 and the tool for levels 3 and 4.
 - **Inputs and properties covered:** the edge-case categories, the number of generated cases, the seeds, the size range, and which observables were compared (return value, input mutation, exceptions, side effects, order).
 - **Tests and tools actually run:** the commands or test names, and their results. Report only what actually ran.
+- **Check of the check:** the mutants tried and which were caught, and whether the A/A run passed.
 - **Unverified behavior:** anything the tests could not cover, and why.
 
 If tests could not be run at all (no test framework, an environment that cannot execute them, a timeout), say so. The item is then unverified: follow rule 5, and do not present it as a confirmed win.
@@ -122,6 +133,7 @@ When the optimization introduces a structure written inside the project (a heap,
 - Koen Claessen and John Hughes, "QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs," ICFP 2000.
 - C. A. R. Hoare, "An Axiomatic Basis for Computer Programming," *CACM* 12(10), 1969: preconditions, postconditions, invariants.
 - Daniel Jackson, *Software Abstractions*, revised ed. (2012): the small-scope hypothesis and bounded checking.
+- Richard A. DeMillo, Richard J. Lipton, and Frederick G. Sayward, "Hints on Test Data Selection: Help for the Practicing Programmer," *IEEE Computer* 11(4), 1978: mutation testing.
 - T. Y. Chen, S. C. Cheung, and S. M. Yiu, "Metamorphic Testing: A New Approach for Generating Next Test Cases" (1998).
 - Edmund Clarke, Daniel Kroening, and Flavio Lerda, "A Tool for Checking ANSI-C Programs," TACAS 2004 (CBMC).
 - Nuno P. Lopes et al., "Alive2: Bounded Translation Validation for LLVM," PLDI 2021.

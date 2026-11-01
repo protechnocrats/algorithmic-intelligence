@@ -12,4 +12,4 @@ Load the file for each language the analysis touches. In a project with several 
 | `*.c`, `*.h` (without C++ sources), C build files (`Makefile`, `CMakeLists.txt`, `meson.build`) | [C.md](C.md) |
 | `*.rs`, `Cargo.toml` | [RUST.md](RUST.md) |
 | `*.py`, `*.pyi`, `pyproject.toml`, `setup.py`, `requirements.txt` | [PYTHON.md](PYTHON.md) |
-| Any other language | [GENERIC.md](GENERIC.md) |
+| Any other language | [GENERIC.md](GENERIC.md), after first looking for a profile saved in the project at `.complexity-optimizer/languages/<LANGUAGE>.md` (for example `ERLANG.md`). `GENERIC.md` says how to use it, and how to build and save one when none exists |

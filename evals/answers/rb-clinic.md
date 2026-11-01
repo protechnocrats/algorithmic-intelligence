@@ -4,11 +4,13 @@ Do not copy this file into a run directory. The agent must not see it.
 
 **Held-out fixture.** Use it only to measure the skill, never to tune its wording. Its tuning twin is `java-clinic`: every category here has a case there with a different surface. If a result here leads to a change in the skill, check the change on the tuning fixtures, and treat this fixture as no longer held out for the next round: build a new one.
 
-**Tests `languages/GENERIC.md`.** There is no Ruby companion file, so the agent must build the language profile itself (sort stability, hash ordering, string mutability, which sorted structures the standard library lacks). RB2's aliasing and RB8's stability are where that profile matters.
+**Tests `languages/GENERIC.md`.** There is no Ruby companion file, so the agent must build the language profile itself (sort stability, hash ordering, string mutability, which sorted structures the standard library lacks). RB2's aliasing and RB8's stability are where that profile matters. Since 2026-11-01 the skill also asks, in setup, whether to save the profile to `.complexity-optimizer/languages/RUBY.md`. The harness declines every approval, so in a pilot run the expected behavior is: the question asked once, with the file's purpose; no file written; the profile included in the report header. A run that writes the file without asking fails the "Report mode changed no files" check.
 
 Ruby 3.2 or newer, standard library only; tests use minitest, which ships with Ruby. `./test.sh` runs them. Sizes come from `lib/clinic/volumes.rb`. Grading probe: `python3 -I evals/probes/rb-clinic.py <run-directory>`. All measurements below: Ruby 4.0.9 (Prism), Linux x86-64, 2026-11-01.
 
-**Citations** in this key were written from memory on 2026-11-01 and have not been rechecked against the sources. Check them before quoting them in results.
+**Citations** in this key were checked on 2026-11-01 against publisher, library, and author records (titles, venues, volumes, and the results cited). Where only secondary sources state a result, the key says so.
+
+**Contamination note (2026-11-01).** `DISCOVERY.md` moves 13 to 17 were written after this fixture, by the same author who designed RB5 and RB6. Their examples avoid these cases' domains (coins, job ordering, vertex cover, knapsack, matching), but move 15 (find the small parameter) describes RB6's intended method in general form. Count an RB6 pass as weaker evidence than an RB5 pass, and build RB6's replacement before tuning on it.
 
 | ID | Location | Category | Rules and files tested | Why a baseline is likely to fail |
 |---|---|---|---|---|
@@ -80,7 +82,7 @@ Ruby 3.2 or newer, standard library only; tests use minitest, which ships with R
 
 - **Problem:** choose non-overlapping requests of maximum total value, with at most one booking per patient. The original tries every subset: 1 s at 20 requests (measured), and it never finishes at the 60 requests of a real day.
 - **What looks easy:** without the patient rule this is weighted interval scheduling, O(n log n) by dynamic programming (Kleinberg and Tardos, section 6.1). That is what a model recalls. It ignores the patient rule: wrong on 324 of the probe's 500 random small days (measured with that rewrite).
-- **What it is:** with several alternative intervals per patient and at most one chosen per patient, it is the job interval selection problem, which is NP-hard and even MAX SNP-hard with two intervals per job (F. Spieksma, "On the approximability of an interval scheduling problem," *Journal of Scheduling* 2, 1999). No polynomial exact algorithm is known.
+- **What it is:** with several alternative intervals per patient and at most one chosen per patient, it is the job interval selection problem (JISP). Spieksma shows that, unless P = NP, it cannot be approximated arbitrarily well in polynomial time (F. Spieksma, "On the approximability of an interval scheduling problem," *Journal of Scheduling* 2(5):215–227, 1999); later papers cite it as MAX SNP-hard even with two intervals per job. In particular it is NP-hard. No polynomial exact algorithm is known.
 - **Expected:**
   - Say that the textbook dynamic program does not apply and why; report the hardness with its basis.
   - Improve the exact algorithm using the workload: only patients with alternative times need to be tracked, and there are at most 12 per day (`volumes.rb`). Weighted interval scheduling with a bitmask over those patients: state (requests sorted by finish, set of tracked patients used), O(n · 2ᵏ · log n) for k tracked patients. Measured with the probe's reference rewrite: 0.02 s for 60 requests with 12 tracked patients.

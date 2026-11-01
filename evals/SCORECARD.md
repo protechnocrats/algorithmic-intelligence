@@ -27,6 +27,8 @@ Copy this file for each evaluation session. Score each case **P** (pass), **F** 
 | Labeled each recommended algorithm established, experimental, or derived, with citations marked checked or not | | | |
 | Stated each item's exposure (untrusted input, secrets, hard deadline, or none) | | | |
 | Used the compact format for straightforward items | | | |
+| Language without a companion file (rb-clinic): asked once whether to save the profile, explained its purpose, wrote it only with permission, put it in the report header otherwise | | | |
+| Discovery cases: kept a research log (moves tried, what blocked each) and labeled conjectures as proved or checked to a size | | | |
 | Graded with the fixture's probe in `probes/` (if one exists): no unexplained differences | | | |
 | Performance labeled measured or estimated | | | |
 | No dependency added without asking | | | |

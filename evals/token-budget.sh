@@ -16,8 +16,8 @@ skill = Path(sys.argv[1])
 tok = lambda *names: sum(len((skill / n).read_text()) for n in names) // 4
 lang = "languages/JAVASCRIPT-TYPESCRIPT.md"  # a typical companion file
 BUDGETS = [  # (what, tokens now, budget)
-    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 6_500),  # raised from 5,200 on 2026-10-31
-    ("Report mode, required files", tok("SKILL.md", "WORKFLOW.md", "ALGORITHM-ARSENAL.md", "REPORTING.md", "languages/INDEX.md", lang), 21_000),  # raised from 17,000
+    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 7_000),  # raised from 5,200 on 2026-10-31, from 6,500 on 2026-11-01 (saved language profiles)
+    ("Report mode, required files", tok("SKILL.md", "WORKFLOW.md", "ALGORITHM-ARSENAL.md", "REPORTING.md", "languages/INDEX.md", lang), 22_000),  # raised from 17,000, from 21,000 on 2026-11-01 (saved language profiles)
     ("Apply mode, added files", tok("DIFFERENTIAL-TESTING.md", "BEHAVIOR-TRAPS.md", "BENCHMARKING.md"), 10_500),  # raised from 8,500
     ("Write mode, required files", tok("SKILL.md", "WRITING-NEW-CODE.md", "ALGORITHM-ARSENAL.md", "languages/INDEX.md", lang), 16_500),  # raised from 14,000
 ]
@@ -25,7 +25,7 @@ langs = [p for p in (skill / "languages").glob("*.md") if p.name not in ("INDEX.
 big = max(langs, key=lambda p: len(p.read_text()))
 BUDGETS.append((f"Largest language companion ({big.relative_to(skill)})", len(big.read_text()) // 4, 3_600))  # raised from 3,000
 largest = max((p for p in skill.rglob("*.md")), key=lambda p: len(p.read_text()))
-BUDGETS.append((f"Largest single file ({largest.relative_to(skill)})", len(largest.read_text()) // 4, 7_000))
+BUDGETS.append((f"Largest single file ({largest.relative_to(skill)})", len(largest.read_text()) // 4, 8_500))  # raised from 7,000 on 2026-11-01 (DISCOVERY.md moves 13 to 19)
 failed = False
 for what, now, budget in BUDGETS:
     status = "ok" if now <= budget else "OVER BUDGET"
