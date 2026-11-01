@@ -10,6 +10,8 @@ usage() {
 Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions skill,baseline]
                           [--skill-ref REF] [--model MODEL] [--runs N] [--parallel P]
                           [--budget USD] [--out DIR] [--instructions TEXT]
+                          [--max-total-usd USD] [--effort LEVEL] [--skill-src DIR] [--stall-seconds S]
+                          [--allow-subagents]
 
   --fixture NAME     ts-shop (default), py-logistics, java-clinic, or rb-clinic
                      (java-clinic needs JAVA_HOME set to a full JDK, or javac on PATH)
@@ -26,6 +28,17 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
   --instructions TEXT  Written to CLAUDE.md in each with-skill run directory and included in its
                      initial commit, as a developer would add it (for example the line the README
                      recommends for loading the skill). Baseline runs never get it.
+  --max-total-usd USD  Stop starting sessions once the sessions so far have reported this much
+                     cost in total. Sessions already running finish, so use --parallel 1 for a
+                     tight limit. Default: no limit.
+  --effort LEVEL     Passed to claude --effort (low, medium, high, xhigh, max). Default: the CLI's.
+  --skill-src DIR    Install the skill from this directory instead of the working tree or
+                     --skill-ref (for testing an uncommitted variant). Copied into <out>/skill.
+  --stall-seconds S  Stop a turn whose transcript has not grown for S seconds while no tool is
+                     running (default 600). The session is then marked invalid and its later
+                     turns are skipped.
+  --allow-subagents  Also allow the agent's sub-agent tool (Agent, Task). Off by default, so
+                     comparisons with earlier rounds are not changed by agents spawning sub-agents.
 
 Progress: <out>/progress.log. Per session: <out>/<session>/ (the run directory) and
 <out>/logs/<session>.* (transcripts, git and test state). Summarize with
@@ -34,7 +47,7 @@ EOF
 }
 
 fixture=ts-shop; cases="report write"; conditions="skill baseline"; skill_ref=""; model=""
-runs=1; parallel=2; budget=5; out=""; instructions=""
+runs=1; parallel=2; budget=5; out=""; instructions=""; max_total=""; effort=""; skill_dir=""; stall=600; subagents=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --fixture) fixture="$2"; shift 2 ;;
@@ -47,6 +60,11 @@ while [ $# -gt 0 ]; do
     --budget) budget="$2"; shift 2 ;;
     --out) out="$2"; shift 2 ;;
     --instructions) instructions="$2"; shift 2 ;;
+    --max-total-usd) max_total="$2"; shift 2 ;;
+    --effort) effort="$2"; shift 2 ;;
+    --skill-src) skill_dir="$2"; shift 2 ;;
+    --stall-seconds) stall="$2"; shift 2 ;;
+    --allow-subagents) subagents=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
@@ -91,8 +109,15 @@ if [ -n "$skill_ref" ]; then
   skill_src="$out/skill/skills/complexity-optimizer"
   skill_label="$skill_ref ($(git -C "$repo" rev-parse --short "$skill_ref"))"
 fi
+if [ -n "$skill_dir" ]; then
+  [ -f "$skill_dir/SKILL.md" ] || { echo "No SKILL.md in $skill_dir" >&2; exit 1; }
+  mkdir -p "$out/skill" && rm -rf "$out/skill/complexity-optimizer" && cp -R "$skill_dir" "$out/skill/complexity-optimizer"
+  skill_src="$out/skill/complexity-optimizer"
+  skill_label="directory $skill_dir (copied to $skill_src)"
+fi
 model_args=()
 [ -n "$model" ] && model_args=(--model "$model")
+[ -n "$effort" ] && model_args+=(--effort "$effort")
 
 # One session: <case: report|write> <skill|baseline> <run number>
 session() {
@@ -101,6 +126,13 @@ session() {
   local skill_args=() id
   [ "$cond" = skill ] && skill_args=(--skill .claude/skills --skill-src "$skill_src")
   if [ -e "$out/LIMIT_REACHED" ]; then note "$name: skipped, usage limit reached earlier (rerun it later)"; return; fi
+  if [ -n "$max_total" ]; then
+    local spent
+    spent="$(spent_usd)"
+    if python3 -c "import sys; sys.exit(0 if float('$spent') >= float('$max_total') else 1)"; then
+      note "$name: skipped, cost cap reached (\$$spent of \$$max_total spent)"; touch "$out/COST_CAP_REACHED"; return
+    fi
+  fi
   "$repo/evals/new-run.sh" "$fixture" "${skill_args[@]}" --dest "$dest" > /dev/null || { note "$name: setup failed"; return; }
   if [ "$cond" = skill ] && [ -n "$instructions" ]; then
     printf '%s\n' "$instructions" > "$dest/CLAUDE.md"
@@ -118,23 +150,43 @@ session() {
     "Bash(mkdir:*)" "Bash(mktemp:*)" "Bash(cp:*)" "Bash(sed:*)" "Bash(timeout:*)" "Bash(time:*)" "Bash(python3:*)"
     "Bash(bash test.sh:*)" "Bash(bash ./test.sh:*)" "Bash(bash $dest/test.sh:*)" "Bash($dest/test.sh:*)")
   local allowed=(Read Edit Write Glob Grep Skill TodoWrite "Bash(git:*)" "${common[@]}" "${fixture_tools[@]}")
-  local turn=0
+  [ "$subagents" = 1 ] && allowed+=(Agent Task)
+  local turn=0 invalid=0
   ask() {  # ask <label> <prompt>
-    local label="$1" prompt="$2" resume=(--session-id "$id")
+    local label="$1" prompt="$2" resume=(--session-id "$id") rc
     [ -e "$out/LIMIT_REACHED" ] && { note "$name: turn $label skipped, usage limit reached"; return; }
+    # After an invalid turn, later turns would only spend money on a session that cannot be scored.
+    [ "$invalid" = 1 ] && { note "$name: turn $label skipped, session already invalid"; return; }
     [ "$turn" -gt 0 ] && resume=(--resume "$id")
     turn=$((turn + 1))
-    (cd "$dest" && timeout -k 60 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
+    local transcript="$log.$turn-$label.jsonl"
+    (trap - TERM INT; cd "$dest" && exec timeout -k 60 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
        --allowedTools "${allowed[@]}" --add-dir /tmp --max-budget-usd "$budget" \
-       --output-format stream-json --verbose > "$log.$turn-$label.jsonl" 2> "$log.$turn-$label.err")
-    note "$name: turn $turn ($label) exit=$?"
+       --output-format stream-json --verbose > "$transcript" 2> "$log.$turn-$label.err") &
+    local runner=$!
+    # Stall watchdog: the transcript stopped growing and no tool process is running, so the API
+    # stream is stuck. Stop only this turn's agent; never the session or the batch around it.
+    while kill -0 "$runner" 2>/dev/null; do
+      sleep 15
+      local agent age
+      agent="$(pgrep -P "$runner" | head -1)"
+      age=$(( $(date +%s) - $(stat -c %Y "$transcript" 2>/dev/null || date +%s) ))
+      if [ "$age" -ge "$stall" ] && [ -n "$agent" ] && [ -z "$(pgrep -P "$agent")" ]; then
+        note "$name: turn $turn ($label) STALLED (no output for ${age}s, no tool running), stopping it"
+        kill "$runner" "$agent" 2>/dev/null
+      fi
+    done
+    wait "$runner"; rc=$?
+    note "$name: turn $turn ($label) exit=$rc"
     # A turn without a final result line stalled or was killed: the session is invalid.
-    if ! tail -1 "$log.$turn-$label.jsonl" 2>/dev/null | grep -q '"type":"result"'; then
+    if ! tail -1 "$transcript" 2>/dev/null | grep -q '"type":"result"'; then
       note "$name: turn $turn ($label) INCOMPLETE (no result line), session invalid"
+      invalid=1
     fi
     # A turn that ended on an API error (usage limit, overload) did no work: the session is invalid.
     if tail -1 "$log.$turn-$label.jsonl" 2>/dev/null | grep -q '"is_error":true'; then
       note "$name: turn $turn ($label) API ERROR, session invalid: $(tail -1 "$log.$turn-$label.jsonl" | grep -o '"result":"[^"]*"')"
+      invalid=1
       # A usage limit fails every later session too: stop starting new ones.
       grep -q 'usage_limit_reached' "$log.$turn-$label.jsonl" && touch "$out/LIMIT_REACHED"
     fi
@@ -153,11 +205,27 @@ session() {
   (cd "$dest" && { echo "## git status"; git status --porcelain; echo "## git log"; git log --oneline; echo "## $test_cmd"; timeout 600 $test_cmd 2>&1 | tail -8 || echo "(test run timed out or failed)"; }) > "$log.final" 2>&1
   note "$name: done"
 }
-export -f session note
-export out repo budget progress fixture skill_src test_cmd write_prompt instructions
+# Total reported cost of the sessions so far (each session's cumulative total_cost_usd).
+spent_usd() {
+  python3 -I - "$out/logs" <<'PY'
+import json, sys, collections
+from pathlib import Path
+best = collections.defaultdict(float)
+for f in Path(sys.argv[1]).glob("*.jsonl"):
+    for line in f.read_text().splitlines():
+        if '"type":"result"' in line:
+            try:
+                best[f.name.split(".")[0]] = max(best[f.name.split(".")[0]], json.loads(line).get("total_cost_usd") or 0.0)
+            except ValueError:
+                pass
+print(f"{sum(best.values()):.2f}")
+PY
+}
+export -f session note spent_usd
+export out repo budget progress fixture skill_src test_cmd write_prompt instructions max_total stall subagents
 
-note "pilot started: fixture=$fixture cases=$cases conditions=$conditions runs=$runs parallel=$parallel budget=\$$budget per turn model=${model:-default} skill=$skill_label instructions=${instructions:+yes}"
+note "pilot started: fixture=$fixture cases=$cases conditions=$conditions runs=$runs parallel=$parallel budget=\$$budget per turn model=${model:-default} skill=$skill_label instructions=${instructions:+yes} effort=${effort:-default} cost cap=${max_total:-none} subagents=$subagents"
 for case_id in $cases; do for cond in $conditions; do for n in $(seq 1 "$runs"); do
   echo "$case_id $cond $n"
-done; done; done | xargs -P "$parallel" -L 1 bash -c "$(declare -p fixture_tools model_args); session \"\$0\" \"\$1\" \"\$2\""
+done; done; done | xargs -P "$parallel" -L 1 bash -c "$(declare -p fixture_tools model_args); trap '' TERM INT; session \"\$0\" \"\$1\" \"\$2\"; exit 0"
 note "pilot finished"

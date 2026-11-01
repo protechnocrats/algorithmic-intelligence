@@ -112,7 +112,12 @@ Write-mode cases (IDs ending in `W1`, `W2`, and so on) test new code, not existi
 - `--cases report,write` and `--conditions skill,baseline`
 - `--skill-ref <commit>` installs the skill as it was at that commit, to compare versions
 - `--model <model>` runs another model
-- `--runs N`, `--parallel P`, `--budget USD`, `--out DIR`
+- `--runs N`, `--parallel P`, `--budget USD` (per turn), `--out DIR`
+- `--max-total-usd USD` stops starting sessions once the round has reported that much in total; use it on every paid run, with `--parallel 1` when the limit must be tight
+- `--instructions TEXT` writes a `CLAUDE.md` line (such as the README's recommended loading line) into with-skill run directories
+- `--effort LEVEL` passes `claude --effort`. Medium effort cut cost by about a third in round 5 with identical code results, but thinner reports: fine for sweeps graded by the probe, not for grading reports
+- `--skill-src DIR` tests a skill variant from a directory without committing it; `--allow-subagents` also allows the sub-agent tool
+- `--stall-seconds S` (default 600) stops a turn whose transcript has stopped growing while no tool runs, marks the session invalid, and skips its later turns; the rest of the batch continues
 
 Start it detached so it survives closing the terminal:
 

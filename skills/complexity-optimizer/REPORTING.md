@@ -19,7 +19,7 @@ Start `OPTIMIZATION-REPORT.md` (or the in-conversation report) with these sectio
 
 ## Optimization item format
 
-Rank items by expected real-world impact. Use the full format below for nontrivial items (rule 6) and for any item with behavior risks or an exposure. Straightforward items and items not worth changing use the compact format, so the report stays proportional:
+Rank items by expected real-world impact. Use the full format below for nontrivial items (rule 6) and for any item with behavior risks or an exposure. Straightforward items and items not worth changing use the compact format, so the report stays proportional. In either format, keep each field to what the developer needs to decide (usually one or two sentences, not a narrative), and state each fact once: refer to the item or section that already says it instead of repeating it. Every field the format lists still appears:
 
 ```markdown
 ### <ID>. <Short title>
@@ -131,7 +131,7 @@ Also list every marked change in a "Needs testing" section at the top of `OPTIMI
 
 ## Final summary
 
-End every run with a short summary in the conversation:
+End every run with a short summary in the conversation. When the report is in files, give each point below in a line or two and point to the report for the detail; do not restate the report in the conversation, since the developer already has it. When the report itself is in the conversation, it carries these points and no separate summary is needed:
 
 - Items applied and verified, with the verification level and a one-line summary of the evidence for each.
 - Items applied with developer approval but marked `NEEDS-TESTING`.

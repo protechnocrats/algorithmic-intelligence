@@ -83,6 +83,13 @@ State the mode in one line at the start of your first reply, with the reason, fo
 
 This skill is agent-neutral. "The agent" is whatever coding agent loads it. Where the workflow says "search callers," "run tests," or "ask the developer," use the platform's equivalent tools. If the platform supports sub-agents, independent analysis of separate candidates may run in parallel, but one agent owns all source edits.
 
+**Work in few, large steps.** Each step (each tool call or command) sends the whole conversation to the model again, so the number of steps drives the cost of a run far more than the size of any one file. None of the following skips anything the workflow requires:
+
+- **Batch independent work.** Read several files, run several searches, or inspect several candidates in one step (several tool calls issued together, or one command that runs several checks) instead of one per step. Run steps one after another only when a later one needs an earlier one's result.
+- **One harness for the whole run.** Write one differential-test file and one benchmark program, and add each item to them as you go, instead of a new harness, a new build, and a separate run for every item. Run all of an item's checks in one command.
+- **Keep output short.** Print summaries, counts, and failures, not full logs: filter long output (for example through `tail` or `grep`), or write it to a file and read only the part you need.
+- **Write text once.** The report is written in one pass (`REPORTING.md`, "Where reports go"), and the conversation summarizes it instead of repeating it ("Final summary").
+
 ## Language detection
 
 Identify the project's languages and runtime versions from build and source files, then load the matching companion file listed in [languages/INDEX.md](languages/INDEX.md), one per language you analyze. For any other language, load [languages/GENERIC.md](languages/GENERIC.md), and follow it in this order:
