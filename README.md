@@ -1,8 +1,183 @@
-# complexity-optimizer
+# Algorithmic Intelligence
 
-A coding-agent skill that makes code fast by lowering time complexity and choosing the right data structures. In existing code it never changes behavior without your explicit approval: every change is backed by differential tests that run the original and the optimized code on the same inputs and compare the results, and anything that would behave differently is listed for your decision first. In new code it chooses efficient algorithms and data structures from the first version.
+### Algorithmic Reasoning and Performance Engineering for AI Coding Agents
 
-The skill is agent-neutral and language-agnostic. It works with any coding agent that supports skills (a folder with a `SKILL.md` and linked reference files), in any programming language.
+**Make AI agents think beyond code generation.**
+
+Algorithmic Intelligence is an agent-independent reasoning and performance engineering skill, installed as `complexity-optimizer`, that helps AI coding agents understand computational problems, discover better algorithms, select efficient data structures, analyze complexity, and engineer solutions that scale. In existing code it never changes behavior without your explicit approval: every change is backed by differential tests that run the original and the optimized code on the same inputs and compare the results, and anything that would behave differently is listed for your decision first. In new code it chooses efficient algorithms and data structures from the first version.
+
+It brings systematic algorithmic thinking and performance engineering discipline into AI-assisted software development.
+
+Rather than simply asking an agent to optimize code, Algorithmic Intelligence guides it to question the problem, challenge its assumptions, explore alternative approaches, establish what is achievable, and engineer a solution backed by correctness and performance evidence.
+
+The result is a different approach to building software: one where computational efficiency is considered from the beginning, not treated as an afterthought.
+
+## The Core Idea
+
+An AI coding agent should not stop at finding a solution that works.
+
+It should understand the problem well enough to find a better solution.
+
+Algorithmic Intelligence provides a systematic reasoning framework that guides agents through the complete engineering process:
+
+1. **Understand the problem** — Establish the computational problem, behavioral requirements, constraints, and workload.
+2. **Analyze the solution** — Examine existing algorithms, data structures, complexity, and resource consumption.
+3. **Explore alternatives** — Evaluate different approaches, establish theoretical lower bounds (or state why none can be established), and discover better algorithms.
+4. **Engineer the solution** — Select appropriate algorithms and data structures while considering real-world system constraints.
+5. **Verify correctness** — Preserve observable behavior through testing, differential testing, and explicit verification.
+6. **Measure performance** — Benchmark meaningful workloads and distinguish theoretical improvements from measured results.
+
+This is not simply about making existing code faster.
+
+It is about improving the reasoning that produces software in the first place.
+
+## Core Capabilities
+
+### 1. Algorithmic Reasoning and Discovery
+
+Move beyond recognizing familiar optimization patterns.
+
+Guide agents to understand the underlying computational problem and reason about the best achievable solution.
+
+Capabilities include:
+
+- Time and space complexity analysis.
+- Identifying exponential, factorial, polynomial, and linear-time opportunities.
+- Establishing theoretical lower bounds, or stating why none can be established; a bound is never invented.
+- Comparing multiple algorithmic approaches.
+- Combining techniques such as hash maps, prefix sums, binary search, dynamic programming, and graph algorithms.
+- Identifying when an existing representation or algorithm prevents better performance.
+- Deriving new approaches when conventional techniques are insufficient.
+- Evaluating algorithmic assumptions rather than applying patterns blindly.
+
+The objective is not merely to find an improvement. It is to identify the best achievable approach and explain why.
+
+### 2. Intelligent Data Structure Selection
+
+Choosing the right data structure can fundamentally change the performance characteristics of a system.
+
+Evaluate:
+
+- Arrays, lists, hash maps, sets, trees, heaps, and specialized structures.
+- Lookup, insertion, deletion, traversal, and update costs.
+- Amortized versus worst-case performance.
+- Memory overhead and allocation behavior.
+- Cache locality and garbage collection implications.
+- Language-specific standard library implementations.
+- Whether introducing a new data structure or dependency is justified.
+
+Data structures should be selected based on computational requirements, not familiarity or convenience alone.
+
+### 3. Performance Engineering Beyond Big-O
+
+Big-O is essential, but it does not tell the entire performance story.
+
+Investigate actual system bottlenecks across multiple dimensions:
+
+- CPU-bound computations.
+- Memory allocation and memory pressure.
+- Database queries and N+1 problems.
+- Repeated network and service calls.
+- I/O operations and unnecessary serialization.
+- Main-thread blocking.
+- Lock contention and concurrency.
+- Queues, latency, and distributed system behavior.
+- Workload characteristics and invocation frequency.
+- Exposure: untrusted input, secrets, and hard deadlines, where the worst case decides. Counting n keys in a hash map is O(n) on average but O(n²) when an attacker chooses colliding keys, so worst-case-safe structures are chosen there.
+
+The goal is to understand not just the theoretical cost of an algorithm, but the actual cost of executing it in a real system.
+
+### 4. Correctness-Preserving Engineering
+
+Performance improvements should not silently change application behavior.
+
+For existing code, establish a behavioral contract before making changes.
+
+Use differential testing to compare original and optimized implementations against the same inputs, checking observable behavior such as:
+
+- Return values.
+- Input mutations.
+- Exceptions.
+- Side effects.
+- Ordering and stability.
+- Other externally observable behavior.
+
+Verification is reported using explicit levels:
+
+- Tested.
+- Property-checked.
+- Exhaustively checked to a stated bound.
+- Proven.
+
+Passing tests are evidence, not proof.
+
+Unverified equivalence and known behavior changes require explicit developer approval.
+
+### 5. Measurement-Driven Performance
+
+A theoretically superior algorithm is not automatically a faster implementation for every workload.
+
+Guide agents to:
+
+- Identify actual hotspots through profiling when possible.
+- Estimate realistic input sizes and execution frequency.
+- Predict expected speedups before benchmarking.
+- Measure execution time and memory consumption.
+- Compare performance at realistic and larger input sizes.
+- Investigate discrepancies between predictions and measurements.
+- Distinguish measured results from theoretical estimates.
+- Avoid optimizing code that is already sufficiently efficient for its workload.
+
+**Reason about performance. Then measure it.**
+
+### 6. Performance-Aware Code Generation
+
+Algorithmic reasoning should happen before code is written, not only after performance problems appear.
+
+When implementing new code, guide agents to:
+
+- Select appropriate algorithms and data structures from the beginning.
+- Consider expected input sizes and invocation frequency.
+- Avoid unnecessary repeated computation.
+- Minimize calls into expensive existing code.
+- Account for the complexity of the surrounding system.
+- Test new implementations against simple, obviously correct reference implementations.
+- Explain the performance decisions made during implementation.
+
+The goal is to prevent inefficient implementations from becoming technical debt in the first place.
+
+## Engineering Principles
+
+Algorithmic Intelligence is built around engineering principles that guide every mode.
+
+| Principle | Philosophy |
+| --- | --- |
+| Algorithmic optimality | Establish lower bounds and always report the best achievable approach; apply a change only when evidence shows it pays off. |
+| Time-first optimization | Optimize execution time before space, subject to hard memory constraints. |
+| Correctness preservation | Treat observable behavior as a contract. |
+| Evidence over intuition | Never claim measured improvements without measurements. |
+| Workload awareness | Evaluate performance using realistic input sizes and execution frequency. |
+| Explicit assumptions | Validate the assumptions behind every algorithmic technique. |
+| Resource awareness | Consider CPU, memory, I/O, network, concurrency, and latency. |
+| Controlled changes | Never silently introduce behavior changes or unverified optimizations. |
+| Engineering simplicity | Respect the project's idioms; never trade readability for an unmeasured gain, and comment any non-obvious trick. |
+| Continuous reasoning | Do not stop at the first improvement when a better solution may exist. |
+
+The objective is not to maximize optimization activity. It is to maximize engineering quality.
+
+Sometimes the best engineering decision is to leave the code alone.
+
+## Agent Independence
+
+Algorithmic Intelligence is not tied to a particular AI model, coding agent, or vendor.
+
+It uses the open Agent Skills convention: a directory containing a `SKILL.md` file and supporting reference documents.
+
+Any coding agent that supports this convention can use it.
+
+It can also be incorporated into project-level agent instructions for agents that read files such as `AGENTS.md` or `CLAUDE.md`.
+
+The intention is to make algorithmic reasoning and performance engineering a reusable capability across the AI coding ecosystem.
 
 ## Quick start
 
@@ -69,7 +244,7 @@ Re-run the install command to fetch the latest version, or `git pull` your clone
 
 ## How it works
 
-### Three modes
+### Three engineering modes
 
 | Mode | Triggered by | What happens |
 |---|---|---|
@@ -154,6 +329,8 @@ For small results, the report is shown in the conversation instead of written to
 
 ## Rules it enforces
 
+Algorithmic Intelligence is designed to help agents make better decisions, not to encourage unnecessary optimization.
+
 1. **Time is invaluable. Space is cheap, but not infinite.** Memory may be spent to save time, but it must stay bounded and must not cost time through GC pressure, cache misses, or OOM crashes. Memory is counted across every copy that can exist at once (per process, worker, request, or tenant), and a hard memory budget (embedded, kernel, mobile, per-request limits) rules out any approach that exceeds it.
 2. **Time first, then space.** Space is optimized only after time is optimal, and never at the expense of time, except when the code exceeds a hard memory budget, and then only with your approval.
 3. **Write the contract, then verify behavior is unchanged** with differential tests that compare return values, input mutation, exceptions, side effects, and ordering, and climb the verification ladder where it is cheap: tested, property-checked, exhaustively checked to a bound (bounded model checkers, concurrency checkers), proven. Only a machine-checked proof or a check of the whole input domain is called proven.
@@ -171,9 +348,13 @@ For small results, the report is shown in the conversation instead of written to
 
 The full wording is in [`SKILL.md`](skills/complexity-optimizer/SKILL.md).
 
-## Languages
+## Language independence
 
-The rules, workflow, algorithm arsenal, differential testing, and behavior traps apply to every language. Companion files add language-specific detail:
+Algorithmic reasoning is independent of programming language, but implementation details and performance characteristics are not.
+
+Language-specific companion references provide information about native data structures, standard library complexity, hidden costs, behavioral differences, testing, and benchmarking tools.
+
+The rules, workflow, algorithm arsenal, differential testing, and behavior traps apply to every language. Companion files add language-specific detail. Currently supported language references:
 
 | Language | Companion file |
 |---|---|
@@ -187,9 +368,11 @@ The rules, workflow, algorithm arsenal, differential testing, and behavior traps
 | Rust | `languages/RUST.md` |
 | Any other language | `languages/GENERIC.md`: the agent builds the same language profile before analyzing |
 
-Each language file covers the language and its standard library only: built-in data structures and their costs, which structures need a dependency, hidden costs, bit-manipulation APIs, language-specific behavior traps, and test, profiling, benchmark, and verification tooling. Frameworks and platforms (UI toolkits, ORMs, web frameworks, game engines) are deliberately not covered; the general rules (N+1 queries, main-thread blocking, I/O in loops) apply to them.
+Each language file covers the language and its standard library only: built-in data structures and their costs, which structures need a dependency, hidden costs, bit-manipulation APIs, language-specific behavior traps, and test, profiling, benchmark, and verification tooling. Frameworks and platforms (UI toolkits, ORMs, web frameworks, game engines) are deliberately not covered; the general rules (N+1 queries, main-thread blocking, I/O in loops) apply to them. The reasoning methodology remains consistent across languages.
 
 ## Files
+
+The skill's knowledge base is modular and organized around its engineering workflow.
 
 | File | Purpose |
 |---|---|
@@ -207,13 +390,38 @@ Each language file covers the language and its standard library only: built-in d
 | `REPORTING.md` | Report header (test baseline, scope), item format (including reachability and changed files), tried and rejected, behavior changes for review, bug log, `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, and the per-language companions |
 
-## Evaluating the skill
+## Evaluation and Testing
 
 The [`evals/`](evals/README.md) folder has test projects in Kotlin, TypeScript, Swift, C, and Rust, plus a held-out Python project never used for tuning, with planted cases: straightforward fixes, exponential and cubic starting points, costs that only appear along the call chain, code reached only through a plugin registration, techniques whose assumptions do not hold, ordering traps, planted bugs, security traps, and code that is not worth changing. Each has an answer key and a scorecard, and the Python and TypeScript projects have grading probes that run trap inputs against each session's final code. It also has a headless runner, cost and token statistics per session, a check of which prompts load the skill, a token-budget check, and tests of language-file claims that the official documentation does not settle.
 
 Results so far (round 3, in [`evals/results/`](evals/results/)): on the held-out Python project, report-flow cases passed at 1.00 with the skill against 0.50 without it on Opus 5.5, and 0.83 against 0.39 on Haiku 5.5. On both models the code was correct even without the skill; the difference was judgment. Without the skill, every baseline run applied an unapproved concurrency change and shipped a hash-based fix that is quadratic on attacker-chosen keys. With the skill, no Opus run did either; Haiku held the concurrency change for review but still shipped the quadratic fix in two of three runs. These runs used Claude Code only; the skill is written to be agent-neutral, but other agents have not been evaluated yet. The Swift fixture has not yet been run on a Swift toolchain. See [`evals/README.md`](evals/README.md) to run the evaluations with and without the skill.
 
+## The Philosophy
+
+Better software doesn't begin with writing more code.
+
+It begins with understanding the problem, questioning assumptions, exploring what's possible, and making deliberate engineering decisions.
+
+It requires looking beyond the obvious solution, reasoning about computational trade-offs, discovering better approaches, and engineering implementations that are correct, efficient, and built to scale.
+
+**Understand deeply.**
+
+**Reason algorithmically.**
+
+**Engineer exceptionally.**
+
 ## Contributing
+
+Contributions are welcome, particularly in:
+
+- New algorithmic techniques and discovery methods.
+- Additional language-specific references.
+- Improvements to correctness verification.
+- Benchmarking methodologies.
+- Evaluation fixtures and test cases.
+- Real-world performance engineering scenarios.
+
+When contributing algorithmic or language-specific knowledge, document assumptions, complexity characteristics, behavioral considerations, and authoritative references.
 
 New language companion files are welcome. Use [`languages/GENERIC.md`](skills/complexity-optimizer/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. Cover the language and its standard library only, not frameworks or platforms. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
 
