@@ -7,6 +7,8 @@ For a small result (one or two items), present the report in the conversation. O
 - `OPTIMIZATION-REPORT.md` — the ranked items, applied changes, benchmarks, and needs-testing list.
 - `BUGS-FOUND.md` — every bug noticed. None are fixed on purpose; any removed as a side effect of an optimization are marked as such.
 
+**Write each file in as few passes as you can.** Every edit to a file is another agent turn, and every turn re-sends the whole conversation, so a report built up through many small edits costs far more than one written at once (in measured sessions, report editing was about a fifth of the cost). Keep findings in your working notes as you analyze. Write `OPTIMIZATION-REPORT.md` and `BUGS-FOUND.md` once, after Phase 3 is complete for every candidate. In apply mode, do not update the report after each item: record each item's results in your notes, and update the report once at close-out (Phase 6). If you find several mistakes while reviewing the report, fix them in one combined edit, or rewrite the file. If the developer asks for progress before then, answer in the conversation.
+
 ## Report header
 
 Start `OPTIMIZATION-REPORT.md` (or the in-conversation report) with these sections, before any items:

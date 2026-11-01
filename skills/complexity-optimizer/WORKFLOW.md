@@ -61,7 +61,7 @@ For each remaining candidate, record:
 
 ## Phase 4: Report
 
-Write the report defined in `REPORTING.md`. Rank items by expected real-world impact: hot path and large `n` first, then complexity gap, then risk. Items whose reachability is unknown (Phase 2, step 2) rank below items reached from an entry point with known frequency, and above items not worth changing; ask the developer whether their code is used, since the answer can move them to the top or remove the need to change them.
+Write the report defined in `REPORTING.md` in one pass, once every candidate has been analyzed ("Where reports go" in `REPORTING.md`). Rank items by expected real-world impact: hot path and large `n` first, then complexity gap, then risk. Items whose reachability is unknown (Phase 2, step 2) rank below items reached from an entry point with known frequency, and above items not worth changing; ask the developer whether their code is used, since the answer can move them to the top or remove the need to change them.
 
 In report mode, stop here and present the report. Ask which items to apply and raise any dependency requests. Ask separately about each item under "Behavior changes for review": a general answer such as "apply all" covers only items whose equivalence is verified (rule 5).
 
@@ -81,4 +81,4 @@ If a differential test fails, the optimization is wrong. Fix the optimization, n
 
 ## Phase 6: Close out
 
-Update the report with what was applied, skipped, or rejected; final benchmark numbers against the predictions; the "Tried and rejected" list; the bug log; and the full lists of `NEEDS-TESTING` and `BEHAVIOR-CHANGE` items. State plainly which items were verified and at which level (with the evidence), which were accepted by the developer with unverified behavior, and which knowingly change behavior. Call an item proven only at verification level 4. Offer to keep each item's benchmark as a regression guard ("Offer a regression guard" in `BENCHMARKING.md`), and list the ones the developer kept.
+Update the report once, in one pass, with what was applied, skipped, or rejected; final benchmark numbers against the predictions; the "Tried and rejected" list; the bug log; and the full lists of `NEEDS-TESTING` and `BEHAVIOR-CHANGE` items. State plainly which items were verified and at which level (with the evidence), which were accepted by the developer with unverified behavior, and which knowingly change behavior. Call an item proven only at verification level 4. Offer to keep each item's benchmark as a regression guard ("Offer a regression guard" in `BENCHMARKING.md`), and list the ones the developer kept.

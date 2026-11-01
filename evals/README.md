@@ -24,6 +24,7 @@ evals/
 ├── new-run.sh         ← creates a fresh run directory outside the repo
 ├── run-pilot.sh       ← runs a fixture headlessly with Claude Code, any skill version and model
 ├── session-stats.py   ← cost, tokens, and skill files read per session
+├── cost-breakdown.py  ← where sessions spend their cost: reading, harnesses, tests, report, commits
 ├── token-budget.sh    ← fails when the skill's required loading grows past its budgets
 └── trigger-test.sh    ← checks which prompts load the skill
 ```
@@ -121,7 +122,7 @@ nohup setsid evals/run-pilot.sh --fixture py-logistics --runs 3 > /dev/null 2>&1
 
 Follow `progress.log` in the output directory. Then:
 
-1. `python3 -I evals/session-stats.py <out>` for cost, tokens, and the skill files each session opened.
+1. `python3 -I evals/session-stats.py <out>` for cost, tokens, and the skill files each session opened, and `python3 -I evals/cost-breakdown.py <out>` for what that cost was spent on (add `--samples` to spot-check how tool calls were classified).
 2. The fixture's probe for each session's final code: `python3 -I evals/probes/py-logistics.py <session directory>`, `node evals/probes/ts-shop.ts evals/fixtures/ts-shop/src <session directory>/src`, `JAVA_HOME=<jdk> python3 -I evals/probes/java-clinic.py <session directory>`, or `python3 -I evals/probes/rb-clinic.py <session directory>`. The clinic probes run the whole check list against the original and the session's code and take several minutes (the original's slow cases are part of it).
 3. Score each session in a copy of `SCORECARD.md`, using the answer key and the probe's output.
 
