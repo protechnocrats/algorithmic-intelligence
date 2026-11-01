@@ -90,6 +90,16 @@ For numerical code, matching outputs on ordinary inputs is not enough evidence. 
 - **Length and indexing units.** UTF-16 code units, Unicode scalars, and grapheme clusters give different lengths and indices.
 - **Locale-sensitive operations.** Case conversion and comparison that depend on the current locale.
 
+## Removed work
+
+Work that looks unnecessary often is not. Before avoiding or deleting any work, rule out each of these:
+
+- **Unseen callers.** A result that no caller in the repository uses can still be used by callers outside it (a public library API, a service endpoint, a plugin interface), or through reflection, dependency injection, serialization, configuration, or templates. Public and exported code: treat every result as used.
+- **Validation and errors.** A computation whose result is discarded may exist to throw on bad input (parsing to validate, a lookup that fails on a missing key). Removing it removes the error.
+- **Side effects of reads.** In systems code, a read can have effects: device registers, memory-mapped I/O, `volatile` variables, page touches that fault memory in, and lazy initialization triggered by first access.
+- **Timing and ordering on purpose.** Constant-time padding and dummy operations in security code, deliberate delays and backoff, memory fences, lock acquisitions that order other threads, and cache or JIT warm-up all look like wasted work. Removing them is a security or correctness regression.
+- **"Nothing changed."** Skipping a refresh because inputs look unchanged is caching: every input must be known and every change detected (see "Caching traps").
+
 ## Purity and caching
 
 ### Hidden inputs

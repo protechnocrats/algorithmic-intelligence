@@ -27,14 +27,21 @@ Find candidates. Prefer evidence over guessing:
 For each candidate, establish before analyzing it:
 
 1. **Its contract.** Read the function and the functions it calls. Write what it requires, what it returns (including order, ties, and duplicates), and what it changes, throws, or calls. This is the specification every later check is held to.
-2. **Who uses it.** Search all callers, including reflection, dependency injection, serialization, and UI bindings where relevant. Note public API exposure.
+2. **Who uses it, and how it is reached.** Search all callers, including reflection, dependency injection, serialization, and UI bindings where relevant. Note public API exposure. Then follow the callers upward, caller by caller, until you reach an **entry point**: code that the program, a framework, or an outside party starts. Entry points include `main` functions and command-line commands; request handlers and routes; event, message, and queue listeners; scheduled and background jobs; UI event handlers and lifecycle callbacks; tests; and public or exported APIs of a library (whose callers are outside the repository).
+
+   **Reachability.** Write down which of these you found:
+   - **Reached from an entry point:** name it. Its frequency (per request, per frame, nightly) is what multiplies the cost in step 4.
+   - **Reached only from tests:** say that no production entry point was found.
+   - **No entry point found:** the chain ends at a function, class, or module that nothing appears to call, often one registered with a dependency-injection container. Do not conclude it is unused. Code reached indirectly does not show up in a search for direct calls. Search for: dependency-injection registrations and bindings (annotations such as `@Inject`, `@Component`, `@Service`, `@Bean`, `@Provides`, module and container configuration in code, XML, YAML, or JSON); classpath or package scanning; service loaders and plugin registries (`META-INF/services`, entry points in package metadata); routing tables and handler maps; event subscriptions; scheduler and job configuration; reflection and lookup by name (class names or method names as strings, `getattr`, dynamic imports); and build or deployment configuration that selects implementations. If one of these reaches the code, treat it as reached from that entry point. If none does, record the reachability as unknown, with the list of places you searched.
+
+   Code with unknown reachability keeps its item. Its cost along the call chain is unknown, not zero: rank it below items on proven hot paths (Phase 4), never list it as "not worth changing" for that reason, never delete it, and ask the developer whether the code is used.
 3. **How often and how large.** Estimate realistic `n` (and every other size variable) and call frequency from callers, data sources, UI limits, pagination, and tests. Write the assumption down.
 4. **Cost along the call chain.** Multiply the function's cost by how many times its callers invoke it per operation: loops in callers, per-item callbacks, per-frame or per-request calls. A function that is optimal for a single call can be the inner loop of a cubic computation. When it is, analyze the caller as the candidate; the fix often belongs there (for example, build an index once, then look up) rather than in the function, which may stay unchanged.
 5. **Hot or cold.** Main thread, per-frame, per-request, per-item, startup, or rare background work.
 6. **Which resource limits it.** CPU, memory, I/O, network, a lock, or a queue. For services and systems, check each resource's utilization, saturation (work waiting for it), and errors: the USE method. Time spent waiting is not fixed by a faster algorithm in the waiting code; see `techniques/queues-and-latency.md` and `techniques/hardware-and-concurrency.md`.
 7. **Exposure.** Does an untrusted party control any input (requests, files, network data, user-supplied patterns or keys), does the code handle secrets (keys, tokens, passwords, private data), or must it meet a hard deadline? If any applies, judge it by its worst case rather than its expected case, and load `techniques/hostile-inputs.md`.
 
-Drop candidates where `n` is provably tiny and the path is cold (rule 8 defines both), but list them in the report as "not worth changing" so the developer sees they were considered.
+Drop candidates where `n` is provably tiny and the path is cold (rule 8 defines both), but list them in the report as "not worth changing" so the developer sees they were considered. A path with unknown reachability (step 2) is not cold: keep those candidates.
 
 ## Phase 3: Analyze
 
@@ -54,7 +61,7 @@ For each remaining candidate, record:
 
 ## Phase 4: Report
 
-Write the report defined in `REPORTING.md`. Rank items by expected real-world impact: hot path and large `n` first, then complexity gap, then risk.
+Write the report defined in `REPORTING.md`. Rank items by expected real-world impact: hot path and large `n` first, then complexity gap, then risk. Items whose reachability is unknown (Phase 2, step 2) rank below items reached from an entry point with known frequency, and above items not worth changing; ask the developer whether their code is used, since the answer can move them to the top or remove the need to change them.
 
 In report mode, stop here and present the report. Ask which items to apply and raise any dependency requests. Ask separately about each item under "Behavior changes for review": a general answer such as "apply all" covers only items whose equivalence is verified (rule 5).
 

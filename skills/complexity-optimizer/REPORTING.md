@@ -36,6 +36,7 @@ Full format:
 - **Location:** `path/to/File.kt:123` — `functionName`
 - **Contract:** What it requires (preconditions), what it returns (including order, ties, and duplicates), and what it changes, throws, or calls (effects). State what the code and its callers show, and mark anything inferred.
 - **Callers and usage:** Who calls it, how often, on which thread, typical and maximum input sizes (state the assumption and its source).
+- **Reachability:** The entry point it is reached from (route, job, listener, command, UI handler, public API) and how often that runs; or "tests only"; or "unknown: no entry point found," with the places searched (dependency-injection configuration, scanning, plugin registries, routes, reflection) and the question for the developer: is this code used? Unknown reachability never means unused: the item stays, ranked below items on proven hot paths.
 - **Bottleneck:** The resource that limits this code (CPU, memory, I/O, network, lock, or queue) and the evidence: profile, trace, query plan, benchmark, developer report, or static estimate only.
 - **Exposure:** None, or untrusted input | secret-dependent | hard deadline, with the worst-case bound and the defense (keyed hashing, limits, constant time, preallocation) from `techniques/hostile-inputs.md`.
 - **Current complexity:** Time O(...) [worst | average | amortized], space O(...), in terms of named variables. Include the cost of the functions it calls and, when callers invoke it in a loop, the total cost along the call chain.
@@ -139,6 +140,7 @@ End every run with a short summary in the conversation:
 - Test suite status before and after, from runs on the final code, including tests that were already failing before analysis.
 - Commits made (one per item) if the developer authorized them; otherwise, that nothing was committed and where the per-item list of changed files is.
 - Parts of the requested scope that were not inspected.
+- Items whose reachability is unknown, with the question for the developer about each: is this code used?
 - Which performance numbers are measured and which are estimated, predictions that the measurements contradicted, and any verification that could not be completed.
 - Changes tried and rejected.
 - Regression guards left in place (benchmarks or tests the developer chose to keep), and how to run them.
