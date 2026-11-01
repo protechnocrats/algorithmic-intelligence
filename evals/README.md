@@ -132,7 +132,7 @@ Sessions that hit a usage limit are marked "API ERROR, session invalid" in `prog
 
 `evals/token-budget.sh` checks the skill's required loading per mode against budgets without running an agent. Run it after every change to the skill.
 
-`evals/claims/kotlin-claims.sh` checks claims in `languages/KOTLIN.md` that the official documentation does not settle (IDs `K-P*`, pending), plus claims already confirmed by a run (`K-C*`, regression checks). It prints one `CLAIM` line per check and fails when a claim is wrong. After each run, update `KOTLIN.md` from the `K-P*` results: state confirmed behavior plainly (noting it is undocumented where that matters) and move the check to the confirmed section. No agent is involved and it costs nothing, so run it whenever the Kotlin version or `KOTLIN.md` changes.
+`evals/claims/kotlin-claims.sh` checks claims in `languages/KOTLIN.md` that the official documentation does not settle (IDs `K-P*` while pending; none are pending as of 2026-11-01), plus claims already confirmed by a run (`K-C*`, regression checks). It prints one `CLAIM` line per check and fails when a claim is wrong. After each run, update `KOTLIN.md` from the `K-P*` results: state confirmed behavior plainly (noting it is undocumented where that matters) and move the check to the confirmed section. No agent is involved and it costs nothing, so run it whenever the Kotlin version or `KOTLIN.md` changes.
 
 ## Getting meaningful results
 

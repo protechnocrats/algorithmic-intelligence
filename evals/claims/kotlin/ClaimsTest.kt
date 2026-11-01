@@ -1,5 +1,7 @@
 // Checks the claims in skills/complexity-optimizer/languages/KOTLIN.md that the
-// official documentation does not settle, plus the ones already confirmed by a run.
+// official documentation does not settle. Pending claims use IDs K-P*; once a run
+// confirms one and KOTLIN.md states it, it moves to the confirmed checks (K-C*),
+// which stay as regression checks. None are pending as of 2026-11-01.
 // Each check prints one "CLAIM <id> ..." line with the observed value, then asserts
 // the value the skill file states. A failure means the skill file is wrong.
 // Run with evals/claims/kotlin-claims.sh.
@@ -17,35 +19,6 @@ class ClaimsTest {
     private fun claim(id: String, text: String, observed: Any?, expected: Any?) {
         println("CLAIM $id ${if (observed == expected) "OK  " else "FAIL"} $text: observed=$observed expected=$expected")
         assertEquals("$id: $text", expected, observed)
-    }
-
-    // Pending: not stated in the docs (2026-10-31). Update KOTLIN.md from these results.
-
-    @Test fun arrayDequeAcceptsNull() {
-        val d = ArrayDeque<String?>()
-        val ok = runCatching { d.addLast(null); d.addFirst(null); d.removeFirst() == null && d.size == 1 }.getOrDefault(false)
-        claim("K-P1", "kotlin.collections.ArrayDeque accepts null", ok, true)
-    }
-
-    @Test fun dataClassDoubleZero() =
-        claim("K-P2", "Point(0.0) == Point(-0.0)", Point(0.0) == Point(-0.0), false)
-
-    @Test fun dataClassDoubleNaN() =
-        claim("K-P3", "Point(NaN) == Point(NaN)", Point(Double.NaN) == Point(Double.NaN), true)
-
-    @Test fun spreadCopiesArray() {
-        val a = intArrayOf(1, 2)
-        mutateFirst(*a)
-        claim("K-P4", "foo(*array) passes a copy (caller's array unchanged)", a[0] == 1, true)
-    }
-
-    @Test fun longShiftUsesSixBits() =
-        claim("K-P5", "1L shl 64 == 1L", (1L shl 64) == 1L, true)
-
-    @Test fun removeAllPredicateIsLinear() {
-        val ratio = growth { n -> (0 until n).toMutableList().also { it.removeAll { x -> x % 2 == 0 } } }
-        println("CLAIM K-P6 ${if (ratio < 3.0) "OK  " else "FAIL"} ArrayList.removeAll { } is O(n): time ratio per doubling=${"%.2f".format(ratio)} (linear ~2, quadratic ~4)")
-        assertTrue("K-P6: removeAll { } grows faster than linear (ratio $ratio)", ratio < 3.0)
     }
 
     // Confirmed on Kotlin 2.4.10 (2026-10-31); kept as regression checks.
@@ -87,19 +60,57 @@ class ClaimsTest {
     }
 
     @Test fun listMinusListIsQuadratic() {
-        val ratio = growth { n -> (0 until n).toList() - (n / 2 until n + n / 2).toList() }
-        println("CLAIM K-C16 ${if (ratio > 3.0) "OK  " else "FAIL"} list - List is O(n·m): time ratio per doubling=${"%.2f".format(ratio)} (quadratic ~4)")
-        assertTrue("K-C16: list - List no longer quadratic (ratio $ratio): update KOTLIN.md", ratio > 3.0)
+        val ratios = growth(listOf(20_000, 40_000, 80_000)) { n -> (0 until n).toList() - (n / 2 until n + n / 2).toList() }
+        val quadratic = ratios.all { it > 3.0 }
+        println("CLAIM K-C16 ${if (quadratic) "OK  " else "FAIL"} list - List is O(n·m): time ratios per doubling=${ratios.joinToString { "%.2f".format(it) }} (quadratic ~4)")
+        assertTrue("K-C16: list - List no longer quadratic (ratios $ratios): update KOTLIN.md", quadratic)
     }
 
     // Median time ratio between sizes n and 2n, after warmup.
-    private fun growth(work: (Int) -> Any): Double {
+    // Confirmed on Kotlin 2.4.10 (2026-11-01, formerly pending K-P1 to K-P6); KOTLIN.md states them.
+
+    @Test fun arrayDequeAcceptsNull() {
+        val d = ArrayDeque<String?>()
+        val ok = runCatching { d.addLast(null); d.addFirst(null); d.removeFirst() == null && d.size == 1 }.getOrDefault(false)
+        claim("K-C17", "kotlin.collections.ArrayDeque accepts null", ok, true)
+    }
+
+    @Test fun dataClassDoubleZero() =
+        claim("K-C18", "Point(0.0) == Point(-0.0)", Point(0.0) == Point(-0.0), false)
+
+    @Test fun dataClassDoubleNaN() =
+        claim("K-C19", "Point(NaN) == Point(NaN)", Point(Double.NaN) == Point(Double.NaN), true)
+
+    @Test fun spreadCopiesArray() {
+        val a = intArrayOf(1, 2)
+        mutateFirst(*a)
+        claim("K-C20", "foo(*array) passes a copy (caller's array unchanged)", a[0] == 1, true)
+    }
+
+    @Test fun longShiftUsesSixBits() =
+        claim("K-C21", "1L shl 64 == 1L", (1L shl 64) == 1L, true)
+
+    @Test fun removeAllPredicateIsLinear() {
+        // Large sizes and a long warm-up: a linear pass over 20,000 elements takes microseconds,
+        // and an unwarmed JIT then makes the larger size look faster (a ratio below 1). Sizes start
+        // past the CPU caches: from 1 to 2 million boxed integers the cost per element jumps once
+        // (measured 2026-11-01: ratios 4.35 then 1.99), which is a cache boundary, not growth.
+        val ratios = growth(listOf(2_000_000, 4_000_000, 8_000_000), warmup = 20) { n ->
+            (0 until n).toMutableList().also { it.removeAll { x -> x % 2 == 0 } }
+        }
+        val linear = ratios.all { it in 1.5..3.0 }
+        println("CLAIM K-C22 ${if (linear) "OK  " else "FAIL"} ArrayList.removeAll { } is O(n): time ratios per doubling=${ratios.joinToString { "%.2f".format(it) }} (linear ~2, quadratic ~4; below 1.5 means the measurement is unreliable)")
+        assertTrue("K-C22: ratios $ratios are not those of a linear algorithm (or the measurement is unreliable)", linear)
+    }
+
+    /** Median times at each size after warm-up, and the ratio between consecutive sizes (each size doubles). */
+    private fun growth(sizes: List<Int>, warmup: Int = 3, work: (Int) -> Any): List<Double> {
+        repeat(warmup) { work(sizes.last()) }
         fun time(n: Int): Double {
             repeat(3) { work(n) }
-            return List(5) { val t = System.nanoTime(); work(n); (System.nanoTime() - t).toDouble() }.sorted()[2]
+            return List(7) { val t = System.nanoTime(); work(n); (System.nanoTime() - t).toDouble() }.sorted()[3]
         }
-        val sizes = listOf(20_000, 40_000, 80_000)
         val times = sizes.map(::time)
-        return listOf(times[1] / times[0], times[2] / times[1]).sorted()[0]
+        return times.zipWithNext { a, b -> b / a }
     }
 }

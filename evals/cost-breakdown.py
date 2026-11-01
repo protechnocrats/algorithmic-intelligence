@@ -19,6 +19,10 @@ output tokens, so output is estimated from the content each call produced and
 scaled to the output tokens the turn's result reports. Shares are then scaled
 to the session's reported total cost.
 
+It also counts tool calls the harness refused for lack of permission. A high
+refusal rate means the session measured the harness, not the skill: fix the
+allowed commands in run-pilot.sh and rerun before scoring.
+
 Limits: a tool's long output makes later calls' context larger, and that cost
 is charged to the later calls, so harness shares are somewhat understated.
 Categories come from file paths and command patterns; spot-check them with
@@ -39,6 +43,7 @@ CATEGORIES = [
 HARNESS_PATH = re.compile(r"(test|bench|probe|check|verify|harness|reference|_orig|original|exhaust|fuzz|property|/tmp/|scratch|timing|perf)", re.I)
 SUITE = re.compile(r"(\./test\.sh|npm test|cargo test|gradlew test|swift test|python3? -m (unittest|pytest)|\bpytest\b)")
 CUSTOM_RUN = re.compile(r"(bench|timeit|perf_counter|hyperfine|/tmp/|diff|equiv|probe|exhaust|fuzz|property|python3? (-I )?[\w./-]+\.py|node [\w./-]+\.(m?[jt]s)|npx tsx|ruby [\w./-]+\.rb|java [\w./-]+\.java)")
+REFUSED = re.compile(r"(requires approval|needs approval|can't be checked before it runs|Permission to use .* has been denied)", re.I)
 READ_CMD = re.compile(r"^\s*(for .*; do .*cat|cat|ls|find|grep|rg|head|tail|sed -n|wc|tree|git (log|show|status|diff|ls-files|branch))\b")
 
 
@@ -106,6 +111,21 @@ def api_calls(files):
         yield cost, chars * scale, [b for b in rec["blocks"] if b.get("type") == "tool_use"]
 
 
+def refusals(files):
+    """(tool calls, refused tool calls) in a session."""
+    asked, refused = set(), 0
+    for _, e in events(files):
+        if e.get("type") == "assistant":
+            asked.update(c["id"] for c in e["message"].get("content") or [] if c.get("type") == "tool_use")
+        elif e.get("type") == "user" and isinstance((e.get("message") or {}).get("content"), list):
+            for c in e["message"]["content"]:
+                if c.get("type") == "tool_result" and c.get("tool_use_id") in asked:
+                    out = c.get("content")
+                    out = out if isinstance(out, str) else json.dumps(out)
+                    refused += bool(REFUSED.search(out[:400]))
+    return len(asked), refused
+
+
 def reported_cost(files):
     cost = 0.0
     for _, e in events(files):
@@ -137,6 +157,7 @@ def main():
     sessions = collections.Counter()
     totals = collections.Counter()
     samples = collections.defaultdict(list)
+    tool_calls, refused = collections.Counter(), collections.Counter()
     for arg in args:
         for model, kind, cond, files in valid_sessions(Path(arg)):
             key = (model, kind, cond)
@@ -149,6 +170,9 @@ def main():
                 for c in cats:
                     share[c] += cost / len(cats)
                     outs[c] += out / len(cats)
+            calls_made, calls_refused = refusals(files)
+            tool_calls[key] += calls_made
+            refused[key] += calls_refused
             whole, session_usd = sum(share.values()), reported_cost(files)
             if not whole:
                 continue
@@ -168,6 +192,9 @@ def main():
                 print(f"| {c} | {100 * usd[key][c] / tot:.0f}% | {usd[key][c] / n:.2f} | {out_tokens[key][c] / n:,.0f} |")
         h = usd[key]["write harness"] + usd[key]["run harness or benchmark"]
         print(f"\nOwn harnesses and benchmarks (write + run): {100 * h / tot:.0f}% of cost, ${h / n:.2f} per session")
+        rate = refused[key] / tool_calls[key] if tool_calls[key] else 0
+        flag = "  <- too many: the harness, not the skill, limited these sessions" if rate > 0.05 and refused[key] >= 3 else ""
+        print(f"Tool calls refused by permissions: {refused[key]} of {tool_calls[key]} ({100 * rate:.0f}%){flag}")
     if show_samples:
         random.seed(1)
         for c in CATEGORIES:
