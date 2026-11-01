@@ -95,7 +95,7 @@ Report and apply mode:
 2. **Survey:** profiles the code when it can run, finds candidate hotspots, writes each one's contract, learns who calls it, how often, and with what input sizes, and classifies the limiting resource (CPU, memory, I/O, network, lock, queue).
 3. **Analyze:** states the theoretical lower bound and compares approaches (deriving new ones with a discovery method when no known technique fits) in proportion to difficulty: at least three plausible ones (including combinations such as hash map plus prefix sum) for nontrivial problems, or the strongest one with a short reason for straightforward ones. It checks each technique's assumptions against the code.
 4. **Report:** ranks items by real-world impact.
-5. **Apply** (only on approval): writes differential tests and contract checks against the original first, makes the change, verifies it at the highest cheap level, benchmarks against its written prediction, and commits each optimization separately.
+5. **Apply** (only on approval): writes differential tests and contract checks against the original first, makes the change, verifies it at the highest cheap level, benchmarks against its written prediction and against the end-to-end operation, and commits each optimization separately only if you authorize commits.
 6. **Close out:** summarizes what was applied and at which verification level, predictions against measurements, what was tried and rejected, what is marked as needing testing, bugs found, pending dependency requests, and regression benchmarks the developer chose to keep.
 
 Write mode: estimates input sizes and call frequency for each part of the new code, picks or derives algorithms and data structures to match, keeps calls into slow existing code to a minimum, tests the new code against a slow, obviously correct reference version and its contract, and lists its performance decisions with their complexity, size assumptions, and verification level.
@@ -103,7 +103,7 @@ Write mode: estimates input sizes and call frequency for each part of the new co
 ## Getting the best results
 
 - **For existing code, start in report mode.** Read the report, then approve items by ID. You stay in control of every change.
-- **Start from a clean working tree on a new branch.** Each optimization lands as its own commit, so any one can be reverted.
+- **Start from a clean working tree on a new branch.** The agent commits only if you authorize it (it asks once at the start of apply mode, or follows your project's instructions). With commits, each optimization lands as its own commit; without them, the report lists the files each item changed, so any one can be reviewed or reverted.
 - **Share what you know about performance.** Profiler output, slow screens, slow endpoints, or "this list can hold 50,000 items" helps the agent focus on what matters. Without it, the agent estimates input sizes from the code and says so.
 - **Narrow the scope for large projects.** Point it at a module, a directory, a file, or a single function instead of the whole repository.
 - **Have a working test suite.** The agent runs it before and after every change. Projects with no tests still work, because the agent writes differential tests, but your own tests catch more.
@@ -148,7 +148,7 @@ check this module for N+1 database queries
 - **`OPTIMIZATION-REPORT.md`:** for each item, the location, what the code does, who calls it, current complexity, theoretical lower bound, the candidates considered, the recommendation, memory impact, dependency needs, behavior risks, whether it can be proven with tests, and benchmark results once applied.
 - **`BUGS-FOUND.md`:** bugs noticed during analysis, with inputs, impact, a suggested fix (not applied), and whether an optimization removed it as a side effect.
 - **Differential tests** in your test sources, with the original implementation kept as a reference. You decide whether to keep them as regression tests.
-- **One commit per applied optimization** with the before and after complexity and benchmark numbers.
+- **One commit per applied optimization, if you authorize commits,** with the before and after complexity and benchmark numbers. Without authorization nothing is committed, and the report lists each item's changed files.
 
 For small results, the report is shown in the conversation instead of written to files. For larger ones, the agent asks where to write it (suggesting `optimization-report/`).
 
@@ -159,13 +159,13 @@ For small results, the report is shown in the conversation instead of written to
 3. **Write the contract, then verify behavior is unchanged** with differential tests that compare return values, input mutation, exceptions, side effects, and ordering, and climb the verification ladder where it is cheap: tested, property-checked, exhaustively checked to a bound (bounded model checkers, concurrency checkers), proven. Only a machine-checked proof or a check of the whole input domain is called proven.
 4. **Bugs are always documented and reported, never fixed on purpose.** If the buggy code is not optimized (already optimal, or behavior cannot be guaranteed unchanged), it is left exactly as is. If it is optimized, the optimization is applied and you are told about the bug; the bug stays unless the optimization removes it as a side effect (for example, an iterative rewrite that no longer overflows the stack), which is marked `BEHAVIOR-CHANGE`.
 5. **Behavior changes are never silent.** Unverified changes and any change that alters behavior (even for the better) are documented for developer review and applied only with explicit approval. Approved ones are marked `NEEDS-TESTING` or `BEHAVIOR-CHANGE` in code and in the report.
-6. **Aim for the best possible complexity.** State the lower bound and compare approaches in proportion to difficulty, without inventing alternatives to fill a quota. Analysis always reports the best achievable approach; applying is driven by evidence.
+6. **Aim for the best possible complexity.** State the lower bound (or that none can be established, and why; never an invented one) and compare approaches in proportion to difficulty, without inventing alternatives to fill a quota. Analysis always reports the best achievable approach; applying is driven by evidence.
 7. **Data structures must earn their place.** New dependencies need the developer's permission.
 8. **Measure, do not only reason.** Profile before choosing, predict the speedup before benchmarking and compare, benchmark time and memory before and after with sound statistics, label results as measured or estimated, and leave cold code with tiny inputs alone. Shorter, newer, or more sophisticated code is never evidence of speed.
 9. **Label the case:** worst, average, or amortized, and judge by the worst case when attackers control the input, the code handles secrets, or a deadline is hard.
 10. **Look beyond CPU loops:** N+1 queries, network calls in loops, main-thread work.
 11. **Keep the public contract:** signatures, return types, threading, and errors.
-12. **Start green:** the existing test suite must pass before and after.
+12. **Start green:** the existing test suite runs before and after. If tests already fail, report mode lists them and continues; apply mode stops until you decide.
 13. **Respect the project's idioms** and comment any non-obvious trick.
 14. **Prefer the language's own data structures** over its host platform's (for example, Kotlin's `ArrayDeque` over `java.util.ArrayDeque`).
 
@@ -196,7 +196,7 @@ Each language file covers the language and its standard library only: built-in d
 | `SKILL.md` | Mandatory rules, modes, language detection, workflow overview, anti-patterns |
 | `WORKFLOW.md` | Report and apply mode: setup, survey, analysis, report, apply, close-out |
 | `WRITING-NEW-CODE.md` | Write mode: which rules apply to new code, sizing the workload, choosing structures, existing-code bottlenecks, tests, summary |
-| `ALGORITHM-ARSENAL.md` | How to find candidates: five triage questions, complexity reference, routing by current complexity, lower bounds, reformulation |
+| `ALGORITHM-ARSENAL.md` | How to find candidates: six triage questions (starting with whether the work is needed at all), complexity reference, routing by current complexity, lower bounds, reformulation |
 | `CORE-TECHNIQUES.md` | Lookup tables of core techniques with their assumptions, production patterns, database queries, bit manipulation, combinations; loaded one section at a time |
 | `DISCOVERY.md` | The method for finding better algorithms when no known technique fits: counting repeated work, carrying answers forward, designing from invariants, changing representation, special cases, reductions, amortization, randomization, work and span, lower-bound proofs, estimates, and doubling experiments |
 | `ADVANCED-TECHNIQUES.md` | Index of the advanced techniques: which domain file to load for which problem, and the rules shared by all of them |

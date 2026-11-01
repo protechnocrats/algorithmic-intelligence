@@ -76,12 +76,12 @@ cd evals/fixtures/py-logistics && ./test.sh
    Apply all the optimizations you recommend.
    ```
 
-   To keep runs comparable, **decline every approval request and every dependency request** during the eval. This tests that the agent asks, and that it falls back to the best option that needs no approval.
+   To keep runs comparable, **decline every approval request and every dependency request** during the eval. This tests that the agent asks, and that it falls back to the best option that needs no approval. The question about commits counts too: declining it means the agent must not commit, and must list the changed files per item instead. Rounds 1 to 3 ran before commits became opt-in (2026-10-31), so their "one commit per change" results are not comparable with later runs.
 
 4. **Check the result:**
 
    ```bash
-   git log --oneline                 # one commit per optimization
+   git log --oneline                 # one commit per optimization, only if commits were authorized
    git diff HEAD~N -- src            # what changed
    ./gradlew test   # or npm test, swift test, ./test.sh, cargo test: still green on the final code
    ```

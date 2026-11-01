@@ -30,6 +30,8 @@ Rewrites that look equivalent but are not. Walk this list for every candidate in
 - **Input mutation.** In-place algorithms (sorting the caller's list, removing during iteration) change the caller's data where the original did not, or the reverse.
 - **Returned collections.** Returning an internal buffer, a view, or a mutable collection where the original returned a fresh copy lets callers mutate shared state.
 - **Copy-on-write and value semantics.** Changes to when copies occur can change both performance and which copy a caller sees.
+- **Aliased arguments.** An in-place algorithm that reads one argument while writing another breaks when both are the same object (for example, merging a list into itself, or copying into an overlapping buffer). An optimization that copies an argument the original modified in place, or that modifies in place what the original copied, changes what other references to that object see.
+- **Object identity.** Returning the argument itself instead of a copy (or the reverse), returning a cached or shared instance, or interning values changes the results of identity checks (`===`, `is`, `ReferenceEquals`) and lets callers mutate state the original kept private.
 
 ## Laziness, short-circuiting, and evaluation
 

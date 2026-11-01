@@ -22,6 +22,15 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 - **Offer a regression guard.** Propose keeping the benchmark (in the project's benchmark tooling, or as a separate job in continuous integration) with a threshold relative to a recorded baseline, so a later change that brings the cost back is caught. Never put timing assertions in unit tests: they are flaky. A test that checks a size-dependent count instead (comparisons, queries, allocations) is a stable alternative where the code exposes one. The developer decides whether to keep it.
 - Label every number as measured. Big-O improvements and workload estimates are labeled estimated and never presented as measured results.
 
+## Component and end-to-end
+
+A benchmark of the changed function (a component benchmark) shows how much faster that function became. It does not show how much faster the program became. Report both levels:
+
+1. **Component:** the changed function or code path, measured as above.
+2. **End-to-end:** the whole operation the developer cares about (the request, page load, frame, batch job, or command that runs this code). Measure it before and after where the project lets you run it (an existing benchmark, an integration test, a local run of the command). If it cannot be run, take the function's share of the operation from a profile, or estimate it from the call counts in the survey, and label the result estimated.
+
+The end-to-end saving can never exceed the share of time the changed code took (Amdahl's law): if the code took 2% of the operation, even an infinitely fast version saves at most 2%. State the share and the resulting saving next to the component numbers. For example: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component speedup with a small end-to-end saving is still worth reporting, labeled honestly, because it may matter more after other bottlenecks are fixed.
+
 ## Memory measurement
 
 Rule 1 requires memory to stay bounded, so measure it, not just time:

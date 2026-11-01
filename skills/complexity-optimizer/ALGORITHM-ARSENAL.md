@@ -4,15 +4,16 @@ Use this file in Phase 3 (or write mode, step 4) to decide how to find candidate
 
 Do not stop at the first technique that improves the bound. Check every section whose signals match, then check the combinations. When no row matches, or none reaches the lower bound, use [DISCOVERY.md](DISCOVERY.md) to derive an approach.
 
-## Start with five questions
+## Start with six questions
 
 Before choosing any algorithm, ask:
 
-1. **Am I repeating work?** Cache, memoize, hoist invariants, or precompute.
-2. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table.
-3. **Am I keeping more information than I need?** Use rolling state, a bounded heap, a streaming algorithm, or a compact representation.
-4. **Can I reorder or batch the work?** Sort offline, sweep, batch I/O, or process independent work together.
-5. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign of values, ordering requirements, purity, memory limits. Every technique row in `CORE-TECHNIQUES.md` and under `techniques/` has a "Valid when" column. Confirm each assumption from the code, not from intuition, and record the evidence in the report.
+1. **Is this work needed at all?** Before making work faster, check whether it can be removed: a result that no caller uses, output that is computed and then discarded, a value recomputed when it is already available (from a parameter, a field, or an earlier step), a refresh or reload that runs when nothing has changed, or a query whose result the caller already has. Removing work is often the largest win. It is safe only when the removed work has no observable effect: it must not write, log, throw, call collaborators, consume random numbers, or change state that anything else reads. If it does any of those, removing it is a behavior change (rule 5). Report removed work as "Work avoided," not as a complexity reduction.
+2. **Am I repeating work?** Cache, memoize, hoist invariants, or precompute.
+3. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table.
+4. **Am I keeping more information than I need?** Use rolling state, a bounded heap, a streaming algorithm, or a compact representation.
+5. **Can I reorder or batch the work?** Sort offline, sweep, batch I/O, or process independent work together.
+6. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign of values, ordering requirements, purity, memory limits. Every technique row in `CORE-TECHNIQUES.md` and under `techniques/` has a "Valid when" column. Confirm each assumption from the code, not from intuition, and record the evidence in the report.
 
 Most wrong optimizations come from a technique used outside its assumptions.
 
@@ -85,6 +86,7 @@ A lower bound tells you when to stop. Common ones:
 - **Output size:** if the result has k elements, Ω(k). Listing all pairs is Ω(n²) when there can be n² pairs.
 - **No known faster algorithm:** some problems have only conjectured bounds. No algorithm substantially faster than O(n²) is known for 3SUM (three elements summing to a target) and the many problems that reduce to it. No polynomial algorithm is known for NP-hard problems such as 0/1 knapsack, subset sum, or the traveling salesperson. Stop there and say the bound is conjectured; do not promise better.
 - **Repeated calls:** when a function is called m times on the same or slowly changing data, the real cost is total work across all calls. Preprocessing once plus cheap queries can beat any per-call algorithm.
+- **No bound can be established:** many real costs have no known lower bound, or none you can derive from the code: work dominated by a database query plan, network round trips, lock contention, cache behavior, hardware, or the distribution of the data. Do not invent one. Report the basis as "unknown," state why, and give the strongest bound you can support instead ("at least one pass over the input," "at least one round trip per distinct key," "at least the size of the output"). Then keep evaluating candidates as rule 6 requires: an unknown bound means you cannot prove you are done, so record which approaches you considered and why you chose the one you did.
 
 If the chosen approach is above the lower bound, say why: the better bound needs an unapproved dependency, needs preprocessing that the call pattern cannot amortize, needs an assumption the code does not satisfy, or has constant factors that lose at realistic sizes (backed by a benchmark).
 

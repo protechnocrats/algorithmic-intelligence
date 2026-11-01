@@ -12,6 +12,16 @@ Passing differential tests are strong evidence, not proof. They show equivalence
 
 If the original depends on collaborators (a repository, a clock, a network client), give both versions the same fakes, and record every call each version makes so calls can be compared.
 
+### When the original cannot be copied
+
+Sometimes a verbatim copy will not compile or will not behave like the original: it reads private state of its class, depends on native resources, or relies on objects that a framework creates and manages. Do not give up on the comparison, and do not silently compare against something weaker. Use the first option that works:
+
+1. **Run the original itself.** Keep the original code reachable in the test build: under a different name in the same class (in test or debug code only), behind a test-only switch, or by building the pre-change version from version control (a separate worktree or checkout of the commit before the change) and running both builds on the same inputs.
+2. **Record the original's outputs first (characterization tests).** Before changing anything, run the original on the edge cases and generated inputs, and save every observable result (return values, mutated inputs, exceptions, recorded collaborator calls) to test fixtures. After the change, run the new code on the same inputs and compare with the saved results. This covers only the inputs you recorded.
+3. **Compare against the contract.** If neither works, check the new code against the executable contract ("The contract as executable properties," below) without an old-versus-new comparison.
+
+Report which option you used. Options 2 and 3 are weaker than a live differential test: state exactly which observable behaviors were not compared old against new. If no option was possible, the item is unverified: follow rule 5, and never describe it as differentially tested.
+
 ## What to compare
 
 Compare all of these, not only the return value:
@@ -21,6 +31,7 @@ Compare all of these, not only the return value:
 - **Exceptions.** Same exception type, and the same message when callers or logs depend on it. Same behavior on null, empty, and invalid input.
 - **Side effects.** Calls to collaborators: which ones, with what arguments, how many times, and in what order. Writes, logs, events, and analytics.
 - **State.** Any object or global state the function changes.
+- **Aliasing and identity.** Whether the function behaves the same when arguments are the same object or share parts (the same list passed twice, a list and a view of it, an object and a collection that contains it), and whether it returns the same object identity where callers can observe it (it returns an argument itself rather than a copy, or reuses a cached or internal object). A deep-copy snapshot of the inputs cannot detect these differences: test them with inputs built to alias, and compare identity (`===`, `is`, `ReferenceEquals`, pointer equality) where the original's identity behavior is observable.
 - **Laziness and short-circuiting.** If the original stops early (for example, `any`, `first`, a `break`), the candidate must not evaluate more elements when evaluation has side effects or can throw.
 
 Floating-point results must match exactly unless the developer approves a tolerance. Reordering additions changes results.
@@ -39,6 +50,7 @@ Use both hand-written edge cases and generated inputs.
 - Null elements or null input where the type allows it.
 - Strings: empty string, whitespace, mixed case, non-ASCII, emoji and other characters outside the basic multilingual plane, combining characters.
 - Ties for any ordering or "first match" logic.
+- Aliased arguments: the same object passed for two parameters, an argument that contains or views another argument, and an output parameter that is also an input. The original and the optimized version must agree on these too.
 - Inputs at and around every threshold, boundary, or special case visible in the original code.
 - Malformed or unexpected input the function can receive (invalid formats, out-of-range values, inconsistent state), when callers can pass it.
 

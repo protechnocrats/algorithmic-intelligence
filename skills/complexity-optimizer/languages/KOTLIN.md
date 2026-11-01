@@ -36,7 +36,7 @@ Only new code follows this preference; do not swap existing Java structures, sin
 | Priority queue | `java.util.PriorityQueue` | offer/poll O(log n), peek O(1), `remove(x)` O(n) | JVM only |
 | Primitive arrays | `IntArray`, `LongArray`, `BooleanArray`, `DoubleArray` | O(1), no boxing | Prefer over `List<Int>` in hot code (see the array-equality trap) |
 | Bitset, enum set / map | `java.util.BitSet`, `EnumSet`, `EnumMap` | O(1) per bit, O(n/64) bulk | JVM only |
-| Lazy pipeline | `asSequence()` | No intermediate lists | Changes evaluation order (traps); slower on small inputs |
+| Lazy pipeline | `asSequence()` | No intermediate lists | Changes evaluation order (traps); can be slower than lists on small inputs, so measure |
 | Persistent collections | `kotlinx.collections.immutable` | Updates share storage with the original instead of copying it | An experimental, pre-1.0 dependency: ask. Replaces copy-on-every-update state (`state = state + item`) |
 
 ## Hidden costs
@@ -53,7 +53,7 @@ Only new code follows this preference; do not swap existing Java structures, sin
 | `groupBy { }.mapValues { it.value.size }` | Builds every group's list | `groupingBy { }.eachCount()` |
 | `containsKey(k)` then `get(k)` | Two lookups | `get` with a null check, or `getOrPut` (trap: `null` values) |
 | A sequence consumed by two terminal operations | Re-runs the whole chain each time | Materialize once with `toList()` |
-| `filter { }.size`, `map { }.sum()` | Builds a list | `count { }`, `sumOf { }` |
+| `filter { }.size`, `filter { }.isNotEmpty()`, `map { }.sum()` | Builds a whole intermediate list | `count { }`, `any { }`, `sumOf { }` |
 | `Pair(a, b)` or a `data class` as a hash key in hot code | Allocation and boxing per lookup; a data class's generated `hashCode` recomputes over every property on each call, so a key holding a large list rehashes it every lookup | Index an `IntArray` (`r * width + c`) when keys are dense; pack two `Int`s into one `Long` (still boxed as a key, but one object instead of three) |
 | `List<Int>`, `Map<Int, Int>`, a `value class` in a generic or nullable position | Boxing, GC pressure, poor locality | `IntArray`, counting arrays, bitsets |
 | `foo(*array)` in a loop | The compiler copies the array (undocumented) | Pass the array, if measured to matter |
@@ -79,7 +79,7 @@ Shifts use only the low 5 bits (`Int`) or 6 bits (`Long`) of the count, so `1 sh
 - **`getOrPut` treats a `null` value as missing** and replaces it; `containsKey` does not. Kotlin 2.4 adds explicit `getOrPutIfMissing` and `getOrPutIfNull` (experimental). On a `ConcurrentMap`, `getOrPut` may run the default even when the key is present; use `computeIfAbsent` when that matters.
 - **Floating-point equality depends on the static type.** `a == b` on values typed `Double` or `Float` follows IEEE 754 (`NaN != NaN`, `-0.0 == 0.0`). In collections, generics, and `Any`, it uses `equals`: `NaN` equals itself and `-0.0 != 0.0`. Moving a `==` loop into a `Set`, `Map`, or `contains` changes results for `NaN` and `-0.0`. Which rule data-class `equals` uses for `Double` properties is undocumented: test it before relying on it. `sorted()` puts `NaN` last; `maxOrNull()` returns `NaN` if any value is `NaN`; a manual `>` loop skips it.
 - **Arrays compare by reference** in `==`, sets, maps, `distinct()`, and data-class `equals`/`hashCode`. Replacing a `List<Int>` with `IntArray` silently changes all of them; `contentEquals` and `contentHashCode` compare contents.
-- **Mutable keys.** A `data class` with `var` properties used as a hash key breaks when mutated.
+- **Mutable keys.** A `data class` with `var` properties used as a hash key breaks when mutated: the entry can no longer be found. `==` calls `equals`; `===` compares references.
 - **Unkeyed hashing.** On the JVM, `String.hashCode` and integer hashes are fixed functions, so an attacker can choose colliding keys. `HashMap` "may use comparison order" to break ties only for `Comparable` keys (OpenJDK: O(log n) per bucket); data-class keys, and the Native and JS implementations, get no such help. Treat the worst case as O(n) per lookup. See `techniques/hostile-inputs.md`.
 - **Stable sorts.** `sort`, `sortBy`, `sortedWith`, and `Array<T>.sortWith` are stable on every target. `sortedBy { }.reversed()` reverses equal elements; `sortedByDescending { }` keeps their order. `binarySearch` may return any index among equal elements.
 - **`maxBy`, `maxWith`, `minBy` return the first extreme element;** `sortedBy { }.last()` returns the last.
@@ -96,7 +96,7 @@ Shifts use only the low 5 bits (`Int`) or 6 bits (`Long`) of the count, so `1 sh
 - **Profiling:** on the JVM, async-profiler (CPU, allocation, and lock flame graphs) or Java Flight Recorder (`-XX:StartFlightRecording`). Kotlin/Native: `perf` or Instruments.
 - **Benchmarks, if already present:** kotlinx-benchmark or JMH (`-prof gc` reports allocation per operation). Otherwise `System.nanoTime()` with warmup and medians; JIT warmup and dead-code elimination distort naive timings.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Lincheck checks concurrent structures for linearizability, with a model-checking mode that enumerates interleavings; on JVM targets, jcstress and JBMC from `JAVA.md` also apply.
-- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): on the JVM, `java.security.MessageDigest.isEqual`, (time depends only on the first argument's length), never `contentEquals` or `==`.
+- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): on the JVM, `java.security.MessageDigest.isEqual`, whose time depends only on the length of its first argument, so pass the expected value first; never `contentEquals` or `==`.
 
 ## References (for verifying claims; not required reading)
 

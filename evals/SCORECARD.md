@@ -31,7 +31,10 @@ Copy this file for each evaluation session. Score each case **P** (pass), **F** 
 | Performance labeled measured or estimated | | | |
 | No dependency added without asking | | | |
 | Asked before applying every behavior change | | | |
-| One commit per applied optimization | | | |
+| Committed only if authorized; then one commit per optimization (else: changed files listed per item) | | | |
+| Report lists failing baseline tests and continued (report mode) | | | |
+| Report lists parts of the scope not inspected | | | |
+| End-to-end share stated next to component speedups | | | |
 | Test suite passes on the final code | | | |
 
 ## Cases
