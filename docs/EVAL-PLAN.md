@@ -1,6 +1,6 @@
 # Evaluation plan: adversarial inputs, security, unusual problems, and write mode on Sonnet and Opus
 
-Status: proposed, 2026-11-02. Nothing in this plan spends money until its phase's cap is agreed.
+Status: proposed, 2026-11-02. Nothing in this plan spends money until its phase's cap is agreed. The `evals/` folder was removed on 2026-11-02. The tools this plan names (`run-pilot.sh`, `grade.py`, the probes, `selftest.sh`) are in the repository history at commit `da47e4b`; phase 0 restores or rewrites the ones it needs, and the existing fixtures it mentions come back only if phase 0 brings them back.
 
 ## Why
 

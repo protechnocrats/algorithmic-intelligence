@@ -12,7 +12,7 @@ Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding a
 
 Sometimes the best engineering decision is to leave the code alone, and the skill says so when it is.
 
-**See it first:** [`examples/`](examples/) has a real, unedited report from one session, and one item compared with and without the skill.
+**See it first:** [a real, unedited report](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/examples) from one session on a Java project, and one item compared with and without the skill.
 
 ## Quick start
 
@@ -117,7 +117,7 @@ Agents load a skill by matching your request against the skill's description. Re
 Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
 ```
 
-This matters most for smaller models. In testing, Haiku 5.5 loaded the skill for 2 of 24 new-code requests from the description alone, and for 22 of 24 with this line, while still skipping trivial requests (0 of 24). (Measured before the skill was renamed from `complexity-optimizer` on 2026-11-01; the description is unchanged.) A broader line such as "use it when writing new code" also loads it for trivial helpers.
+Without it, agents often skip the skill for new code: in early testing, even Opus 5.5 did not load it for 1 of 3 write-mode requests. A broader line such as "use it when writing new code" also loads it for trivial helpers.
 
 ### Verify and update
 
@@ -244,16 +244,16 @@ Companion files cover the language and its standard library only. Frameworks and
 
 ## Evidence
 
-The [`evals/`](evals/README.md) folder tests whether an agent with the skill makes the right call on code where the right answer is known, against the same agent without it. It has:
+The skill was tested by running the same coding agent on small projects with planted problems, with and without the skill, and checking each session's final code against the original with trap inputs. The harness and every round's results are in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals); a new harness is being built ([docs/EVAL-PLAN.md](docs/EVAL-PLAN.md)).
 
-- **Test projects** in Kotlin, TypeScript, Swift, C, Rust, Java, Ruby, and Python, with planted cases: straightforward fixes, exponential and cubic starting points, costs that only appear along the call chain, code reached only through a plugin registration, techniques whose assumptions do not hold, ordering and floating-point traps, planted bugs, security traps, invented problems that need the discovery method (including one that only looks like a textbook problem and is NP-hard), verification over a finite domain, external limits such as rate limits and open-file limits, and code that is not worth changing.
-- **Two held-out projects** (Python and Ruby) that are never used to tune the skill, only to measure it. The Ruby project also tests the path for a language without a companion file.
-- **Answer keys, scorecards, and grading probes** that run trap inputs against each session's final code. Each check in the Java and Ruby probes was confirmed against a correct rewrite (no difference reported) and the tempting wrong one (caught).
-- **Tooling:** a headless runner, per-session cost and token statistics, a check of which prompts load the skill, a token-budget check, and tests of language-file claims that official documentation does not settle.
+Results on Claude Opus 5.5 so far:
 
-**Results so far** (round 3, in [`evals/results/`](evals/results/)): on the held-out Python project, report-flow cases passed at 1.00 with the skill against 0.50 without it on Opus 5.5, and 0.83 against 0.39 on Haiku 5.5. On both models the code was correct even without the skill; the difference was judgment. Without the skill, every baseline run applied an unapproved concurrency change and shipped a hash-based fix that is quadratic on attacker-chosen keys. With the skill, no Opus run did either; Haiku held the concurrency change for review but still shipped the quadratic fix in two of three runs.
+- **Hostile input** (held-out Python project): every run without the skill shipped a hash-based fix that becomes quadratic when an attacker chooses colliding IDs, and applied a concurrency change nobody approved. No run with the skill did either. Report-flow cases passed at 1.00 with the skill against 0.50 without.
+- **Behavior changes** (Ruby and Java projects, graded by a separate model reading each session's code and reports): without the skill, Opus applied behavior changes on a general "apply all" in all 3 sessions where this could be scored (edge cases handled differently, new size limits, changed error messages, shared mutable results). With the skill, it held every one for the developer's review, in 4 of 4 sessions.
+- **Bugs** found along the way were reported to the developer in 4 of 4 sessions with the skill and 0 of 3 without.
+- **Cost:** sessions with the skill cost 1.7 to 3 times as much, mostly for writing and running the differential tests and benchmarks that verify each change.
 
-**Limits:** these runs used Claude Code only; the skill is written to be agent-neutral, but other agents have not been evaluated yet. The Java and Ruby projects were added after round 3 and have not been run yet, and the Swift project has not yet been run on a Swift toolchain. See [`evals/README.md`](evals/README.md) to run the evaluations with and without the skill.
+**Limits:** small samples, so treat these as early signals. All runs used Claude Code; other agents have not been evaluated. Claude Sonnet has not been tested yet.
 
 ## Files
 
@@ -279,8 +279,8 @@ The skill's knowledge base is modular and organized around its workflow. The age
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): what each part of the repository does, what the agent loads in each mode, and where each idea lives.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes reach `main`, and the rules for changing the skill.
-- `.devcontainer/`: every toolchain the evaluation fixtures need (JDK, Ruby, Node, Rust, Python, Swift), and a sandbox for running agent sessions.
-- [evals/results/README.md](evals/results/README.md): every evaluation round so far, summarized.
+- `.devcontainer/`: the JDK, Ruby, Node, Rust, Python, and Swift toolchains, and a sandbox for running agent sessions.
+- [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md): the plan for the next evaluations. Earlier rounds are in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals/results).
 
 ## Releases and security
 
@@ -289,18 +289,7 @@ The skill's knowledge base is modular and organized around its workflow. The age
 
 ## Contributing
 
-Changes reach `main` only through pull requests that pass the repository checks, and every pull request that changes the skill adds a line to the `[Unreleased]` section of [CHANGELOG.md](CHANGELOG.md). Contributions are welcome, particularly:
-
-- New discovery methods and algorithmic techniques.
-- Language companion files.
-- Improvements to verification and benchmarking.
-- Evaluation fixtures and test cases, especially real-world performance problems.
-
-When contributing algorithmic or language-specific knowledge, document assumptions, complexity, behavioral considerations, and authoritative references, and judge each addition by whether it changes how the agent thinks, verifies, or measures, not by coverage alone.
-
-**Language companion files:** use [`languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. A profile that the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
-
-**Changes to the skill itself:** put each instruction in the file where it belongs, written so that any agent, from the smallest model to the largest, can follow it without guessing. Then run `evals/token-budget.sh`: budgets make growth visible and are raised when a needed instruction exceeds them, never met by trimming instructions. New eval cases follow "Adding a case" in [`evals/README.md`](evals/README.md).
+Contributions are welcome, particularly new discovery methods and algorithmic techniques, language companion files, improvements to verification and benchmarking, and real-world performance problems. Judge each addition by whether it changes how the agent thinks, verifies, or measures, not by coverage alone, and document its assumptions, complexity, behavioral considerations, and authoritative references. [CONTRIBUTING.md](CONTRIBUTING.md) has the details: how changes reach `main`, the rules for changing the skill, and the checklist for language companion files.
 
 **Understand deeply. Reason algorithmically. Engineer exceptionally.**
 

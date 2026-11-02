@@ -8,40 +8,33 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Changed
 
-- **`SKILL.md` rewritten for clarity:** shorter sentences, one statement of each instruction, rules 6 and 8 split into paragraphs. No rule, threshold, example, or named section was removed (7,898 tokens, from 8,181).
-- **A fourth way to keep behavior: take the fast path, and fall back to the original where it cannot match** (for example, send in batches and resend a failed batch one item at a time). In round 9, both Opus sessions with the skill said no behavior-keeping version of the SMS batching existed, although this one does.
+- **Clearer instructions throughout:** `SKILL.md`, `WORKFLOW.md`, `REPORTING.md`, `DIFFERENTIAL-TESTING.md`, `BENCHMARKING.md`, and `ALGORITHM-ARSENAL.md` rewritten in shorter sentences, with each instruction stated once and the rest pointing to it. No rule, step, threshold, example, or named section was removed.
+- **Before filing a speedup as a behavior change, the agent looks for a version that keeps the behavior:** redo costly work only when its input changed, hand out copies of cached values, take the fast path and fall back to the original where it cannot match (for example, resend a failed batch one item at a time), or read data that something outside the operation may change once per operation. A behavior change is listed only when no such version exists, with each way tried. When the developer declines a behavior change, the agent applies the version that keeps the behavior.
+- **Changes to how code calls another system are now verifiable.** Batching, deduplicating, or caching calls to a database or service is checked against a fake that implements the collaborator's documented contract (limits, missing items, partial failure, error order), comparing everything callers observe and the requested items as a set. Only behavior the documentation does not settle stays unverified.
+- **The agent states its mode first, then reads the file for that mode before looking at code** (`WORKFLOW.md` or `WRITING-NEW-CODE.md`), and `DIFFERENTIAL-TESTING.md` before writing differential tests.
 - **The agent says when it runs on a small model.** If it knows its model and the model is a small, fast, or low-cost tier, it adds one line after the mode: the skill is tested with coding-tier models such as Claude Sonnet and Opus.
-- **One "Reproduce" section can cover every item** in `APPLY-RESULTS.md` when one harness tests them all, instead of repeating it per item.
-- **Changes to how code calls another system are now verifiable.** Batching, deduplicating, or caching calls to a database or service is checked against a fake that implements the collaborator's documented contract (limits, missing items, partial failure, error order), comparing everything callers observe and the requested items as a set. Only behavior the documentation does not settle stays unverified. In round 7 the skill held such changes back as unverifiable even when they were safe.
-- **Before filing a speedup as a behavior change, the agent looks for a version that keeps the behavior:** redo costly work only when its input changed, hand out copies of cached values, or read data that something outside the operation may change once per operation (only results the original could also produce). A behavior change is listed only when no such version exists, with each way tried. When the developer declines a behavior change, the agent applies the version that keeps the behavior. In round 8, every Haiku session with the skill left two items slow for lack of this.
-- **The agent reads the file for its mode before looking at code** (`WORKFLOW.md` or `WRITING-NEW-CODE.md`), and `DIFFERENTIAL-TESTING.md` before writing differential tests. In round 8, 6 of 8 sessions read neither.
-- **The agent states its mode first.** The instruction now opens `SKILL.md` and the first step of each workflow, since sessions often skipped it.
+- **New behavior traps,** from changes coding-tier models made in testing: numeric identity in hash keys (`1` against `1.0`), new size limits an optimization introduces, and batched queries that must keep values as bound parameters. In write mode, a cache key must include the user, tenant, and permissions when they change the result.
 - **The A/A run of a differential test is required only when the behavior can vary between runs** (time, randomness, hash or iteration order, concurrency, external systems); deterministic code records "not needed".
-- **The end-to-end share is its own field** in the apply results and part of each item's prediction, since sessions often left it out.
+- **The end-to-end share is its own field** in the apply results and part of each item's prediction.
+- **One "Reproduce" section can cover every item** in `APPLY-RESULTS.md` when one harness tests them all.
 
 ### Added
 
-- **Six clinic cases** (evals only), so java-clinic and its held-out twin rb-clinic cover what only kotlin-shop covered: a secret comparison that must keep uniform timing (J11, RB10), an NP-hard grouped knapsack with a pseudo-polynomial solution (J12, RB11), and 3SUM counting with a conjectured O(n²) bound (J13, RB12), each with probe checks confirmed against a correct and a tempting wrong rewrite.
-- **Full grading** (evals only): `evals/GRADING.md` defines every category a round is graded on (validity, behavior safety, case outcomes, protocol, analysis, verification, measurement, report completeness, skill use, cost), and `evals/grade.py` grades every session on all of them and writes a scorecard. Judged categories use a model with a fixed rubric, validated on a planted defect. `run-pilot.sh` allows more read-only commands and gains `--skip-permissions` for disposable machines, since permission refusals of loops made 4 of round 8's 16 sessions invalid.
-
-- **Harness guards** (none are installed with the skill or add to an agent's context): `evals/check-refs.py` fails CI on broken links, file names, section names, and rule numbers in the skill; `evals/rule-cases.py` generates `docs/RULE-EVIDENCE.md`, the eval cases that test each rule, from the answer keys, and CI fails when it is out of date; `evals/check-report.py` grades a session's report files against the formats in `REPORTING.md`. `CONTRIBUTING.md` gains "Pruning rules" (a rule with no case needs a case, not deletion) and "Guards". 32 answer-key cases now name the rules they test by number.
-
-- **For contributors:** `docs/ARCHITECTURE.md` (what loads when, where each idea lives), `CONTRIBUTING.md`, issue and pull-request templates, `CODEOWNERS`, and a dev container with every toolchain the fixtures need (not yet built and tested).
-- **Free self-tests:** `evals/selftest.sh` tests the eval runner with a stub agent (no API, no cost); `--probes` also checks the Java and Ruby grading probes against committed correct and wrong rewrites.
-- **More runnable fixtures:** `run-pilot.sh` now runs the report flow on kotlin-shop, swift-shop, c-shop, and rust-shop; its stall watchdog no longer relies on Linux-only `stat` options.
-- **Results overview:** `evals/results/README.md` summarizes every round and each clinic case's history.
+- **For contributors:** `docs/ARCHITECTURE.md` (what loads when, where each idea lives), `CONTRIBUTING.md`, issue and pull-request templates, `CODEOWNERS`, and a dev container with the JDK, Ruby, Node, Rust, Python, and Swift toolchains.
 - **Installing a specific release** is documented in the README (the tag's `skills/` folder URL).
-- `examples/`: a real report-and-apply run on the Java fixture, unedited, and one item compared with and without the skill (hostile input on a hash map), linked from the top of the README.
+- `docs/EVAL-PLAN.md`: the plan for the next evaluations (hostile inputs, security side effects of optimizations, unusual problems, and write mode, on Sonnet and Opus).
+
+### Removed
+
+- **The evaluation harness (`evals/`) and the examples (`examples/`),** to be rebuilt per `docs/EVAL-PLAN.md`. Both stay readable in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b), with every round's results.
+- **The CI checks that depended on it** (token budgets, cross-references, rule evidence) and `docs/RULE-EVIDENCE.md`.
 
 ### Evaluation
 
-- Evaluations now report coding-tier models only (Claude Sonnet and Opus). Round 8's results are corrected: the judge found behavior changes applied on "apply all" in 2 of 3 Opus baselines, which the probe does not test.
-- Round 9 ([results](evals/results/2026-11-02-round9.md)), Java project with three new cases, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 4 valid sessions with the skill and 3 of 3 without (each changed a public method's signature to make sums exact); with Opus, 0 of 2 and 0 of 1. 5 of 15 sessions were invalid because of harness permission refusals.
-- The evaluation cost cap is now hard: each turn may spend only what is left of it. Round 9 went $5.97 over its cap because the cap only stopped new sessions from starting.
-- `grade.py` counts a probe that cannot compile against a session's code as a behavior difference, not as "no difference", and marks a session invalid when more than half of its shell commands were refused.
-- `grade.py` scores write-mode cases only on write sessions, and the judge's cost cap no longer has a $0.50 floor per call.
-- Round 8 ([results](evals/results/2026-11-02-round8.md)), held-out Ruby project, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 3 valid sessions with the skill and 4 of 4 without (corrupted labels); with Opus, 0 of 2 and 0 of 3 (4 sessions invalid: harness permission refusals), and the baseline was faster and cheaper. With the skill, Haiku held back two speedups as behavior changes where equivalent versions exist.
-- Round 7 ([results](evals/results/2026-11-01-round7.md)), Haiku 5.5: on the held-out Ruby project, neither skill session changed behavior while the baseline corrupted user-visible labels; on the Java project, the baseline's "optimization" became 3.5 times slower on attacker-chosen keys, which none of 11 skill sessions did. Write mode loaded the skill with the README's recommended project-instruction line.
+Results on Claude Opus 5.5 from the rounds since 0.1.0 ([results in the history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals/results)), graded on every category including a judge reading each session's code and reports:
+- Without the skill, Opus applied behavior changes on a general "apply all" in all 3 sessions where this could be scored. With it, Opus held every one for review, in 4 of 4 sessions.
+- Bugs were reported to the developer in 4 of 4 sessions with the skill and 0 of 3 without.
+- Sessions with the skill cost 1.7 to 3 times as much.
 
 ## [0.1.0] - 2026-11-01
 

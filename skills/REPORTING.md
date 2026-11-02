@@ -8,9 +8,12 @@ For a small result (one or two items), present the report in the conversation. O
 - `BUGS-FOUND.md` — written in Phase 4: every bug noticed during the analysis. None are fixed on purpose.
 - `APPLY-RESULTS.md` — written at the end of apply mode (Phase 6): what was applied and how it was verified and measured, changes marked as needing testing, behavior changes decided, changes tried and rejected while applying, and bugs found while applying. It refers to items by the IDs in `OPTIMIZATION-REPORT.md`.
 
-**Write each file once, and do not edit it afterward.** Text an agent writes stays in the conversation, and every later step sends the whole conversation to the model again, so a report's size is paid for again on every step after it is written, and every edit adds another copy of the changed text. Keep findings in your working notes as you analyze; write `OPTIMIZATION-REPORT.md` and `BUGS-FOUND.md` once, after Phase 3 is complete for every candidate. In apply mode, never edit or rewrite `OPTIMIZATION-REPORT.md`: the developer is deciding from it, and its analysis must stay as written. Record each item's results in your notes and write `APPLY-RESULTS.md` once, at close-out. If you find a mistake in a file you already wrote, fix it in one combined edit and say what changed. When the developer answers after `APPLY-RESULTS.md` is written (approvals, declines, dependency decisions), record all of the answers in one combined edit, not one edit per answer. If the developer asks for progress before then, answer in the conversation.
+**Write each file once, and do not edit it afterward.** Text you write stays in the conversation, and every later step sends the whole conversation to the model again: a report's size is paid again on every step after it, and every edit adds another copy of the changed text.
+- Keep findings in your working notes while you analyze. Write `OPTIMIZATION-REPORT.md` and `BUGS-FOUND.md` once, after Phase 3 is complete for every candidate.
+- In apply mode, never edit or rewrite `OPTIMIZATION-REPORT.md`: the developer is deciding from it, and its analysis must stay as written. Keep each item's results in your notes and write `APPLY-RESULTS.md` once, at close-out.
+- If you find a mistake in a file you already wrote, fix it in one combined edit and say what changed. When the developer answers after `APPLY-RESULTS.md` is written (approvals, declines, dependency decisions), record all the answers in one combined edit, not one per answer. If the developer asks for progress before then, answer in the conversation.
 
-**Keep each file as short as the decisions allow.** Every field below appears, but in one line unless the item needs more: no narrative, and each fact stated once (refer to the item or section that already says it). An item may expand a field into short sub-bullets only when the developer has to decide something about it: an item under "Behavior changes for review," unverified equivalence, an exposure (untrusted input, secrets, a hard deadline), or a new dependency.
+**Keep each file as short as the decisions allow.** Every field below appears, in one line unless the item needs more: no narrative, and each fact stated once (refer to the item or section that already says it). Expand a field into short sub-bullets only when the developer has to decide something about it: an item under "Behavior changes for review," unverified equivalence, an exposure (untrusted input, secrets, a hard deadline), or a new dependency.
 
 ## Report header
 
@@ -22,7 +25,7 @@ Start `OPTIMIZATION-REPORT.md` (or the in-conversation report) with these sectio
 
 ## Optimization item format
 
-Rank items by expected real-world impact. Use the full format for nontrivial items (rule 6) and for any item with behavior risks or an exposure; straightforward items and items not worth changing use the compact format. The format marks the difficulty: full format means nontrivial, compact means straightforward or not worth changing.
+Rank items by expected real-world impact. Use the full format for nontrivial items (rule 6) and for any item with behavior risks or an exposure, and the compact format for straightforward items and items not worth changing. The format itself tells the reader the difficulty.
 
 Compact format:
 
@@ -134,7 +137,7 @@ Also list every marked change in a "Needs testing" section of `APPLY-RESULTS.md`
 
 ## Final summary
 
-End every run with a short summary in the conversation. When the report is in files, give each point below in a line or two and point to the files for the detail; do not restate them in the conversation, since the developer already has them. When the report itself is in the conversation, it carries these points and no separate summary is needed:
+End every run with a short summary in the conversation. When the report is in files, give each point below in a line or two and point to the files for the detail, without restating them. When the report itself is in the conversation, it already carries these points and needs no separate summary:
 
 - Items applied and verified, with the verification level and a one-line summary of the evidence for each.
 - Items applied with developer approval but marked `NEEDS-TESTING`.

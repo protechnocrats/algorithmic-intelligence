@@ -106,15 +106,7 @@ Many large wins come from changing the problem rather than speeding up the loop.
 
 ## Behavior-changing techniques
 
-Some techniques in `CORE-TECHNIQUES.md` and the domain files necessarily change observable behavior: element order, laziness, side effects skipped, concurrency, error and crash behavior, approximate instead of exact results, different floating-point results, different model outputs, different images or geometry, or the shape of what callers receive. Rule 5 applies to every one of them:
-
-- Never apply a behavior-changing optimization silently.
-- Document it in the report under "Behavior changes for review," with the exact behavior before and after.
-- Apply it only after the developer explicitly approves that item (a general "apply all" is not approval), then add the `BEHAVIOR-CHANGE` marker from `REPORTING.md`.
-
-This includes changes that look like improvements: a function that fails faster, returns results in a "more sensible" order, or no longer throws an exception callers may rely on. Those are behavior changes, and the developer decides.
-
-The one exception is a bug removed as a side effect of the best optimization, such as an iterative rewrite that no longer overflows the stack. Rule 4 in `SKILL.md` governs it.
+Some techniques in `CORE-TECHNIQUES.md` and the domain files necessarily change observable behavior: element order, laziness, side effects skipped, concurrency, error and crash behavior, approximate instead of exact results, different floating-point results, different model outputs, different images or geometry, or the shape of what callers receive. Rule 5 applies to every one of them: first look for a version that keeps the behavior; otherwise list the item under "Behavior changes for review" with the exact behavior before and after, apply it only after the developer explicitly approves that item (a general "apply all" is not approval), and then add the `BEHAVIOR-CHANGE` marker from `REPORTING.md`. That includes changes that look like improvements: failing faster, a "more sensible" order, no longer throwing an exception callers may rely on. The one exception is a bug removed as a side effect of the best optimization, such as an iterative rewrite that no longer overflows the stack (rule 4).
 
 ## When the best technique is not available
 
