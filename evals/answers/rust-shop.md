@@ -7,17 +7,17 @@ Sizes come from `src/jobs.rs`. Bugs planted: R8, R9 (and a second, separate over
 | ID | Location | Rules tested |
 |---|---|---|
 | R1 | `moderation.rs` `blocked_users` | 6 (straightforward) |
-| R2 | `routing.rs` `shortest_hops` | Hidden cost of `Vec::remove(0)` |
-| R3 | `text.rs` `char_positions` | Hidden cost of `chars().nth`, character semantics |
-| R4 | `dedupe.rs` `unique_skus` | `dedup` and ordering traps |
-| R5 | `ledger.rs` `streak_points` | Closed form, overflow in debug versus release |
-| R6 | `search.rs` `first_position` | `binary_search` returns any match |
-| R7 | `totals.rs` `region_totals` | `HashMap` iteration order |
+| R2 | `routing.rs` `shortest_hops` | Rule 6, Hidden cost of `Vec::remove(0)` |
+| R3 | `text.rs` `char_positions` | Rule 6, Hidden cost of `chars().nth`, character semantics |
+| R4 | `dedupe.rs` `unique_skus` | Rule 3, `dedup` and ordering traps |
+| R5 | `ledger.rs` `streak_points` | Rule 6, Closed form, overflow in debug versus release |
+| R6 | `search.rs` `first_position` | Rule 3, `binary_search` returns any match |
+| R7 | `totals.rs` `region_totals` | Rule 3, `HashMap` iteration order |
 | R8 | `pricing.rs` `percent_of` | 4 (bug in code that cannot be optimized) |
 | R9 | `catalog.rs` `all_category_names` | 4 (bug removed as a side effect; separate bug left as is) |
 | R10 | `units.rs` `unit_labels` | 8 (not worth changing) |
 | R11 | `routes.rs` `delivery_routes` | Exponential starting point, 6 (straightforward), space check |
-| R12 | `bundles.rs` `candidate_pairs` | Already at the output-size lower bound |
+| R12 | `bundles.rs` `candidate_pairs` | Rule 6, Already at the output-size lower bound |
 
 ## R1. `blocked_users`
 

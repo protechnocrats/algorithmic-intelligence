@@ -7,15 +7,15 @@ Sizes come from the comment at the top of `include/shop.h`. Bugs planted: C7, C8
 | ID | Location | Rules tested |
 |---|---|---|
 | C1 | `text.c` `count_char` | 6 (straightforward), `strlen` in a loop condition |
-| C2 | `text.c` `join_tags` | Repeated `strlen`/`strcat` scans, exact truncation behavior |
+| C2 | `text.c` `join_tags` | Rule 6, Repeated `strlen`/`strcat` scans, exact truncation behavior |
 | C3 | `ids.c` `ids_above` | Growth by one with `realloc`, ownership |
-| C4 | `search.c` `first_index` | `bsearch` returns any match |
-| C5 | `orders.c` `sort_by_priority` | `qsort` is not stable |
-| C6 | `orders.c` `streak_points` | Closed form, signed overflow is undefined behavior |
+| C4 | `search.c` `first_index` | Rule 3, `bsearch` returns any match |
+| C5 | `orders.c` `sort_by_priority` | Rule 3, `qsort` is not stable |
+| C6 | `orders.c` `streak_points` | Rule 6, Closed form, signed overflow is undefined behavior |
 | C7 | `text.c` `last_char` | 4 (bug in code that cannot be optimized) |
 | C8 | `ids.c` `has_duplicate_ids` | 4 (bug preserved, because preserving it is cheap) |
 | C9 | `units.c` `unit_name` | 8 (not worth changing) |
-| C10 | `dispatch.c` `dispatch_value` | Cost along the call chain, first-match duplicates, allocation failure |
+| C10 | `dispatch.c` `dispatch_value` | Rule 6, Cost along the call chain, first-match duplicates, allocation failure |
 
 ## C1. `count_char`
 

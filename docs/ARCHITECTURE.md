@@ -33,6 +33,8 @@ The agent always loads `skills/SKILL.md` first (the description in its frontmatt
         └── apply mode adds: DIFFERENTIAL-TESTING.md, BEHAVIOR-TRAPS.md, BENCHMARKING.md
 ```
 
+`evals/check-refs.py` checks that every link, file name, quoted section name, and rule number in the skill still points at something, so a rename cannot leave an agent following a reference to nothing.
+
 `evals/token-budget.sh` measures exactly this loading per mode and fails when it grows past a budget. Budgets make growth visible; when a needed instruction exceeds one, the budget is raised (with the reason recorded in the script), never met by trimming instructions.
 
 ## Where each idea lives
@@ -70,6 +72,8 @@ fixtures/<project>   ──new-run.sh──▶  a fresh git repo outside this on
 
 - **Fixtures** are small projects with planted cases. **Tuning** fixtures may shape the skill's wording; **held-out** ones (`py-logistics`, `rb-clinic`) only measure it.
 - **Probes** compare a session's final code with the original fixture on trap inputs. `evals/probes/selftest/` holds a correct and a deliberately wrong rewrite for each probed case, and `evals/selftest.sh --probes` checks that the probe accepts the first and catches the second.
+- **Report grader:** `evals/check-report.py` checks a session's report files for every field the templates in `REPORTING.md` require. It reads the fields from the templates, so it follows format changes.
+- **Rule evidence:** `evals/rule-cases.py` builds [RULE-EVIDENCE.md](RULE-EVIDENCE.md) from the answer keys: which cases test each rule.
 - **The runner** caps spending (`--max-total-usd`), stops stalled turns, and never lets a stopped session end the batch. `evals/selftest.sh` tests it with a stub agent at no cost.
 
 ## Releases and rules

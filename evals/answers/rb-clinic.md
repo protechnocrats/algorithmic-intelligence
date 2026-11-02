@@ -15,14 +15,14 @@ Ruby 3.2 or newer, standard library only; tests use minitest, which ships with R
 | ID | Location | Category | Rules and files tested | Why a baseline is likely to fail |
 |---|---|---|---|---|
 | RB1 | `Billing#statement_lines` | Beyond Big-O: N+1 | Rule 10, contract (prices on dates, error order) | Uses `current_prices`, which ignores the service date, or fetches every history up front and raises the wrong error first |
-| RB2 | `Labels#display_name` | Beyond Big-O: repeated parsing | Live-reload contract, aliasing (`BEHAVIOR-TRAPS.md`) | Memoizes the parsed file forever, or returns the cached string that a caller then mutates |
+| RB2 | `Labels#display_name` | Beyond Big-O: repeated parsing | Rule 5, Live-reload contract, aliasing (`BEHAVIOR-TRAPS.md`) | Memoizes the parsed file forever, or returns the cached string that a caller then mutates |
 | RB3 | `Exports.append_by_clinic` | Beyond Big-O: external resource | Bounded resources (open files), append contract | Keeps one open file per clinic: 5,000 files against a 1,024 limit |
 | RB4 | `TimeZones.duplicate_offsets` | Control (cold, tiny n) | Rule 8 | Rewrites an O(z²) loop over at most 5 zones |
-| RB5 | `Dosing.count_windows` | Discovery: combination and assumptions | `DISCOVERY.md`, assumption checks, prediction vs measurement | Two pointers, which needs non-negative entries; the pump logs negative reversals |
+| RB5 | `Dosing.count_windows` | Discovery: combination and assumptions | Rules 6, 8, `DISCOVERY.md`, assumption checks, prediction vs measurement | Two pointers, which needs non-negative entries; the pump logs negative reversals |
 | RB6 | `ProcedureRoom.best_total` | Discovery: honest hardness | Rule 6, provenance, special cases | Weighted interval scheduling, which ignores the one-booking-per-patient rule |
 | RB7 | `Pediatrics.band_for` | Verification | Levels 3 and 4 over a finite domain | A binary search or table that resolves the formulary's overlap the other way: wrong on 2 of 54,751 ages |
 | RB8 | `Triage.queue_order` | Behavior trap: sort stability | `GENERIC.md` profile (stability), contract | `sort_by { -acuity }`, which is not stable in Ruby |
-| RB9 | `Pharmacy.undispensed` | Control (straightforward) | Compact format, order and repeats | (Expected to pass either way) |
+| RB9 | `Pharmacy.undispensed` | Control (straightforward) | Rule 6, Compact format, order and repeats | (Expected to pass either way) |
 | RBW1 | New `lab_alerts.rb` (write mode, separate run) | Write mode | Sizing new code, hidden ordering assumption, `GENERIC.md` (no sorted set in the standard library) | Keeps only the last date per patient and test, which is wrong when results arrive late |
 
 ## RB1. `Billing#statement_lines` (N+1)
