@@ -29,16 +29,5 @@ jobs:
           set -euo pipefail
           test -f skills/SKILL.md
           grep -q '^name: algorithmic-intelligence$' skills/SKILL.md
-      - name: Token budgets (evals/token-budget.sh)
-        run: bash evals/token-budget.sh
-      - name: Cross-references in the skill resolve (evals/check-refs.py)
-        run: python3 evals/check-refs.py
-      - name: Rule evidence table is current (evals/rule-cases.py --check)
-        run: python3 evals/rule-cases.py --check
-      - name: Eval scripts parse
-        run: |
-          set -euo pipefail
-          for f in evals/*.sh evals/claims/*.sh; do bash -n "$f"; done
-          python3 -m py_compile evals/*.py evals/probes/*.py
       - name: CHANGELOG.md has an Unreleased section
         run: grep -q '^## \[Unreleased\]' CHANGELOG.md

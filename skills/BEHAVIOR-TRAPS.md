@@ -19,6 +19,7 @@ Rewrites that look equivalent but are not. Walk this list for every candidate in
 - **Mutable keys.** An object used as a hash key and mutated afterward can no longer be found.
 - **Case, culture, and normalization.** String comparisons that ignore case or depend on locale must use the same comparer in the new structure.
 - **Floating-point keys.** `NaN`, `-0.0` versus `0.0`, and rounding make float keys unsafe in hash structures.
+- **Numeric identity.** `1` and `1.0`, or `2.50` and `2.5` as decimals, may be equal under `==` but not as hash keys (Ruby `eql?`, Java `Integer` versus `Long`, `BigDecimal` scale), or the reverse. A list scan with `==` matched them; a hash structure may not.
 
 ## Duplicates and nulls
 
@@ -42,7 +43,6 @@ Rewrites that look equivalent but are not. Walk this list for every candidate in
 ## Numbers
 
 For numerical code, matching outputs on ordinary inputs is not enough evidence. Test the edge values listed in `DIFFERENTIAL-TESTING.md` (NaN, infinities, signed zero, subnormals, extreme magnitudes).
-
 
 - **Overflow.** A closed-form formula or a different summation order can overflow where the loop did not, or the reverse. Some languages wrap silently, others trap or crash.
 - **Floating-point association.** `(a + b) + c` is not `a + (b + c)`. Prefix sums, reordering, and parallel reduction change results.
@@ -146,6 +146,7 @@ An optimization can be faster while making the system less secure. Treat every i
 
 - **Constant-time code.** Do not replace constant-time comparisons or computations (secrets, tokens, MACs, password hashes) with early-exit or data-dependent versions.
 - **Authorization and validation.** Early exits, caching, batching, and reordering must not skip, reorder, or weaken authentication, authorization, or input validation checks.
+- **Query building.** Batching per-item queries into one (`WHERE id IN (...)`) must keep the values as bound parameters, never concatenated into the query text, and chunk to the driver's parameter limit.
 - **Cache keys.** A cache key must include every input that affects the result, including user, tenant, permission, locale, and configuration context. Omitting one can leak data across users.
 - **Adversarial inputs.** Hash-based structures can degrade to their worst case under hash flooding when attackers control keys; prefer structures with worst-case guarantees (or randomized hashing) for untrusted input.
 - **Resource exhaustion.** A faster average case with a much worse worst case (unbounded caches, quadratic behavior on pathological input, unbounded recursion) can create a denial-of-service risk.
@@ -155,6 +156,7 @@ If an existing security weakness is found, it is a bug: document it and report i
 ## Errors and limits
 
 - **Different exceptions.** A new structure may throw a different exception type, at a different point, or not at all.
+- **New size limits.** An optimization that works only up to a size the original never limited (a bitmask over at most 64 items, a table sized for the test data, a fixed-size buffer) adds an error or a wrong result above that size. Check the largest size callers can pass, not the sizes in the tests.
 - **Recursion depth.** Turning iteration into recursion (or the reverse) changes stack overflow behavior on large inputs. Removing an overflow on valid input is a bug fixed as a side effect (rule 4); introducing one is a regression and is never acceptable.
 - **Resource limits.** A faster algorithm that uses more memory may hit OOM where the original did not (rule 1: memory must stay bounded).
 
