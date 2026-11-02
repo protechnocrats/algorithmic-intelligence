@@ -33,5 +33,5 @@ Tags matching `v*` are protected: they cannot be moved or deleted (see `.github/
 
 `.github/rulesets/` holds the repository's rulesets as JSON, so they are reviewed like code. To apply or update one: on GitHub, **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, and choose the file.
 
-- `main-branch.json`: changes reach `main` only through pull requests whose checks pass (`skill-checks`); review threads must be resolved; no force pushes, no deletion, linear history (squash or rebase merges). Repository administrators can bypass the rules in an emergency. Once there is a second maintainer, raise the required approvals from 0 to 1.
+- `main-branch.json`: changes reach `main` only through pull requests whose checks pass (`skill-checks`); review threads must be resolved; no force pushes, no deletion, linear history (squash or rebase merges). Repository administrators can bypass the rules only through a pull request (bypass mode `pull_request`): even an administrator cannot push to `main` directly, but can merge a pull request without waiting for its checks in an emergency. Once there is a second maintainer, raise the required approvals from 0 to 1.
 - `release-tags.json`: tags matching `v*` cannot be deleted or moved; administrators can bypass.
