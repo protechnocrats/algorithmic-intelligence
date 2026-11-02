@@ -27,6 +27,8 @@ Load this file for Swift projects on any target: Apple platforms, Linux and Wind
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `array.removeFirst()` or `insert(_, at: 0)` in a loop (queue, BFS) | O(n) each, O(n²) total | Head index, reversed array with `popLast()`, or `Deque` (dependency) |

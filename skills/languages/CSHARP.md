@@ -25,6 +25,8 @@ Not in the base library: deque, interval tree, trie, multimap. Ask before adding
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | Enumerating the same `IEnumerable<T>` query more than once | Re-runs the whole query each time (possibly a database query) | Materialize once with `ToList()`/`ToArray()` (check deferred-execution trap) |

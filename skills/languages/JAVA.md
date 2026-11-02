@@ -24,6 +24,8 @@ Not in the standard library: multisets, bidirectional maps, primitive-specialize
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `LinkedList.get(i)` in an indexed loop | O(n²) | Iterate with an iterator or switch to `ArrayList` |

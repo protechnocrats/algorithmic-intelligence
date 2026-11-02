@@ -21,6 +21,8 @@ Load this file for Rust projects. Record the toolchain, the edition, and the min
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `vec.contains(&x)` inside a loop | O(n·m) | `HashSet` built once (check the ordering trap) |

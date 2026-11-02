@@ -41,6 +41,8 @@ Only new code follows this preference; do not swap existing Java structures, sin
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `list = list + item` or `+=` on a `var` of read-only `List` in a loop | Copies each step: O(n²) | `mutableListOf` and `add`, `buildList { }`, or a persistent list |

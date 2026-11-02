@@ -23,6 +23,8 @@ C's standard library has almost no data structures. What it provides:
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `for (i = 0; i < strlen(s); i++)` | `strlen` runs every iteration: O(n²) | Compute the length once before the loop (only if the loop does not change `s`) |

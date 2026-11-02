@@ -25,6 +25,8 @@ Load this file for JavaScript and TypeScript projects. Record the runtime (Node 
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `queue.shift()` in a loop (BFS, job queues) | O(n) per call in general, O(n²) total | Head index pointer, or a ring buffer |

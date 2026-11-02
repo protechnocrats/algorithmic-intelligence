@@ -24,6 +24,8 @@ Load this file for Python projects. Record the interpreter and version (`require
 
 ## Hidden costs
 
+This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+
 | Pattern | Cost | Fix |
 |---|---|---|
 | `x in items` on a list or `dict.values()` inside a loop | O(n) per check | A `set` or `dict` built once (traps: hashability, order) |
