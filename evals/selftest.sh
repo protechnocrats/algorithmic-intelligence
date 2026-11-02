@@ -88,10 +88,11 @@ if [ "${1:-}" = --probes ]; then
     for c in $expect; do grep -q "DIFF  $c:" "$out" || missed="$missed $c"; done
     if [ "$fixture" = java-clinic ]; then
       grep -q "RATE LIMIT EXCEEDED" "$out" || missed="$missed J3-rate"
-      grep -q -E "JW1: [1-9][0-9]* mismatches" "$out" || missed="$missed JW1"
+      # The probe prints mismatch details first and the count on a later line.
+      grep -q -E "^ *[1-9][0-9]* mismatches in [0-9]+ cases" "$out" || missed="$missed JW1"
     else
       grep -q "DIFF  RB5:" "$out" || missed="$missed RB5"
-      grep -q -E "RBW1: [1-9][0-9]* mismatches" "$out" || missed="$missed RBW1"
+      grep -q -E "^ *[1-9][0-9]* mismatches in [0-9]+ cases" "$out" || missed="$missed RBW1"
     fi
     [ -z "$missed" ] && pass "$fixture probe: every wrong rewrite caught" || bad "$fixture probe: not caught:$missed"
   done
