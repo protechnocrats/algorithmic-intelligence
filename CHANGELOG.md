@@ -8,6 +8,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Changed
 
+- **`SKILL.md` rewritten for clarity:** shorter sentences, one statement of each instruction, rules 6 and 8 split into paragraphs. No rule, threshold, example, or named section was removed (7,898 tokens, from 8,181).
+- **A fourth way to keep behavior: take the fast path, and fall back to the original where it cannot match** (for example, send in batches and resend a failed batch one item at a time). In round 9, both Opus sessions with the skill said no behavior-keeping version of the SMS batching existed, although this one does.
+- **The agent says when it runs on a small model.** If it knows its model and the model is a small, fast, or low-cost tier, it adds one line after the mode: the skill is tested with coding-tier models such as Claude Sonnet and Opus.
+- **One "Reproduce" section can cover every item** in `APPLY-RESULTS.md` when one harness tests them all, instead of repeating it per item.
 - **Changes to how code calls another system are now verifiable.** Batching, deduplicating, or caching calls to a database or service is checked against a fake that implements the collaborator's documented contract (limits, missing items, partial failure, error order), comparing everything callers observe and the requested items as a set. Only behavior the documentation does not settle stays unverified. In round 7 the skill held such changes back as unverifiable even when they were safe.
 - **Before filing a speedup as a behavior change, the agent looks for a version that keeps the behavior:** redo costly work only when its input changed, hand out copies of cached values, or read data that something outside the operation may change once per operation (only results the original could also produce). A behavior change is listed only when no such version exists, with each way tried. When the developer declines a behavior change, the agent applies the version that keeps the behavior. In round 8, every Haiku session with the skill left two items slow for lack of this.
 - **The agent reads the file for its mode before looking at code** (`WORKFLOW.md` or `WRITING-NEW-CODE.md`), and `DIFFERENTIAL-TESTING.md` before writing differential tests. In round 8, 6 of 8 sessions read neither.
@@ -31,6 +35,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Evaluation
 
+- Evaluations now report coding-tier models only (Claude Sonnet and Opus). Round 8's results are corrected: the judge found behavior changes applied on "apply all" in 2 of 3 Opus baselines, which the probe does not test.
 - Round 9 ([results](evals/results/2026-11-02-round9.md)), Java project with three new cases, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 4 valid sessions with the skill and 3 of 3 without (each changed a public method's signature to make sums exact); with Opus, 0 of 2 and 0 of 1. 5 of 15 sessions were invalid because of harness permission refusals.
 - The evaluation cost cap is now hard: each turn may spend only what is left of it. Round 9 went $5.97 over its cap because the cap only stopped new sessions from starting.
 - `grade.py` counts a probe that cannot compile against a session's code as a behavior difference, not as "no difference", and marks a session invalid when more than half of its shell commands were refused.
