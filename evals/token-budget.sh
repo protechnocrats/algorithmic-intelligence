@@ -16,16 +16,16 @@ skill = Path(sys.argv[1])
 tok = lambda *names: sum(len((skill / n).read_text()) for n in names) // 4
 lang = "languages/JAVASCRIPT-TYPESCRIPT.md"  # a typical companion file
 BUDGETS = [  # (what, tokens now, budget)
-    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 8_000),  # raised from 5,200 on 2026-10-31; to 7,000 (saved language profiles) and 7,500 (count every call at its real cost) on 2026-11-01, 8,000 (state the mode first; verifiable call changes) after v0.1.0
-    ("Report mode, required files", tok("SKILL.md", "WORKFLOW.md", "ALGORITHM-ARSENAL.md", "REPORTING.md", "languages/INDEX.md", lang), 23_000),  # raised from 17,000; to 22,000 (saved language profiles) and 23,000 (count every call) on 2026-11-01
+    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 8_500),  # raised from 5,200 on 2026-10-31; to 7,000 (saved language profiles) and 7,500 (count every call at its real cost) on 2026-11-01, 8,000 (state the mode first; verifiable call changes) after v0.1.0, 8,500 on 2026-11-02 (look for a version that keeps the behavior; load the mode file: round 8)
+    ("Report mode, required files", tok("SKILL.md", "WORKFLOW.md", "ALGORITHM-ARSENAL.md", "REPORTING.md", "languages/INDEX.md", lang), 24_000),  # raised from 17,000; to 22,000 (saved language profiles) and 23,000 (count every call) on 2026-11-01; to 24,000 on 2026-11-02 (round 8 fixes)
     ("Apply mode, added files", tok("DIFFERENTIAL-TESTING.md", "BEHAVIOR-TRAPS.md", "BENCHMARKING.md"), 11_500),  # raised from 8,500; from 10,500 after v0.1.0 (changes to calls into other systems)
-    ("Write mode, required files", tok("SKILL.md", "WRITING-NEW-CODE.md", "ALGORITHM-ARSENAL.md", "languages/INDEX.md", lang), 17_500),  # raised from 14,000; to 17,500 on 2026-11-01 (count every call)
+    ("Write mode, required files", tok("SKILL.md", "WRITING-NEW-CODE.md", "ALGORITHM-ARSENAL.md", "languages/INDEX.md", lang), 18_000),  # raised from 14,000; to 17,500 on 2026-11-01 (count every call); to 18,000 on 2026-11-02 (round 8 fixes in SKILL.md)
 ]
 langs = [p for p in (skill / "languages").glob("*.md") if p.name not in ("INDEX.md", "GENERIC.md")]
 big = max(langs, key=lambda p: len(p.read_text()))
 BUDGETS.append((f"Largest language companion ({big.relative_to(skill)})", len(big.read_text()) // 4, 3_600))  # raised from 3,000
 largest = max((p for p in skill.rglob("*.md")), key=lambda p: len(p.read_text()))
-BUDGETS.append((f"Largest single file ({largest.relative_to(skill)})", len(largest.read_text()) // 4, 8_500))  # raised from 7,000 on 2026-11-01 (DISCOVERY.md moves 13 to 19)
+BUDGETS.append((f"Largest single file ({largest.relative_to(skill)})", len(largest.read_text()) // 4, 9_000))  # raised from 7,000 on 2026-11-01 (DISCOVERY.md moves 13 to 19); to 9,000 on 2026-11-02 (SKILL.md, round 8 fixes)
 failed = False
 for what, now, budget in BUDGETS:
     status = "ok" if now <= budget else "OVER BUDGET"
