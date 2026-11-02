@@ -264,9 +264,14 @@ The skill's knowledge base is modular and organized around its workflow. The age
 | `REPORTING.md` | Report header (test baseline, scope, language profile), item format, tried and rejected, behavior changes for review, bug log, `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions, and `GENERIC.md` for building and saving a profile for any other language |
 
+## Releases and security
+
+- **Releases:** every version is tagged (`v0.1.0`, `v0.2.0`, …) and published on the [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases) page with its release notes. The notes for every version are in [CHANGELOG.md](CHANGELOG.md); how releases are made is in [RELEASING.md](RELEASING.md).
+- **Security:** to report a vulnerability, follow [SECURITY.md](SECURITY.md). Report privately through the repository's Security tab, not in a public issue.
+
 ## Contributing
 
-Contributions are welcome, particularly:
+Changes reach `main` only through pull requests that pass the repository checks, and every pull request that changes the skill adds a line to the `[Unreleased]` section of [CHANGELOG.md](CHANGELOG.md). Contributions are welcome, particularly:
 
 - New discovery methods and algorithmic techniques.
 - Language companion files.

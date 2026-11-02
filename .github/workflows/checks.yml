@@ -1,0 +1,40 @@
+# The check every pull request to main must pass (required by .github/rulesets/main-branch.json).
+# Uses no third-party actions: the repository is fetched with plain git.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  skill-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch the commit under test
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q .
+          git fetch -q --depth 1 "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "$SHA"
+          git checkout -q FETCH_HEAD
+      - name: Skill name and layout
+        run: |
+          set -euo pipefail
+          test -f skills/SKILL.md
+          grep -q '^name: algorithmic-intelligence$' skills/SKILL.md
+      - name: Token budgets (evals/token-budget.sh)
+        run: bash evals/token-budget.sh
+      - name: Eval scripts parse
+        run: |
+          set -euo pipefail
+          for f in evals/*.sh evals/claims/*.sh; do bash -n "$f"; done
+          python3 -m py_compile evals/*.py evals/probes/*.py
+      - name: CHANGELOG.md has an Unreleased section
+        run: grep -q '^## \[Unreleased\]' CHANGELOG.md

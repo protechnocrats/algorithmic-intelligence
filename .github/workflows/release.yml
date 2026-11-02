@@ -1,0 +1,37 @@
+# Publishes a GitHub release for every pushed version tag (v<major>.<minor>.<patch>),
+# with that version's section of CHANGELOG.md as the release notes. A tag whose
+# version has no CHANGELOG.md section fails here, so no release goes out without notes.
+# Uses no third-party actions: only the GitHub CLI that GitHub's runners provide.
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release with its notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          gh api "repos/$REPO/contents/CHANGELOG.md?ref=$TAG" --jq .content | base64 -d > CHANGELOG.md
+          # The section runs from "## [<version>]" to the next "## [" heading.
+          awk -v head="## [$version]" '
+            index($0, head) == 1 { on = 1; next }
+            on && index($0, "## [") == 1 { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "CHANGELOG.md at $TAG has no section '## [$version]'. Add the release notes, then tag again." >&2
+            exit 1
+          fi
+          gh release create "$TAG" --repo "$REPO" --title "$TAG" --notes-file notes.md --verify-tag
