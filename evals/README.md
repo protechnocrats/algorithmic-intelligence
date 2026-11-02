@@ -2,7 +2,7 @@
 
 These evals check whether an agent using the skill makes the right call on code where the right answer is already known. Each fixture is a small project with planted cases. Each case targets one rule: a straightforward fix, a technique whose assumptions do not hold, an ordering trap, a planted bug, a security trap, code that is not worth changing, and so on.
 
-`npx skills add` installs only `skills/algorithmic-intelligence/`, so nothing in `evals/` reaches people who install the skill.
+`npx skills add` installs only the skill in `skills/`, so nothing in `evals/` reaches people who install the skill.
 
 ## Layout
 
@@ -106,7 +106,7 @@ Write-mode cases (IDs ending in `W1`, `W2`, and so on) test new code, not existi
 
 ## Running headlessly with Claude Code
 
-`evals/run-pilot.sh` runs a fixture's report flow (report, "apply all", decline every approval) and its write-mode case through `claude -p`, and keeps every transcript, the git state, and the test results under `~/algorithmic-intelligence-evals/`. It limits tools to file reads and edits plus the fixture's test command and `git`, and caps spending per turn. Options:
+`evals/run-pilot.sh` runs a fixture's report flow (report, "apply all", decline every approval) and its write-mode case through `claude -p`, and keeps every transcript, the git state, and the test results under `~/complexity-optimizer-evals/`. It limits tools to file reads and edits plus the fixture's test command and `git`, and caps spending per turn. Options:
 
 - `--fixture ts-shop | py-logistics | java-clinic | rb-clinic`
 - `--cases report,write` and `--conditions skill,baseline`

@@ -90,11 +90,11 @@ Run `npx skills --help` to choose a specific agent or run non-interactively. Req
 
 ### Option 2: Manual install
 
-Copy the `skills/algorithmic-intelligence/` folder (the folder that contains `SKILL.md`) into your agent's skills directory:
+Copy the `skills/` folder (it contains `SKILL.md` and the files it links to) into your agent's skills directory, as a folder named `algorithmic-intelligence`:
 
 ```bash
 git clone https://github.com/protechnocrats/algorithmic-intelligence.git
-cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
+cp -r algorithmic-intelligence/skills <your-agent-skills-dir>/algorithmic-intelligence
 ```
 
 For example, Claude Code reads skills from `.claude/skills/` in a project or `~/.claude/skills/` for your user. For other agents, check their documentation for the skills directory. Keep the folder intact: `SKILL.md` links to the other files by relative path.
@@ -104,7 +104,7 @@ For example, Claude Code reads skills from `.claude/skills/` in a project or `~/
 If your agent does not support skills but reads a project instructions file (such as `AGENTS.md`), copy the folder into your repository and add a line to that file:
 
 ```markdown
-For performance, time complexity, or data-structure work, follow skills/algorithmic-intelligence/SKILL.md and the files it links to.
+For performance, time complexity, or data-structure work, follow skills/SKILL.md and the files it links to.
 ```
 
 ### Make sure it loads for new code
@@ -209,7 +209,7 @@ The skill exists to help agents make better decisions, not to encourage optimiza
 13. **Respect the project's idioms** and comment any non-obvious trick.
 14. **Prefer the language's own data structures** over its host platform's (for example, Kotlin's `ArrayDeque` over `java.util.ArrayDeque`).
 
-The full wording is in [`SKILL.md`](skills/algorithmic-intelligence/SKILL.md).
+The full wording is in [`SKILL.md`](skills/SKILL.md).
 
 ## Languages
 
@@ -275,7 +275,7 @@ Contributions are welcome, particularly:
 
 When contributing algorithmic or language-specific knowledge, document assumptions, complexity, behavioral considerations, and authoritative references, and judge each addition by whether it changes how the agent thinks, verifies, or measures, not by coverage alone.
 
-**Language companion files:** use [`languages/GENERIC.md`](skills/algorithmic-intelligence/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. A profile that the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
+**Language companion files:** use [`languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist for what to cover, follow the structure of the existing files, and add a row to the table in `languages/INDEX.md`. A profile that the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only. Cite official documentation for every complexity and ordering claim, and list it in the file's "References" section. Where a claim is implementation behavior rather than documented behavior, say so, and add a check for it under `evals/claims/` (see `evals/claims/kotlin/` for an example).
 
 **Changes to the skill itself:** put each instruction in the file where it belongs, written so that any agent, from the smallest model to the largest, can follow it without guessing. Then run `evals/token-budget.sh`: budgets make growth visible and are raised when a needed instruction exceeds them, never met by trimming instructions. New eval cases follow "Adding a case" in [`evals/README.md`](evals/README.md).
 

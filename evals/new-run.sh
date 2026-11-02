@@ -12,10 +12,10 @@ Usage: evals/new-run.sh <fixture> [--skill <dir>] [--skill-src <path>] [--dest <
   --skill <dir>   Also copy the skill into <dir> inside the run directory,
                   relative to its root (for example .claude/skills).
                   Omit it for a baseline run without the skill.
-  --skill-src <path>  Skill folder to copy (default: skills/algorithmic-intelligence
+  --skill-src <path>  Skill folder to copy (default: skills
                   in this repository). Use it to install another version.
   --dest <path>   Run directory. Default:
-                  ~/algorithmic-intelligence-evals/<fixture>-<timestamp>
+                  ~/complexity-optimizer-evals/<fixture>-<timestamp>
 EOF
 }
 
@@ -42,7 +42,7 @@ repo_dir="$(dirname "$evals_dir")"
 source_dir="$evals_dir/fixtures/$fixture"
 [ -d "$source_dir" ] || { echo "Unknown fixture: $fixture" >&2; exit 1; }
 
-dest="${dest:-$HOME/algorithmic-intelligence-evals/$fixture-$(date +%Y%m%d-%H%M%S)}"
+dest="${dest:-$HOME/complexity-optimizer-evals/$fixture-$(date +%Y%m%d-%H%M%S)}"
 case "$dest" in
   "$repo_dir"|"$repo_dir"/*) echo "The run directory must be outside this repository." >&2; exit 1 ;;
 esac
@@ -58,7 +58,7 @@ git -c user.name="Eval Fixture" -c user.email="eval@example.invalid" commit -q -
 
 if [ -n "$skill_dir" ]; then
   mkdir -p "$skill_dir"
-  src="${skill_src:-$repo_dir/skills/algorithmic-intelligence}"
+  src="${skill_src:-$repo_dir/skills}"
   # Install under the name in the skill's own SKILL.md: versions before 2026-11-01 are named complexity-optimizer.
   skill_name="$(sed -n 's/^name: *//p' "$src/SKILL.md" | head -1)"
   cp -R "$src" "$skill_dir/${skill_name:-algorithmic-intelligence}"

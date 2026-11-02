@@ -23,13 +23,16 @@ while [ $# -gt 0 ]; do
 done
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-out="${out:-$HOME/algorithmic-intelligence-evals/trigger-$(date +%Y%m%d-%H%M%S)}"
+out="${out:-$HOME/complexity-optimizer-evals/trigger-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$out/logs"
-skill_src="$repo/skills/algorithmic-intelligence"
+skill_src="$repo/skills"
 if [ -n "$skill_ref" ]; then
-  # The skill moved from skills/complexity-optimizer to skills/algorithmic-intelligence on 2026-11-01.
-  ref_path=skills/algorithmic-intelligence
-  git -C "$repo" cat-file -e "$skill_ref:$ref_path" 2>/dev/null || ref_path=skills/complexity-optimizer
+  # Where the skill lives depends on the commit: skills/ (from 2026-11-01, flat), before that
+  # skills/algorithmic-intelligence/ (briefly) or skills/complexity-optimizer/.
+  ref_path=skills
+  for p in skills skills/algorithmic-intelligence skills/complexity-optimizer; do
+    if git -C "$repo" cat-file -e "$skill_ref:$p/SKILL.md" 2>/dev/null; then ref_path=$p; break; fi
+  done
   mkdir -p "$out/skill" && git -C "$repo" archive "$skill_ref" "$ref_path" | tar -x -C "$out/skill" || exit 1
   skill_src="$out/skill/$ref_path"
 fi

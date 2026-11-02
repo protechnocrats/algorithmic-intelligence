@@ -24,7 +24,7 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
   --runs N           Runs per case and condition (default 1)
   --parallel P       Sessions at a time (default 2)
   --budget USD       Spending cap per turn, passed to --max-budget-usd (default 5)
-  --out DIR          Output directory (default ~/algorithmic-intelligence-evals/pilot-<timestamp>)
+  --out DIR          Output directory (default ~/complexity-optimizer-evals/pilot-<timestamp>)
   --instructions TEXT  Written to CLAUDE.md in each with-skill run directory and included in its
                      initial commit, as a developer would add it (for example the line the README
                      recommends for loading the skill). Baseline runs never get it.
@@ -72,7 +72,7 @@ done
 cases="${cases//ts/report}"; cases="${cases//tw1/write}"
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-out="${out:-$HOME/algorithmic-intelligence-evals/pilot-$(date +%Y%m%d-%H%M%S)}"
+out="${out:-$HOME/complexity-optimizer-evals/pilot-$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$out/logs"
 progress="$out/progress.log"
 note() { echo "$(date '+%F %T') $*" >> "$progress"; }
@@ -101,13 +101,16 @@ case "$fixture" in
 esac
 
 # Install the skill from a git ref when asked, so two versions can be compared.
-skill_src="$repo/skills/algorithmic-intelligence"
+skill_src="$repo/skills"
 skill_label="working tree at $(git -C "$repo" rev-parse --short HEAD)$(git -C "$repo" diff --quiet -- skills || echo ' (with uncommitted changes)')"
 if [ -n "$skill_ref" ]; then
   mkdir -p "$out/skill"
-  # The skill moved from skills/complexity-optimizer to skills/algorithmic-intelligence on 2026-11-01.
-  ref_path=skills/algorithmic-intelligence
-  git -C "$repo" cat-file -e "$skill_ref:$ref_path" 2>/dev/null || ref_path=skills/complexity-optimizer
+  # Where the skill lives depends on the commit: skills/ (from 2026-11-01, flat), before that
+  # skills/algorithmic-intelligence/ (briefly) or skills/complexity-optimizer/.
+  ref_path=skills
+  for p in skills skills/algorithmic-intelligence skills/complexity-optimizer; do
+    if git -C "$repo" cat-file -e "$skill_ref:$p/SKILL.md" 2>/dev/null; then ref_path=$p; break; fi
+  done
   git -C "$repo" archive "$skill_ref" "$ref_path" | tar -x -C "$out/skill" || { echo "Cannot read the skill at $skill_ref" >&2; exit 1; }
   skill_src="$out/skill/$ref_path"
   skill_label="$skill_ref ($(git -C "$repo" rev-parse --short "$skill_ref"))"
