@@ -147,23 +147,21 @@ Sessions that hit a usage limit are marked "API ERROR, session invalid" in `prog
 
 ## Next runs
 
-The most valuable runs not yet done, in order, with their commands. Each needs a spending limit that allows it; always keep `--max-total-usd`.
+The most valuable runs not yet done, in order, with their commands. Headline metrics come from coding-tier models only: Claude Sonnet and Opus. Each needs a spending limit that allows it; always keep `--max-total-usd`. Run them in the dev container with `--skip-permissions`: on a developer machine, permission refusals made a third of round 9's sessions invalid.
 
 ```bash
 line="Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code."
 
-# 1. Held-out rb-clinic, 4 more pairs (about $3.60): a defensible skill-versus-baseline rate.
-evals/run-pilot.sh --fixture rb-clinic --cases report --runs 4 --parallel 1 \
-  --model claude-haiku-5-5 --instructions "$line" --max-total-usd 4.50
+# 1. Sonnet, never tested yet: held-out rb-clinic, 5 pairs (about $3 per pair, an estimate: re-estimate from the first pair).
+evals/run-pilot.sh --fixture rb-clinic --cases report --runs 5 --parallel 1 --skip-permissions \
+  --model claude-sonnet-5-5 --instructions "$line" --max-total-usd 15
 
-# 2. The same on the default model (about $4 per pair at round 3's rates): the README's headline numbers are from it.
-evals/run-pilot.sh --fixture rb-clinic --cases report --runs 2 --parallel 1 \
-  --instructions "$line" --max-total-usd 10
-
-# 3. A second java-clinic baseline (about $0.30), and the verified-batching change before and after (J1, J3).
-evals/run-pilot.sh --fixture java-clinic --cases report --conditions baseline --runs 1 \
-  --model claude-haiku-5-5 --max-total-usd 1
+# 2. Opus, more baselines (rounds 8 and 9 have 4 valid Opus baselines in total): java-clinic, 3 pairs (about $8 per pair).
+evals/run-pilot.sh --fixture java-clinic --cases report --runs 3 --parallel 1 --skip-permissions \
+  --model claude-opus-5-5 --instructions "$line" --max-total-usd 24
 ```
+
+Grade every run on every category with `evals/grade.py` (`GRADING.md`).
 
 Another agent (Codex CLI, Gemini CLI) is not supported by `run-pilot.sh` yet: it calls `claude -p` and parses Claude Code's stream format. Supporting one means a per-agent command, allowed-tools mapping, and transcript parser.
 
