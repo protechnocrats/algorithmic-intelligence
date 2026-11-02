@@ -212,7 +212,8 @@ def reports_of(session_dir):
         if ".git" in p.parts or "node_modules" in p.parts:
             continue
         rel = p.relative_to(session_dir).as_posix()
-        if rel in ("CLAUDE.md", "README.md") or rel.startswith("skill"):
+        # The installed skill (.claude/skills/...) is not the session's output, and would reveal the condition.
+        if rel in ("CLAUDE.md", "README.md") or rel.startswith((".claude/", "skill")) or "/skills/" in f"/{rel}":
             continue
         tracked = subprocess.run(["git", "-C", str(session_dir), "ls-files", "--error-unmatch", rel], capture_output=True).returncode == 0
         if not tracked:
@@ -278,7 +279,7 @@ Return only one JSON object, with no other text:
 def run_judge(prompt, model, budget):
     with tempfile.TemporaryDirectory() as tmp:
         r = subprocess.run(["claude", "-p", "--model", model, "--output-format", "json", "--max-budget-usd", str(budget),
-                            "--disallowedTools", "Bash Edit Write Read Glob Grep WebFetch WebSearch Task"],
+                            "--disallowedTools", "Bash", "Edit", "Write", "Read", "Glob", "Grep", "WebFetch", "WebSearch", "Task"],
                            input=prompt, capture_output=True, text=True, cwd=tmp, timeout=1800)
     try:
         out = json.loads(r.stdout)
