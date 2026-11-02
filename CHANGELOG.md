@@ -17,6 +17,8 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Added
 
+- **Full grading** (evals only): `evals/GRADING.md` defines every category a round is graded on (validity, behavior safety, case outcomes, protocol, analysis, verification, measurement, report completeness, skill use, cost), and `evals/grade.py` grades every session on all of them and writes a scorecard. Judged categories use a model with a fixed rubric, validated on a planted defect. `run-pilot.sh` allows more read-only commands and gains `--skip-permissions` for disposable machines, since permission refusals of loops made 4 of round 8's 16 sessions invalid.
+
 - **Harness guards** (none are installed with the skill or add to an agent's context): `evals/check-refs.py` fails CI on broken links, file names, section names, and rule numbers in the skill; `evals/rule-cases.py` generates `docs/RULE-EVIDENCE.md`, the eval cases that test each rule, from the answer keys, and CI fails when it is out of date; `evals/check-report.py` grades a session's report files against the formats in `REPORTING.md`. `CONTRIBUTING.md` gains "Pruning rules" (a rule with no case needs a case, not deletion) and "Guards". 32 answer-key cases now name the rules they test by number.
 
 - **For contributors:** `docs/ARCHITECTURE.md` (what loads when, where each idea lives), `CONTRIBUTING.md`, issue and pull-request templates, `CODEOWNERS`, and a dev container with every toolchain the fixtures need (not yet built and tested).
@@ -28,7 +30,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Evaluation
 
-- Round 8 ([results](evals/results/2026-11-02-round8.md)), held-out Ruby project, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 5 sessions with the skill and 4 of 5 without (corrupted labels); with Opus, 0 of 3 in both, and the baseline was faster and cheaper. With the skill, Haiku held back two speedups as behavior changes where equivalent versions exist.
+- Round 8 ([results](evals/results/2026-11-02-round8.md)), held-out Ruby project, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 3 valid sessions with the skill and 4 of 4 without (corrupted labels); with Opus, 0 of 2 and 0 of 3 (4 sessions invalid: harness permission refusals), and the baseline was faster and cheaper. With the skill, Haiku held back two speedups as behavior changes where equivalent versions exist.
 - Round 7 ([results](evals/results/2026-11-01-round7.md)), Haiku 5.5: on the held-out Ruby project, neither skill session changed behavior while the baseline corrupted user-visible labels; on the Java project, the baseline's "optimization" became 3.5 times slower on attacker-chosen keys, which none of 11 skill sessions did. Write mode loaded the skill with the README's recommended project-instruction line.
 
 ## [0.1.0] - 2026-11-01

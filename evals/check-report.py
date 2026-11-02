@@ -122,11 +122,12 @@ def check(session):
     return out, items
 
 
-failed = False
-for session in sys.argv[1:]:
-    problems, items = check(session)
-    for p in problems:
-        print(f"  {p}")
-    print(f"{session}: {items} entries checked, {len(problems)} missing")
-    failed |= bool(problems)
-sys.exit(1 if failed else 0)
+if __name__ == "__main__":
+    failed = False
+    for session in sys.argv[1:]:
+        problems, items = check(session)
+        for p in problems:
+            print(f"  {p}")
+        print(f"{session}: {items} entries checked, {len(problems)} missing")
+        failed |= bool(problems)
+    sys.exit(1 if failed else 0)

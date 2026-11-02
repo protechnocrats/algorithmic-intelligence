@@ -1,4 +1,6 @@
-# Scorecard
+# Scorecard (manual)
+
+For runs `evals/grade.py` cannot read, such as an agent the runner does not drive. Otherwise use `grade.py`, which fills in every category of [GRADING.md](GRADING.md) automatically.
 
 Copy this file for each evaluation session. Score each case **P** (pass), **F** (fail), or **~** (partial), and note why.
 
