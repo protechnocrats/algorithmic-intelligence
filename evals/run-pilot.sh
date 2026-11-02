@@ -13,7 +13,8 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
                           [--max-total-usd USD] [--effort LEVEL] [--skill-src DIR] [--stall-seconds S]
                           [--allow-subagents]
 
-  --fixture NAME     ts-shop (default), py-logistics, java-clinic, or rb-clinic
+  --fixture NAME     ts-shop (default), py-logistics, java-clinic, rb-clinic, or, report flow only,
+                     kotlin-shop, swift-shop, c-shop, rust-shop
                      (java-clinic needs JAVA_HOME set to a full JDK, or javac on PATH)
   --cases LIST       report (report, apply all, decline) and write (the write-mode case);
                      default both. The older names ts and tw1 still work.
@@ -97,8 +98,29 @@ case "$fixture" in
     test_cmd="./test.sh"
     fixture_tools=("Bash(./test.sh)" "Bash(./test.sh:*)" "Bash(ruby:*)")
     write_prompt="Add a method Clinic::LabAlerts.repeat_tests(results, window_days) in a new file lib/clinic/lab_alerts.rb. results is an array of lab results in the order they arrived; each responds to patient_id, test_code and taken_on (a Date). Return, in arrival order, the results for which an earlier-arrived result has the same patient_id and test_code and a taken_on within window_days days of this one's, before or after. Add tests." ;;
+  # Report flow only: these fixtures have no write-mode case.
+  kotlin-shop)
+    test_cmd="./gradlew test"
+    fixture_tools=("Bash(./gradlew test)" "Bash(./gradlew test:*)" "Bash(./gradlew:*)" "Bash(java:*)")
+    write_prompt="" ;;
+  swift-shop)
+    test_cmd="swift test"
+    fixture_tools=("Bash(swift test)" "Bash(swift test:*)" "Bash(swift build:*)" "Bash(swift:*)")
+    write_prompt="" ;;
+  c-shop)
+    test_cmd="./test.sh"
+    fixture_tools=("Bash(./test.sh)" "Bash(./test.sh:*)" "Bash(cc:*)" "Bash(gcc:*)" "Bash(clang:*)" "Bash(make:*)")
+    write_prompt="" ;;
+  rust-shop)
+    test_cmd="cargo test"
+    fixture_tools=("Bash(cargo test)" "Bash(cargo test:*)" "Bash(cargo build:*)" "Bash(cargo:*)")
+    write_prompt="" ;;
   *) echo "No pilot configuration for fixture: $fixture" >&2; exit 1 ;;
 esac
+
+if [ -z "$write_prompt" ] && [[ " $cases " == *" write "* ]]; then
+  echo "$fixture has no write-mode case; use --cases report" >&2; exit 1
+fi
 
 # Install the skill from a git ref when asked, so two versions can be compared.
 skill_src="$repo/skills"
@@ -176,7 +198,8 @@ session() {
       sleep 15
       local agent age
       agent="$(pgrep -P "$runner" | head -1)"
-      age=$(( $(date +%s) - $(stat -c %Y "$transcript" 2>/dev/null || date +%s) ))
+      # File modification time through Python: stat's options differ between Linux and macOS.
+      age=$(( $(date +%s) - $(python3 -c 'import os, sys; print(int(os.path.getmtime(sys.argv[1])))' "$transcript" 2>/dev/null || date +%s) ))
       if [ "$age" -ge "$stall" ] && [ -n "$agent" ] && [ -z "$(pgrep -P "$agent")" ]; then
         note "$name: turn $turn ($label) STALLED (no output for ${age}s, no tool running), stopping it"
         kill "$runner" "$agent" 2>/dev/null
