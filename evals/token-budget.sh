@@ -16,9 +16,9 @@ skill = Path(sys.argv[1])
 tok = lambda *names: sum(len((skill / n).read_text()) for n in names) // 4
 lang = "languages/JAVASCRIPT-TYPESCRIPT.md"  # a typical companion file
 BUDGETS = [  # (what, tokens now, budget)
-    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 7_500),  # raised from 5,200 on 2026-10-31; to 7,000 (saved language profiles) and 7,500 (count every call at its real cost) on 2026-11-01
+    ("SKILL.md, loaded on every trigger", tok("SKILL.md"), 8_000),  # raised from 5,200 on 2026-10-31; to 7,000 (saved language profiles) and 7,500 (count every call at its real cost) on 2026-11-01, 8,000 (state the mode first; verifiable call changes) after v0.1.0
     ("Report mode, required files", tok("SKILL.md", "WORKFLOW.md", "ALGORITHM-ARSENAL.md", "REPORTING.md", "languages/INDEX.md", lang), 23_000),  # raised from 17,000; to 22,000 (saved language profiles) and 23,000 (count every call) on 2026-11-01
-    ("Apply mode, added files", tok("DIFFERENTIAL-TESTING.md", "BEHAVIOR-TRAPS.md", "BENCHMARKING.md"), 10_500),  # raised from 8,500
+    ("Apply mode, added files", tok("DIFFERENTIAL-TESTING.md", "BEHAVIOR-TRAPS.md", "BENCHMARKING.md"), 11_500),  # raised from 8,500; from 10,500 after v0.1.0 (changes to calls into other systems)
     ("Write mode, required files", tok("SKILL.md", "WRITING-NEW-CODE.md", "ALGORITHM-ARSENAL.md", "languages/INDEX.md", lang), 17_500),  # raised from 14,000; to 17,500 on 2026-11-01 (count every call)
 ]
 langs = [p for p in (skill / "languages").glob("*.md") if p.name not in ("INDEX.md", "GENERIC.md")]

@@ -12,6 +12,18 @@ Passing differential tests are strong evidence, not proof. They show equivalence
 
 If the original depends on collaborators (a repository, a clock, a network client), give both versions the same fakes, and record every call each version makes so calls can be compared.
 
+### Changes to calls into other systems
+
+When the optimization changes how the code calls a collaborator (batching requests, fetching each record once instead of per use, caching a lookup, combining writes), the calls differ by design, so "record every call and compare" fails by construction. That does not make the change unverifiable. Verify it this way:
+
+1. **Build a fake from the collaborator's documented contract,** not from what the current code happens to use. Implement every documented behavior the new code relies on: batch-size limits, what happens to missing or invalid items, partial failure (all-or-nothing or per item), ordering, and which errors are raised when. Put the limits in the fake as checks, so a call that breaks one fails the test.
+2. **Compare everything callers observe,** old against new on the same fake: return values, exceptions (type, and which item caused them, for example the first missing record in the original order), state, and the writes and other effects that reach the collaborator.
+3. **Compare the requests as sets, not sequences:** the new code must ask for the same logical items (the same records read, the same writes made, nothing extra and nothing missing), within the documented limits. Check the call count you expect too, since it is the point of the change.
+4. **Inject failures:** make the fake return a missing item, an invalid item, and an error at the first, a middle, and the last position, and compare the outcomes.
+5. **State the assumption:** the result holds for a collaborator that behaves as its documentation says. List any behavior the change depends on that the documentation does not settle (for example, whether one batch read sees the same snapshot as separate reads, or whether timing between calls matters to the system); that part alone is unverified and goes to the developer under rule 5.
+
+A change verified this way is at least level 1 ("Verification levels"), not unverified equivalence.
+
 ### When the original cannot be copied
 
 Sometimes a verbatim copy will not compile or will not behave like the original: it reads private state of its class, depends on native resources, or relies on objects that a framework creates and manages. Do not give up on the comparison, and do not silently compare against something weaker. Use the first option that works:
@@ -95,7 +107,7 @@ These checks hold the new code to the contract, not just to the old code's outpu
 A differential test that passes is evidence only if it could have failed. Before you count it, show that it can:
 
 - **Plant a difference (mutation testing).** In a temporary copy of the code under test (the original, before the new version exists; the new version, once it does), make one small change at a time that the test must catch: an off-by-one at a boundary, a reversed tie order, a dropped edge case (empty input, a duplicate, `NaN`), a changed exception type, a skipped side effect. Also try the tempting wrong rewrite you rejected during analysis (for example the unstable sort, or the version without the wraparound). Run the differential test against each mutant. A mutant it does not catch marks a property the test cannot verify: add inputs or comparisons until it is caught, or report that property as unverified. Mutants are never committed; delete them when done.
-- **Compare the original with itself (an A/A run).** Run the differential test with the original on both sides. It must pass. If it fails, something nondeterministic (time, randomness, hash order, concurrency) is being compared: control it (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison until it passes.
+- **Compare the original with itself (an A/A run) when the behavior can vary between runs:** the code or the test reads the time, uses randomness, depends on hash or iteration order, runs concurrently, or calls an external system. Run the differential test with the original on both sides. It must pass. For code that is deterministic on its inputs, write "A/A not needed: deterministic" instead of running it. If it fails, something nondeterministic (time, randomness, hash order, concurrency) is being compared: control it (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison until it passes.
 
 Record which mutants were caught in "Reporting verification."
 
@@ -107,7 +119,7 @@ Treat an optimization as verified (level 1 or higher) only when all of these hol
 2. Edge cases and generated inputs both pass.
 3. The existing test suite passes, run on the final version of the code.
 4. Every trap in `BEHAVIOR-TRAPS.md` that could apply is either covered by a test or ruled out by analysis you can state in one sentence.
-5. The test passed its own checks ("Check the check"): the A/A run passes, and for each observable compared, at least one planted difference was caught.
+5. The test passed its own checks ("Check the check"): for each observable compared, at least one planted difference was caught, and the A/A run passes where the behavior can vary between runs.
 
 If any part cannot be checked at any level (real database ordering, platform rendering, timing, hardware, or thread interleavings with no concurrency checker available), it is not verified. Follow rule 5: ask the developer, and if they accept, add the `NEEDS-TESTING` marker from `REPORTING.md`. If a differential test shows that the outputs differ and the difference is intended, it is a behavior change, not a test to relax: document it for review and use the `BEHAVIOR-CHANGE` marker only after approval.
 
@@ -118,7 +130,7 @@ For every applied item, report:
 - **Level reached:** 1 to 4 from "Verification levels," with the domain and bounds for level 3 and the tool for levels 3 and 4.
 - **Inputs and properties covered:** the edge-case categories, the number of generated cases, the seeds, the size range, and which observables were compared (return value, input mutation, exceptions, side effects, order).
 - **Tests and tools actually run:** the commands or test names, and their results. Report only what actually ran.
-- **Check of the check:** the mutants tried and which were caught, and whether the A/A run passed.
+- **Check of the check:** the mutants tried and which were caught, and whether the A/A run passed (or "not needed: deterministic").
 - **Unverified behavior:** anything the tests could not cover, and why.
 
 If tests could not be run at all (no test framework, an environment that cannot execute them, a timeout), say so. The item is then unverified: follow rule 5, and do not present it as a confirmed win.
