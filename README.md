@@ -12,6 +12,8 @@ Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding a
 
 Sometimes the best engineering decision is to leave the code alone, and the skill says so when it is.
 
+**See it first:** [`examples/`](examples/) has a real, unedited report from one session, and one item compared with and without the skill.
+
 ## Quick start
 
 ```bash

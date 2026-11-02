@@ -13,6 +13,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 - **The A/A run of a differential test is required only when the behavior can vary between runs** (time, randomness, hash or iteration order, concurrency, external systems); deterministic code records "not needed".
 - **The end-to-end share is its own field** in the apply results and part of each item's prediction, since sessions often left it out.
 
+### Added
+
+- `examples/`: a real report-and-apply run on the Java fixture, unedited, and one item compared with and without the skill (hostile input on a hash map), linked from the top of the README.
+
 ### Evaluation
 
 - Round 7 ([results](evals/results/2026-11-01-round7.md)), Haiku 5.5: on the held-out Ruby project, neither skill session changed behavior while the baseline corrupted user-visible labels; on the Java project, the baseline's "optimization" became 3.5 times slower on attacker-chosen keys, which none of 11 skill sessions did. Write mode loaded the skill with the README's recommended project-instruction line.
