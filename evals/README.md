@@ -29,6 +29,10 @@ evals/
 └── trigger-test.sh    ← checks which prompts load the skill
 ```
 
+## Testing the harness for free
+
+`evals/selftest.sh` checks the runner with a stub agent instead of the real CLI, so it needs no API key and costs nothing: every runnable fixture sets up and runs its tests, the `CLAUDE.md` line lands only in with-skill runs, the cost cap stops sessions, and the stall watchdog stops a stuck turn without ending the batch (about 10 minutes). `evals/selftest.sh --probes` also checks the Java and Ruby grading probes against the correct and wrong rewrites in `probes/selftest/` (about 30 minutes more). Run it after changing any eval script.
+
 ## Requirements
 
 - **kotlin-shop:** a full JDK 17 or newer (with `javac`) and network access for the first Gradle build. If your default Java has no compiler, point `JAVA_HOME` at a full JDK, for example the one bundled with Android Studio (`<android-studio>/jbr`).
@@ -39,6 +43,8 @@ evals/
 - **py-logistics:** Python 3.10 or newer; standard library only. Since `languages/PYTHON.md` was added (after round 3), runs load it; rounds 1 to 3 ran with `languages/GENERIC.md`.
 - **java-clinic:** a full JDK 17 or newer, with `javac` on `PATH` or `JAVA_HOME` pointing at it (export `JAVA_HOME` before starting the agent or `run-pilot.sh`). No build tool and no dependencies: `test.sh` compiles with `javac` and runs a minimal test runner.
 - **rb-clinic:** Ruby 3.2 or newer; standard library only (minitest ships with Ruby). There is no Ruby companion file, so this fixture exercises `languages/GENERIC.md`.
+
+**Platform:** the scripts need Bash, Git, Python 3, and GNU-compatible `timeout` (on macOS, install GNU coreutils). The dev container in `.devcontainer/` has everything, including Swift; it has not yet been built and tested, so the first build may need small fixes.
 
 Check that the fixture is green before you start:
 
@@ -108,7 +114,7 @@ Write-mode cases (IDs ending in `W1`, `W2`, and so on) test new code, not existi
 
 `evals/run-pilot.sh` runs a fixture's report flow (report, "apply all", decline every approval) and its write-mode case through `claude -p`, and keeps every transcript, the git state, and the test results under `~/complexity-optimizer-evals/`. It limits tools to file reads and edits plus the fixture's test command and `git`, and caps spending per turn. Options:
 
-- `--fixture ts-shop | py-logistics | java-clinic | rb-clinic`
+- `--fixture ts-shop | py-logistics | java-clinic | rb-clinic`, or, report flow only, `kotlin-shop | swift-shop | c-shop | rust-shop` (configured but not yet run; kotlin-shop's first Gradle build needs network access)
 - `--cases report,write` and `--conditions skill,baseline`
 - `--skill-ref <commit>` installs the skill as it was at that commit, to compare versions
 - `--model <model>` runs another model
@@ -138,6 +144,28 @@ Sessions that hit a usage limit are marked "API ERROR, session invalid" in `prog
 `evals/token-budget.sh` checks the skill's required loading per mode against budgets without running an agent. Run it after every change to the skill.
 
 `evals/claims/kotlin-claims.sh` checks claims in `languages/KOTLIN.md` that the official documentation does not settle (IDs `K-P*` while pending; none are pending as of 2026-11-01), plus claims already confirmed by a run (`K-C*`, regression checks). It prints one `CLAIM` line per check and fails when a claim is wrong. After each run, update `KOTLIN.md` from the `K-P*` results: state confirmed behavior plainly (noting it is undocumented where that matters) and move the check to the confirmed section. No agent is involved and it costs nothing, so run it whenever the Kotlin version or `KOTLIN.md` changes.
+
+## Next runs
+
+The most valuable runs not yet done, in order, with their commands. Each needs a spending limit that allows it; always keep `--max-total-usd`.
+
+```bash
+line="Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code."
+
+# 1. Held-out rb-clinic, 4 more pairs (about $3.60): a defensible skill-versus-baseline rate.
+evals/run-pilot.sh --fixture rb-clinic --cases report --runs 4 --parallel 1 \
+  --model claude-haiku-5-5 --instructions "$line" --max-total-usd 4.50
+
+# 2. The same on the default model (about $4 per pair at round 3's rates): the README's headline numbers are from it.
+evals/run-pilot.sh --fixture rb-clinic --cases report --runs 2 --parallel 1 \
+  --instructions "$line" --max-total-usd 10
+
+# 3. A second java-clinic baseline (about $0.30), and the verified-batching change before and after (J1, J3).
+evals/run-pilot.sh --fixture java-clinic --cases report --conditions baseline --runs 1 \
+  --model claude-haiku-5-5 --max-total-usd 1
+```
+
+Another agent (Codex CLI, Gemini CLI) is not supported by `run-pilot.sh` yet: it calls `claude -p` and parses Claude Code's stream format. Supporting one means a per-agent command, allowed-tools mapping, and transcript parser.
 
 ## Getting meaningful results
 

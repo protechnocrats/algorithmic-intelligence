@@ -125,6 +125,15 @@ Ask your agent: "Which skills do you have for optimizing time complexity?" It sh
 
 To update, re-run the install command, or `git pull` your clone and copy the folder again.
 
+**A specific release.** Every release is tagged (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). To install one, point the Skills CLI at the tag's `skills/` folder:
+
+```bash
+npx skills add https://github.com/protechnocrats/algorithmic-intelligence/tree/v0.1.0/skills \
+  --skill algorithmic-intelligence
+```
+
+The Skills CLI documents folder URLs like this, not tags as such; it installed `v0.1.0` correctly when tested. For a manual install, `git clone --branch v0.1.0 https://github.com/protechnocrats/algorithmic-intelligence.git` and copy `skills/` as above.
+
 ## What happens in a run
 
 Report and apply mode:
@@ -265,6 +274,13 @@ The skill's knowledge base is modular and organized around its workflow. The age
 | `BEHAVIOR-TRAPS.md` | Rewrites that look equivalent but are not: ordering, aliasing and identity, removed work, numerical, machine-learning, image, geometry, simulation, hidden-input, concurrency, cancellation, and security traps |
 | `REPORTING.md` | Report header (test baseline, scope, language profile), item format, tried and rejected, behavior changes for review, bug log, `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions, and `GENERIC.md` for building and saving a profile for any other language |
+
+## For contributors
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): what each part of the repository does, what the agent loads in each mode, and where each idea lives.
+- [CONTRIBUTING.md](CONTRIBUTING.md): how changes reach `main`, and the rules for changing the skill.
+- `.devcontainer/`: every toolchain the evaluation fixtures need (JDK, Ruby, Node, Rust, Python, Swift), and a sandbox for running agent sessions.
+- [evals/results/README.md](evals/results/README.md): every evaluation round so far, summarized.
 
 ## Releases and security
 

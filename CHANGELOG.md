@@ -15,6 +15,11 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Added
 
+- **For contributors:** `docs/ARCHITECTURE.md` (what loads when, where each idea lives), `CONTRIBUTING.md`, issue and pull-request templates, `CODEOWNERS`, and a dev container with every toolchain the fixtures need (not yet built and tested).
+- **Free self-tests:** `evals/selftest.sh` tests the eval runner with a stub agent (no API, no cost); `--probes` also checks the Java and Ruby grading probes against committed correct and wrong rewrites.
+- **More runnable fixtures:** `run-pilot.sh` now runs the report flow on kotlin-shop, swift-shop, c-shop, and rust-shop; its stall watchdog no longer relies on Linux-only `stat` options.
+- **Results overview:** `evals/results/README.md` summarizes every round and each clinic case's history.
+- **Installing a specific release** is documented in the README (the tag's `skills/` folder URL).
 - `examples/`: a real report-and-apply run on the Java fixture, unedited, and one item compared with and without the skill (hostile input on a hash map), linked from the top of the README.
 
 ### Evaluation

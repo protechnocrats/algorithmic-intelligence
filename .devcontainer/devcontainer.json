@@ -1,0 +1,22 @@
+{
+  "name": "algorithmic-intelligence",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/devcontainers/features/rust:1": { "version": "stable" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "vscjava.vscode-java-pack",
+        "Shopify.ruby-lsp",
+        "rust-lang.rust-analyzer",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+name: Idea or new technique
+description: A new technique, discovery method, language file, or evaluation case.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: How it changes what the agent does
+      description: Which decision it improves (thinking, verifying, or measuring), and where an agent goes wrong today without it.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sources or evidence
+      description: References, measurements, or a case where it matters.
