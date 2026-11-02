@@ -17,6 +17,8 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Added
 
+- **Harness guards** (none are installed with the skill or add to an agent's context): `evals/check-refs.py` fails CI on broken links, file names, section names, and rule numbers in the skill; `evals/rule-cases.py` generates `docs/RULE-EVIDENCE.md`, the eval cases that test each rule, from the answer keys, and CI fails when it is out of date; `evals/check-report.py` grades a session's report files against the formats in `REPORTING.md`. `CONTRIBUTING.md` gains "Pruning rules" (a rule with no case needs a case, not deletion) and "Guards". 32 answer-key cases now name the rules they test by number.
+
 - **For contributors:** `docs/ARCHITECTURE.md` (what loads when, where each idea lives), `CONTRIBUTING.md`, issue and pull-request templates, `CODEOWNERS`, and a dev container with every toolchain the fixtures need (not yet built and tested).
 - **Free self-tests:** `evals/selftest.sh` tests the eval runner with a stub agent (no API, no cost); `--probes` also checks the Java and Ruby grading probes against committed correct and wrong rewrites.
 - **More runnable fixtures:** `run-pilot.sh` now runs the report flow on kotlin-shop, swift-shop, c-shop, and rust-shop; its stall watchdog no longer relies on Linux-only `stat` options.

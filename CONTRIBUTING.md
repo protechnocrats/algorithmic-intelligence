@@ -24,6 +24,19 @@ Thank you for helping. This project is a skill (Markdown instructions that codin
 - **Run `evals/token-budget.sh`.** If a needed instruction exceeds a budget, raise the budget in the script with the reason. Never shorten or move instructions to fit.
 - **Measure behavior changes.** A change meant to alter what agents do should be tested before and after on a tuning fixture (see `evals/README.md`), never tuned on a held-out fixture.
 
+## Pruning rules
+
+Every line of `skills/SKILL.md` is loaded on every run, so a rule there must earn its place. [docs/RULE-EVIDENCE.md](docs/RULE-EVIDENCE.md) lists the eval cases that test each rule. It is generated from the "Rules tested" column of the answer keys by `evals/rule-cases.py`, and CI fails when it is out of date, so it cannot drift from the cases.
+
+- **A rule with no case needs a case, not deletion.** An empty row means the rule has not been tested yet, not that it does nothing.
+- **Remove or move a rule only after a before-and-after run** on a tuning fixture shows the same results without it, and only with the maintainer's approval.
+- **This applies to `SKILL.md`.** Technique files, `DISCOVERY.md`, and language files load only when a step routes to them; they cover code no eval reaches (kernels, databases, compilers) and are not pruned for lack of a case.
+- When you add a case, name the rules it tests, by number, in its answer key.
+
+## Guards
+
+A written rule is a request; a script is a check. Before adding a guard to the skill (a script the agent must run), measure the failure it would catch: `evals/check-report.py` grades a session's reports against the formats in `REPORTING.md`. Add a guard to the skill only for a failure that keeps happening across sessions, since its instruction is loaded on every run. CI keeps the skill itself consistent: `evals/check-refs.py` fails on links, file names, section names, and rule numbers that no longer exist.
+
 ## Language companion files
 
 Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist, follow the structure of the existing files, and add a row to `skills/languages/INDEX.md`. A profile the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only, not frameworks. Cite official documentation for every complexity and ordering claim. Where a claim is implementation behavior rather than documented behavior, say so, and add a check under `evals/claims/` (see `evals/claims/kotlin/`).
@@ -34,7 +47,7 @@ Follow "Adding a case" in [evals/README.md](evals/README.md). Every case states,
 
 ## Running things
 
-- **Free:** `evals/token-budget.sh`, `evals/selftest.sh` (the harness, with a stub agent), `evals/selftest.sh --probes` (the graders), the fixtures' own test suites, `evals/claims/kotlin-claims.sh`.
+- **Free:** `evals/check-refs.py`, `evals/rule-cases.py`, `evals/check-report.py <session directory>`, `evals/token-budget.sh`, `evals/selftest.sh` (the harness, with a stub agent), `evals/selftest.sh --probes` (the graders), the fixtures' own test suites, `evals/claims/kotlin-claims.sh`.
 - **Costs money:** `evals/run-pilot.sh` and `evals/trigger-test.sh` start real agent sessions. Always pass `--max-total-usd`, and read [SECURITY.md](SECURITY.md) on running them safely.
 - **Toolchains:** the dev container in `.devcontainer/` has the JDK, Ruby, Node, Rust, Python, and Swift the fixtures need.
 

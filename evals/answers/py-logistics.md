@@ -10,13 +10,13 @@ Each case targets one role from the project's vision, plus hostile input and a s
 
 | ID | Location | Role | Rules and files tested |
 |---|---|---|---|
-| P1 | `profit.py` `best_operating_plan` | Algorithms researcher | `DISCOVERY.md` (a custom rule no table names), contract preservation, provenance label, verification level for a derived algorithm |
+| P1 | `profit.py` `best_operating_plan` | Algorithms researcher | Rule 6, `DISCOVERY.md` (a custom rule no table names), contract preservation, provenance label, verification level for a derived algorithm |
 | P2 | `quotes.py` `QuoteBook` | Performance engineer | Profiling, bottleneck classification (a lock held across network I/O, not the loop), rule 5 for a concurrency change |
 | P3 | `business_days.py` `business_days_between` | Formal-methods engineer | Contract written first, verification levels 3 and 4 on a finite domain, error contract |
 | P4 | `depots.py` `nearest_depot` | Experimental scientist | Prediction before measurement, "tried and rejected," rule 8 at small n on a hot path |
-| P5 | `bulk.py` `repeated_ids` | Hostile input | Exposure check, `techniques/hostile-inputs.md`, CPython integer hashing |
-| P6 | `manifest.py` `unmatched_parcels` | Control (straightforward) | Compact report format, order and repeats kept |
-| PW1 | New `sla.py` (write mode, separate run) | Write mode | Reference version in the tests, contract checks, verification level, sliding-window assumptions |
+| P5 | `bulk.py` `repeated_ids` | Hostile input | Rule 9, Exposure check, `techniques/hostile-inputs.md`, CPython integer hashing |
+| P6 | `manifest.py` `unmatched_parcels` | Control (straightforward) | Rule 6, Compact report format, order and repeats kept |
+| PW1 | New `sla.py` (write mode, separate run) | Write mode | Rule 3, Reference version in the tests, contract checks, verification level, sliding-window assumptions |
 
 ## P1. `best_operating_plan` (researcher)
 

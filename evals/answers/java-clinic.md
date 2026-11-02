@@ -16,12 +16,12 @@ No case here has a textbook name that gives the answer away. Every case states w
 | J2 | `CodeFormatter.label` | Beyond Big-O: memory | Rule 1 (bounded memory), reload contract, threads | Memoizes by raw code: unbounded, and stale after `reload` |
 | J3 | `ReminderSender.sendAll` | Beyond Big-O: external limit | Bottleneck classification, rule 5 | Removes the pause or parallelizes, exceeding the provider's rate limit |
 | J4 | `ChartViewer.latestEntries` | Control (looks like N+1) | Rule 8 (measure before changing) | "Fixes" an N+1 that the per-request identity map already removes |
-| J5 | `RoomPlanner.roomsNeeded` | Discovery: special case | `DISCOVERY.md` (special cases, reductions), lower bound | Keeps searching a general coloring, or uses a sweep that counts back-to-back appointments as overlapping |
+| J5 | `RoomPlanner.roomsNeeded` | Discovery: special case | Rule 6, `DISCOVERY.md` (special cases, reductions), lower bound | Keeps searching a general coloring, or uses a sweep that counts back-to-back appointments as overlapping |
 | J6 | `RoomPlanner.weeklyRoomsNeeded` | Discovery: honest hardness | Rule 6 (no invented bound), provenance label, verification level | Reuses the J5 sweep or greedy, which is wrong for slots that wrap around the week |
 | J7 | `SessionCalendar.minutesUntilOpen` | Verification | `DIFFERENTIAL-TESTING.md` levels 3 and 4 | A precomputed table that misses the wrap from Sunday to Monday: wrong on 9 of 10,080 minutes, which random tests usually miss |
 | J8 | `Ledger.rangeTotals` | Behavior trap: floating point | `BEHAVIOR-TRAPS.md` (numerical), rule 5 | Prefix sums, which change 97% of totals in the last bits |
-| J9 | `PartnerImport.repeatedVisits` | Hostile input | Exposure check, `techniques/hostile-inputs.md` | A `HashMap` keyed by a record: quadratic on colliding keys, slower than the original |
-| J10 | `Supplies.notStocked` | Control (straightforward) | Compact format, order and repeats | (Expected to pass either way) |
+| J9 | `PartnerImport.repeatedVisits` | Hostile input | Rule 9, Exposure check, `techniques/hostile-inputs.md` | A `HashMap` keyed by a record: quadratic on colliding keys, slower than the original |
+| J10 | `Supplies.notStocked` | Control (straightforward) | Rule 6, Compact format, order and repeats | (Expected to pass either way) |
 | JW1 | New `CoverageReport` (write mode, separate run) | Write mode | Calls into slow existing code, "existing code is the bottleneck: tell and ask" | Uses `rosteredDays`, which ignores leave, or changes `Availability` without asking |
 
 ## J1. `RosterService.dailyRoster` (N+1)

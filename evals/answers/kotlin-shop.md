@@ -13,13 +13,13 @@ Sizes come from `Jobs.kt` (`Volumes`). Bugs planted: K4, K5, K6.
 | K5 | `Reports.kt` `ordersFromActiveCustomers` | 4 (bug preserved), duplicate-key trap |
 | K6 | `Catalog.kt` `allCategoryNames` | 4 (bug removed as a side effect), 14 |
 | K7 | `Shipping.kt` `ShippingCalculator.quote` | Hidden inputs, caching |
-| K8 | `Tokens.kt` `tokensMatch` | Security trap |
+| K8 | `Tokens.kt` `tokensMatch` | Rule 9, Security trap |
 | K9 | `Calendar.kt` `workingDayLabels` | 8 (not worth changing) |
 | K10 | `OrderSummary.kt` `customerNamesForOrders` | 10 (N+1), 5 (unverifiable behavior) |
 | K11 | `Warehouse.kt` `shortestHops` | 14 (Kotlin `ArrayDeque`) |
 | K12 | `Bestsellers.kt` `topSellers` | 6 (nontrivial), stability trap, 14 fallback |
-| K13 | `Crates.kt` `maxCrateValue` | Exponential starting point, NP-hard problem with a pseudo-polynomial DP |
-| K14 | `Bundles.kt` `countBundles` | Cubic starting point, conjectured lower bound (3SUM) |
+| K13 | `Crates.kt` `maxCrateValue` | Rule 6, Exponential starting point, NP-hard problem with a pseudo-polynomial DP |
+| K14 | `Bundles.kt` `countBundles` | Rule 6, Cubic starting point, conjectured lower bound (3SUM) |
 | K15 | `Dormancy.kt` `DormantCustomersReport.run` | Reachability (rule 8): reached only through `ServiceLoader` registration, no direct caller |
 
 ## K1. `blockedUsers`

@@ -9,12 +9,12 @@ Sizes come from `Sources/Shop/Volumes.swift`. Bugs planted: S5, S9.
 | ID | Location | Rules tested |
 |---|---|---|
 | S1 | `Routing.swift` `shortestHops` | `removeFirst` cost, 7 (`Deque` is a dependency) |
-| S2 | `Text.swift` `characterPositions` | String index offsetting, `Character` semantics |
-| S3 | `Tags.swift` `uniqueTags` | `Set` iteration order is randomized per process |
-| S4 | `Loyalty.swift` `streakPoints` | Closed form, overflow traps |
+| S2 | `Text.swift` `characterPositions` | Rule 6, String index offsetting, `Character` semantics |
+| S3 | `Tags.swift` `uniqueTags` | Rule 3, `Set` iteration order is randomized per process |
+| S4 | `Loyalty.swift` `streakPoints` | Rule 6, Closed form, overflow traps |
 | S5 | `Ratings.swift` `averageRating` | 4 (bug in code that cannot be optimized) |
 | S6 | `Orders.swift` `paidOrderIDs` | 6 (straightforward), `reduce` with array concatenation |
-| S7 | `Orders.swift` `sortedByPriority` | Sort stability (documented as guaranteed), ties tested |
+| S7 | `Orders.swift` `sortedByPriority` | Rule 3, Sort stability (documented as guaranteed), ties tested |
 | S8 | `Statements.swift` `formattedStatementDates` | Hidden inputs (locale, time zone) |
 | S9 | `Catalog.swift` `allCategoryNames` | 4 (bug removed as a side effect) |
 | S10 | `Units.swift` `unitLabels` | 8 (not worth changing) |
