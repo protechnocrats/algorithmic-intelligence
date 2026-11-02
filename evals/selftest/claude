@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Stand-in for the claude CLI, for testing the eval harness without an API or cost.
+# Prints a minimal stream-json transcript with a reported cost of $0.60 per turn.
+# STUB_STALL=1 makes "Apply" turns hang with no output and no child process,
+# to test the stall watchdog. Used by evals/selftest.sh; never install it on PATH yourself.
+echo '{"type":"system","subtype":"init"}'
+if [ "${STUB_STALL:-0}" = 1 ] && [[ "$2" == Apply* ]]; then exec sleep 300; fi
+echo '{"type":"result","subtype":"success","is_error":false,"num_turns":1,"total_cost_usd":0.6,"usage":{"output_tokens":0}}'
