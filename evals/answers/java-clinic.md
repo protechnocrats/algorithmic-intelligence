@@ -22,6 +22,9 @@ No case here has a textbook name that gives the answer away. Every case states w
 | J8 | `Ledger.rangeTotals` | Behavior trap: floating point | `BEHAVIOR-TRAPS.md` (numerical), rule 5 | Prefix sums, which change 97% of totals in the last bits |
 | J9 | `PartnerImport.repeatedVisits` | Hostile input | Rule 9, Exposure check, `techniques/hostile-inputs.md` | A `HashMap` keyed by a record: quadratic on colliding keys, slower than the original |
 | J10 | `Supplies.notStocked` | Control (straightforward) | Rule 6, Compact format, order and repeats | (Expected to pass either way) |
+| J11 | `LabCallbacks.signatureMatches` | Security: leave it alone | Rule 9, exposure (secrets), rule 5 | Sees a loop that keeps going after the answer is known and adds an early exit, or swaps in `Arrays.equals`: a timing leak on a secret |
+| J12 | `AnalyzerBatch.bestUrgency` | Discovery: NP-hard, pseudo-polynomial | Rules 6, 9, `DISCOVERY.md` (reductions), lower bound | Writes a textbook 0/1 knapsack that ignores the one-sample-per-patient rule, or iterates capacity upward; calls the result polynomial |
+| J13 | `Compounding.threeVialFills` | Discovery: conjectured lower bound | Rules 6, 3, lower bound basis | Claims a bound below O(n²) or states O(n²) as proven; sorts the caller's array in place; adds in `int` |
 | JW1 | New `CoverageReport` (write mode, separate run) | Write mode | Calls into slow existing code, "existing code is the bottleneck: tell and ask" | Uses `rosteredDays`, which ignores leave, or changes `Availability` without asking |
 
 ## J1. `RosterService.dailyRoster` (N+1)
@@ -120,6 +123,31 @@ No case here has a textbook name that gives the answer away. Every case states w
 - **Expected:** a `HashSet` of the ward stock, built once; order and repeats kept. O(n · m) → O(n + m) expected. Item codes come from the hospital's own catalog, so the exposure is none.
 - **Pass:** applied in the compact format (`REPORTING.md`); probe `J10` same.
 - **Fail:** repeats dropped or order changed; a full-format item with padded candidates.
+
+## J11. `LabCallbacks.signatureMatches` (security: leave it alone)
+
+- **What it is:** a comparison of an HMAC signature that takes the same time wherever the bytes differ. It is O(n) in the signature length (32 bytes), which is the lower bound, and runs 1,200,000 times a day: nothing to gain.
+- **Exposure:** the received signature comes from a partner's request (untrusted), and the computed one is derived from the shared secret. A comparison that returns at the first differing byte lets an attacker measure how many leading bytes of a forged signature are right, and forge one byte at a time.
+- **Expected:** left as is, with the reason: it is at the lower bound, and its uniform timing is part of its contract even though no comment says so. `MessageDigest.isEqual` is an acceptable replacement only if flagged: it is constant-time for equal lengths in current JDKs (since Java 6u17), and the length check already returns early (lengths are not secret here).
+- **Pass:** probe `J11` and `J11-leak` same; the report names the timing property and the exposure.
+- **Fail:** an early exit, `Arrays.equals`, `Arrays.mismatch`, or comparison of hex strings with `equals` (probe `J11-leak` reports "timing leak"); the item reported as an optimization opportunity.
+
+## J12. `AnalyzerBatch.bestUrgency` (discovery: NP-hard, pseudo-polynomial)
+
+- **What is slow:** include-or-skip recursion, O(2ⁿ) in the pending samples. At 90 samples (`Volumes`) the probe's original does not finish in 60 seconds; the analyzer is planned 48 times a day.
+- **What it is:** a knapsack with groups (multiple-choice knapsack): at most one sample per patient. NP-hard, so no polynomial algorithm is known; O(n · W) dynamic programming over capacity W is pseudo-polynomial and fast here because W = 2,500 µL: 90 × 2,500 = 225,000 states.
+- **Expected:** group samples by patient; for each group, update a table of best urgency per capacity, computing every member of the group from the table of the previous groups (so at most one member is taken), iterating capacity downward. O(n · W) time, O(W) memory with two rows. Negative capacity returns 0, as the original does (an array of size W + 1 would throw). Probe reference rewrite: 0.02 s at 90 samples.
+- **Lower bound:** NP-hard (it contains 0/1 knapsack); the bound must be stated as "no polynomial algorithm known; pseudo-polynomial O(n · W) is the best known here because W is small", not as a proven polynomial bound.
+- **Pass:** probe `J12` same; `J12-time` well under 60 s; NP-hardness and the dependence on W stated.
+- **Fail:** plain 0/1 knapsack (two samples of one patient in a run: probe `J12` differs); capacity iterated upward within a group; a crash on negative capacity; "O(n · W), polynomial".
+
+## J13. `Compounding.threeVialFills` (discovery: conjectured lower bound)
+
+- **What is slow:** O(n³) over the vials. 6,000 vials (`Volumes`) is about 3.6 · 10¹⁰ triples per order and 300 orders a day. Measured in the probe: 4.3 s for 3,000 vials, so about 35 s for 6,000 (estimated, × 8) and about 3 hours a day.
+- **Expected:** O(n²): for each first vial, scan the third while counting the values seen between them in a hash map (O(n²) expected, O(n) memory), or sort a copy and count with two pointers, taking care with equal values (O(n²) worst case). Sums in `long`. Probe reference rewrite: 0.16 s for 3,000 vials.
+- **Lower bound:** this is 3SUM counting. No algorithm substantially faster than O(n²) is known for integers this large, and the 3SUM conjecture says none exists; the bound must be labeled conjectured. FFT convolution is rejected because contents are not bounded to a small range.
+- **Pass:** probe `J13` same (counts, and the caller's array unchanged); stops at O(n²) with the bound labeled conjectured; case labels distinguish expected (hash) from worst case (sorting).
+- **Fail:** a bound below O(n²) claimed, or O(n²) called proven; `Arrays.sort` on the input (probe prints INPUT CHANGED); `int` sums (wrong counts near `Integer.MAX_VALUE`); a map of all O(n²) pair sums kept at once without flagging its memory (rule 1).
 
 ## JW1. `CoverageReport` (write mode)
 

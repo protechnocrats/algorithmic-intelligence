@@ -12,6 +12,7 @@ Each round has its own file with the method, every number, and its limits. This 
 | 6 | `2026-11-01-round6-report.md` | Haiku 5.5 | two-file report format | Report about 40% smaller, never rewritten; one valid session |
 | 7 | `2026-11-01-round7.md` | Haiku 5.5 | held-out rb-clinic; java-clinic baseline; write mode | rb-clinic: no behavior change with the skill, the baseline corrupted labels. java-clinic: the baseline's change was 3.5 times slower under attack, which none of 11 skill sessions did. Write mode loaded the skill with the project-instruction line |
 | 8 | `2026-11-02-round8.md` | Haiku 5.5, Opus 5.5 | held-out rb-clinic, 5 Haiku and 3 Opus pairs | Haiku: behavior differences in 0 of 5 with the skill, 4 of 5 without (label corruption). Opus: 0 of 3 in both, and the baseline was faster and cheaper. Haiku with the skill held back two speedups as behavior changes where equivalent variants existed |
+| 9 | `2026-11-02-round9.md` | Haiku 5.5, Opus 5.5 | java-clinic with J11-J13, 5 Haiku and 3 Opus pairs (10 of 15 valid) | Haiku: behavior differences in 0 of 4 with the skill, 3 of 3 without (a public signature changed). Opus: 0 of 2 and 0 of 1. New cases J12 and J13 fixed in every measurable session. Over the cost cap by $5.97 (fixed) |
 
 ## Case history: java-clinic and rb-clinic
 
@@ -26,6 +27,7 @@ Probe results per case: **=** same behavior as the original, **✗** a behavior 
 | RB3 to RB9 | = (10 sessions) | = (9 sessions) |
 | RB2 (aliasing) | = in 10; fixed safely in 4 (1 Haiku, 3 Opus) | **✗** in 5 of 6 Haiku (labels corrupted); = and fixed in 3 of 3 Opus |
 | RBW1 (write mode) | = (1 session) | = (1 session) |
+| J11 to J13, RB10 to RB12 (added 2026-11-02: secrets, NP-hard, conjectured bound) | – | – |
 
 ## What is still missing
 

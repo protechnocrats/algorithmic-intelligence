@@ -40,13 +40,18 @@ for fixture in ts-shop py-logistics java-clinic rb-clinic; do
 done
 
 # 3: the cost cap. The stub reports $0.60 as each session's running total, as the real CLI
-# reports cumulative cost, so each session counts $0.60: with a $1.00 cap, two run and two are skipped.
+# reports cumulative cost, so each session counts $0.60. With a $1.00 cap the cap is hard: the
+# first session runs all three turns, the second runs one turn ($0.40 was left) and stops, invalid,
+# and the last two never start.
 out="$work/cap"
 "$here/run-pilot.sh" --fixture rb-clinic --cases report --conditions skill,baseline --runs 2 --parallel 1 --max-total-usd 1 --out "$out" > /dev/null 2>&1
-if [ "$(grep -c ': done' "$out/progress.log")" = 2 ] && [ "$(grep -c 'cost cap reached' "$out/progress.log")" = 2 ]; then
-  pass "cost cap: 2 sessions ran, 2 skipped"
+turns="$(grep -c 'exit=' "$out/progress.log")"
+cut="$(grep -c 'turn apply skipped, cost cap reached' "$out/progress.log")"
+never="$(grep -c ': skipped, cost cap reached' "$out/progress.log")"
+if [ "$turns" = 4 ] && [ "$cut" = 1 ] && [ "$never" = 2 ]; then
+  pass "cost cap: 4 turns ran, the second session stopped at the cap, 2 sessions never started"
 else
-  bad "cost cap: $(grep -c ': done' "$out/progress.log") ran, $(grep -c 'cost cap reached' "$out/progress.log") skipped"
+  bad "cost cap: $turns turns ran, $cut sessions stopped at the cap, $never never started"
 fi
 
 # 4: the stall watchdog.
@@ -79,8 +84,8 @@ if [ "${1:-}" = --probes ]; then
       bad "$fixture probe: the correct rewrite was flagged"; grep -E "DIFF|RATE|mismatch" "$out" | head -5
     fi
   done
-  expect_java="J1 J2 J5 J6 J7 J8 J10"
-  expect_rb="RB1 RB2 RB3 RB6 RB7 RB8 RB9"
+  expect_java="J1 J2 J5 J6 J7 J8 J10 J11-leak J12 J13"
+  expect_rb="RB1 RB2 RB3 RB6 RB7 RB8 RB9 RB10-leak RB11 RB12"
   for fixture in java-clinic rb-clinic; do
     out="$work/probe-$fixture-wrong.out"
     [ "$fixture" = java-clinic ] && expect="$expect_java" || expect="$expect_rb"

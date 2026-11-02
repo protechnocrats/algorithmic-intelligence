@@ -29,9 +29,11 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
   --instructions TEXT  Written to CLAUDE.md in each with-skill run directory and included in its
                      initial commit, as a developer would add it (for example the line the README
                      recommends for loading the skill). Baseline runs never get it.
-  --max-total-usd USD  Stop starting sessions once the sessions so far have reported this much
-                     cost in total. Sessions already running finish, so use --parallel 1 for a
-                     tight limit. Default: no limit.
+  --max-total-usd USD  Hard cap on the total reported cost of the sessions. Each turn's
+                     --max-budget-usd is lowered to what is left, and turns stop once it is spent
+                     (a session cut short is invalid). With --parallel above 1, sessions running
+                     at once can each spend what was left, so use --parallel 1 for a tight limit.
+                     Default: no limit.
   --effort LEVEL     Passed to claude --effort (low, medium, high, xhigh, max). Default: the CLI's.
   --skill-src DIR    Install the skill from this directory instead of the working tree or
                      --skill-ref (for testing an uncommitted variant). Copied into <out>/skill.
@@ -194,11 +196,20 @@ session() {
     [ -e "$out/LIMIT_REACHED" ] && { note "$name: turn $label skipped, usage limit reached"; return; }
     # After an invalid turn, later turns would only spend money on a session that cannot be scored.
     [ "$invalid" = 1 ] && { note "$name: turn $label skipped, session already invalid"; return; }
+    # The cost cap is hard: each turn may spend only what is left of it, not the full --budget.
+    # Checking only before a session starts let one session run $6 past the cap (round 9).
+    local turn_budget="$budget"
+    if [ -n "$max_total" ]; then
+      turn_budget="$(python3 -c "print(round(min(float('$budget'), float('$max_total') - float('$(spent_usd)')), 2))")"
+      if python3 -c "import sys; sys.exit(0 if float('$turn_budget') <= 0.05 else 1)"; then
+        note "$name: turn $label skipped, cost cap reached, session invalid"; touch "$out/COST_CAP_REACHED"; invalid=1; return
+      fi
+    fi
     [ "$turn" -gt 0 ] && resume=(--resume "$id")
     turn=$((turn + 1))
     local transcript="$log.$turn-$label.jsonl"
     (trap - TERM INT; cd "$dest" && exec timeout -k 60 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
-       "${perm[@]}" --add-dir /tmp --max-budget-usd "$budget" \
+       "${perm[@]}" --add-dir /tmp --max-budget-usd "$turn_budget" \
        --output-format stream-json --verbose > "$transcript" 2> "$log.$turn-$label.err") &
     local runner=$!
     # Stall watchdog: the transcript stopped growing and no tool process is running, so the API

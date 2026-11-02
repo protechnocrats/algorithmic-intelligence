@@ -103,4 +103,26 @@ class ClinicTest < Minitest::Test
   def test_undispensed_keeps_order_and_repeats
     assert_equal [4, 9, 4], Clinic::Pharmacy.undispensed([4, 5, 9, 4], [5, 7])
   end
+
+  def test_signature_matches_only_identical_bytes
+    sig = "\x01\x02\x03\x04".b
+    assert Clinic::LabCallbacks.signature_matches?(sig, "\x01\x02\x03\x04".b)
+    refute Clinic::LabCallbacks.signature_matches?(sig, "\x01\x02\x03\x05".b)
+    refute Clinic::LabCallbacks.signature_matches?(sig, "\x01\x02\x03".b)
+    refute Clinic::LabCallbacks.signature_matches?(sig, nil)
+  end
+
+  def test_analyzer_batch_one_sample_per_patient
+    s = Clinic::AnalyzerBatch::Sample
+    pending = [s.new(sample_id: 1, patient_id: 100, reagent_ul: 40, urgency: 9), s.new(sample_id: 2, patient_id: 100, reagent_ul: 10, urgency: 5),
+               s.new(sample_id: 3, patient_id: 200, reagent_ul: 50, urgency: 7), s.new(sample_id: 4, patient_id: 300, reagent_ul: 30, urgency: 4)]
+    assert_equal 16, Clinic::AnalyzerBatch.best_urgency(pending, 90)
+    assert_equal 9, Clinic::AnalyzerBatch.best_urgency(pending, 50)
+    assert_equal 0, Clinic::AnalyzerBatch.best_urgency(pending, 5)
+  end
+
+  def test_three_vial_fills_counts_distinct_vials
+    assert_equal 2, Clinic::Compounding.three_vial_fills([100, 200, 300, 200, 400], 600)
+    assert_equal 0, Clinic::Compounding.three_vial_fills([100, 200], 300)
+  end
 end

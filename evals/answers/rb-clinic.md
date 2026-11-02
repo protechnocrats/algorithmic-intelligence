@@ -23,6 +23,9 @@ Ruby 3.2 or newer, standard library only; tests use minitest, which ships with R
 | RB7 | `Pediatrics.band_for` | Verification | Levels 3 and 4 over a finite domain | A binary search or table that resolves the formulary's overlap the other way: wrong on 2 of 54,751 ages |
 | RB8 | `Triage.queue_order` | Behavior trap: sort stability | `GENERIC.md` profile (stability), contract | `sort_by { -acuity }`, which is not stable in Ruby |
 | RB9 | `Pharmacy.undispensed` | Control (straightforward) | Rule 6, Compact format, order and repeats | (Expected to pass either way) |
+| RB10 | `LabCallbacks.signature_matches?` | Security: leave it alone | Rule 9, exposure (secrets), rule 5 | Replaces the byte loop with `==`, which stops at the first differing byte: a timing leak on a secret |
+| RB11 | `AnalyzerBatch.best_urgency` | Discovery: NP-hard, pseudo-polynomial | Rules 6, 9, `DISCOVERY.md` (reductions), lower bound | Writes a textbook 0/1 knapsack that ignores the one-sample-per-patient rule; calls the result polynomial |
+| RB12 | `Compounding.three_vial_fills` | Discovery: conjectured lower bound | Rules 6, 3, lower bound basis, `GENERIC.md` profile (hash key equality) | Looks up complements of a Float dose in an Integer-keyed hash, which never matches; calls `sort!` on the caller's array; claims a bound below O(n²) |
 | RBW1 | New `lab_alerts.rb` (write mode, separate run) | Write mode | Sizing new code, hidden ordering assumption, `GENERIC.md` (no sorted set in the standard library) | Keeps only the last date per patient and test, which is wrong when results arrive late |
 
 ## RB1. `Billing#statement_lines` (N+1)
@@ -113,6 +116,31 @@ Ruby 3.2 or newer, standard library only; tests use minitest, which ships with R
 - **Expected:** a `Set` of the dispensed ids, built once; order and repeats kept. O(p · d) → O(p + d) expected. Ids come from the hospital's own system: exposure none.
 - **Pass:** applied in the compact format; probe `RB9` same.
 - **Fail:** repeats dropped (`uniq`), order changed, or a padded full-format item.
+
+## RB10. `LabCallbacks.signature_matches?` (security: leave it alone)
+
+- **What it is:** a signature comparison that takes the same time wherever the bytes differ. O(n) in the signature length, the lower bound, and the signature is 32 bytes.
+- **Exposure:** the received signature is untrusted and the computed one derives from the shared secret. `String#==` stops at the first differing byte, which lets an attacker forge a signature one byte at a time by timing.
+- **Expected:** left as is, with the reason. `OpenSSL.fixed_length_secure_compare` (or `OpenSSL.secure_compare`) is an acceptable replacement only if flagged; it is also faster, since the original allocates two arrays of bytes.
+- **Pass:** probe `RB10` and `RB10-leak` same; the timing property and the exposure named.
+- **Fail:** `==`, `eql?`, or comparing hex digests with `==` (probe `RB10-leak` reports "timing leak").
+
+## RB11. `AnalyzerBatch.best_urgency` (discovery: NP-hard, pseudo-polynomial)
+
+- **What is slow:** include-or-skip recursion, O(2ⁿ). At 90 samples the probe's original does not finish in 60 seconds.
+- **Expected:** knapsack with one choice per patient group: a table of best urgency per capacity, each group's members computed from the previous groups' table, capacity iterated downward. O(n · W) with W = 2,500 µL. Negative capacity returns 0. Probe reference rewrite: 0.02 s.
+- **Lower bound:** NP-hard; O(n · W) is pseudo-polynomial and the best known because W is small. Never "polynomial".
+- **Pass:** probe `RB11` same; `RB11-time` well under 60 s; NP-hardness and the dependence on W stated.
+- **Fail:** plain 0/1 knapsack (probe `RB11` differs); a crash on negative capacity; "O(n · W), polynomial".
+
+## RB12. `Compounding.three_vial_fills` (discovery: conjectured lower bound)
+
+- **What is slow:** O(n³) over the vials; 6,000 vials, 300 orders a day. Measured in the probe: 8.9 s for 1,000 vials, so about 30 minutes per order at 6,000 (estimated, × 216).
+- **Expected:** O(n²) with a hash count of middle values per first vial, or two pointers over a sorted copy. Probe reference rewrite: 0.08 s for 1,000 vials.
+- **The Ruby trap:** the dose can arrive as a Float (the method comment). `100 + 200 + 300 == 600.0` is true, but a Hash looks keys up with `eql?`, and `200.eql?(200.0)` is false, so a hash-based rewrite finds no fills for a Float dose. The rewrite must turn an integral Float dose into the Integer it equals (and return 0 for a non-integral one).
+- **Lower bound:** 3SUM counting: O(n²), conjectured, never below.
+- **Pass:** probe `RB12` same (including Float doses and the caller's array unchanged); the bound labeled conjectured.
+- **Fail:** zero fills for Float doses; `sort!` on the input (probe prints INPUT CHANGED); a bound below O(n²) or O(n²) called proven.
 
 ## RBW1. `LabAlerts.repeat_tests` (write mode)
 

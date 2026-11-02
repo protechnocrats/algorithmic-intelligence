@@ -40,4 +40,13 @@ public final class Volumes {
     /** Coverage reports: doctors per report and days per report. */
     public static final int DOCTORS_PER_COVERAGE_REPORT = 50;
     public static final int DAYS_PER_COVERAGE_REPORT_MAX = 366;
+    /** Lab callbacks per day, all partners. */
+    public static final int LAB_CALLBACKS_PER_DAY = 1_200_000;
+    /** Chemistry analyzer: runs per day, samples pending when a run is planned, reagent per run (microliters). */
+    public static final int ANALYZER_RUNS_PER_DAY = 48;
+    public static final int SAMPLES_PENDING_PER_RUN = 90;
+    public static final int ANALYZER_REAGENT_PER_RUN_MICROLITERS = 2_500;
+    /** Vials on the compounding shelf, and compounding orders checked per day. */
+    public static final int VIALS_ON_COMPOUNDING_SHELF = 6_000;
+    public static final int COMPOUNDING_ORDERS_PER_DAY = 300;
 }

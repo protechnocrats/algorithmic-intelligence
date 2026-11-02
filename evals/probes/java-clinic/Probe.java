@@ -47,6 +47,12 @@ public class Probe {
             case "J9" -> j9();
             case "J9-time" -> j9Time();
             case "J10" -> j10();
+            case "J11" -> j11();
+            case "J11-leak" -> j11Leak();
+            case "J12" -> j12();
+            case "J12-time" -> j12Time();
+            case "J13" -> j13();
+            case "J13-time" -> j13Time();
             case "JW1" -> jw1();
             default -> throw new IllegalArgumentException(args[0]);
         }
@@ -336,6 +342,94 @@ public class Probe {
             for (int i = 0, n = rng.nextInt(10); i < n; i++) stock.add("I" + rng.nextInt(10));
             out(outcome(() -> Supplies.notStocked(order, stock)));
         }
+    }
+
+    // ---------- J11 ----------
+    static void j11() {
+        Random rng = new Random(11);
+        for (int t = 0; t < 300; t++) {
+            byte[] a = new byte[rng.nextInt(40)];
+            rng.nextBytes(a);
+            byte[] b = rng.nextInt(3) == 0 ? new byte[rng.nextInt(40)] : a.clone();
+            if (b.length > 0 && rng.nextBoolean()) b[rng.nextInt(b.length)] ^= (byte) (1 + rng.nextInt(255));
+            out(outcome(() -> LabCallbacks.signatureMatches(a, b)));
+        }
+        out(outcome(() -> LabCallbacks.signatureMatches(new byte[] {1}, null)));
+        out(outcome(() -> LabCallbacks.signatureMatches(new byte[0], new byte[0])));
+    }
+
+    /** Prints "same time" when a mismatch in the first byte takes as long as one in the last byte, else "timing leak". */
+    static void j11Leak() {
+        int n = 16 << 20;
+        byte[] a = new byte[n], first = new byte[n], last = new byte[n];
+        new Random(111).nextBytes(a);
+        System.arraycopy(a, 0, first, 0, n);
+        System.arraycopy(a, 0, last, 0, n);
+        first[0] ^= 1;
+        last[n - 1] ^= 1;
+        long[] tf = new long[15], tl = new long[15];
+        boolean sink = false;
+        for (int r = 0; r < 15; r++) {
+            long t = System.nanoTime(); sink ^= LabCallbacks.signatureMatches(a, first); tf[r] = System.nanoTime() - t;
+            t = System.nanoTime(); sink ^= LabCallbacks.signatureMatches(a, last); tl[r] = System.nanoTime() - t;
+        }
+        Arrays.sort(tf);
+        Arrays.sort(tl);
+        out(tf[7] * 4 < tl[7] ? "timing leak" + (sink ? "" : " ") : "same time" + (sink ? "" : " "));
+    }
+
+    // ---------- J12 ----------
+    static void j12() {
+        Random rng = new Random(12);
+        for (int t = 0; t < 300; t++) {
+            List<LabSample> pending = new ArrayList<>();
+            for (int i = 0, n = rng.nextInt(13); i < n; i++)
+                pending.add(new LabSample(i, rng.nextInt(5), rng.nextInt(31), rng.nextInt(26) - 5));
+            int cap = rng.nextInt(84) - 4;
+            out(outcome(() -> AnalyzerBatch.bestUrgency(pending, cap)));
+        }
+        out(outcome(() -> AnalyzerBatch.bestUrgency(List.of(), 100)));
+        out(outcome(() -> AnalyzerBatch.bestUrgency(List.of(new LabSample(1, 1, 0, 5), new LabSample(2, 1, 0, 7)), 0)));
+        out(outcome(() -> AnalyzerBatch.bestUrgency(List.of(new LabSample(1, 1, 0, 5)), -1)));
+        out(outcome(() -> AnalyzerBatch.bestUrgency(List.of(new LabSample(1, 1, 3, Integer.MAX_VALUE), new LabSample(2, 2, 3, Integer.MAX_VALUE)), 10)));
+    }
+
+    static void j12Time() {
+        Random rng = new Random(120);
+        List<LabSample> pending = new ArrayList<>();
+        for (int i = 0; i < 90; i++) pending.add(new LabSample(i, rng.nextInt(70), 10 + rng.nextInt(60), rng.nextInt(100)));
+        long t = System.nanoTime();
+        long r = AnalyzerBatch.bestUrgency(pending, 2_500);
+        out(String.format("90 samples, 2,500 uL: %.2f s (urgency %d)", (System.nanoTime() - t) / 1e9, r));
+    }
+
+    // ---------- J13 ----------
+    static void j13() {
+        Random rng = new Random(13);
+        for (int t = 0; t < 200; t++) {
+            int[] vials = new int[rng.nextInt(30)];
+            for (int i = 0; i < vials.length; i++) vials[i] = rng.nextInt(12) * 50;
+            int[] copy = vials.clone();
+            long dose = rng.nextInt(30) * 50L;
+            out(outcome(() -> Compounding.threeVialFills(vials, dose)) + (Arrays.equals(vials, copy) ? "" : " INPUT CHANGED: " + Arrays.toString(vials)));
+        }
+        int max = Integer.MAX_VALUE, min = Integer.MIN_VALUE;
+        out(outcome(() -> Compounding.threeVialFills(new int[] {max, max, max, 2, -2}, 3L * max)));
+        out(outcome(() -> Compounding.threeVialFills(new int[] {max, max, 2}, 0)));
+        out(outcome(() -> Compounding.threeVialFills(new int[] {min, min, min, max}, 3L * min)));
+        out(outcome(() -> Compounding.threeVialFills(new int[] {max, max, 1, 1}, 2L * max + 1)));
+        int[] same = new int[40];
+        Arrays.fill(same, 7);
+        out(outcome(() -> Compounding.threeVialFills(same, 21)));
+    }
+
+    static void j13Time() {
+        Random rng = new Random(130);
+        int[] vials = new int[3_000];
+        for (int i = 0; i < vials.length; i++) vials[i] = 50 * (1 + rng.nextInt(400));
+        long t = System.nanoTime();
+        long r = Compounding.threeVialFills(vials, 30_000);
+        out(String.format("3,000 vials: %.2f s (%d fills)", (System.nanoTime() - t) / 1e9, r));
     }
 
     // ---------- JW1 (write mode; checked against an independent reference) ----------
