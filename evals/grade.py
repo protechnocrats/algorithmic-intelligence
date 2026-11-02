@@ -96,6 +96,21 @@ def run_header(run):
     return fixture, (model.group(1) if model else "default")
 
 
+def shell_refusals(files):
+    """(shell commands, refused shell commands) in a session."""
+    asked, refused = set(), 0
+    for _, e in costs.events(files):
+        if e.get("type") == "assistant":
+            asked.update(c["id"] for c in e["message"].get("content") or [] if c.get("type") == "tool_use" and c.get("name") == "Bash")
+        elif e.get("type") == "user" and isinstance((e.get("message") or {}).get("content"), list):
+            for c in e["message"]["content"]:
+                if c.get("type") == "tool_result" and c.get("tool_use_id") in asked:
+                    out = c.get("content")
+                    out = out if isinstance(out, str) else json.dumps(out)
+                    refused += bool(costs.REFUSED.search(out[:400]))
+    return len(asked), refused
+
+
 def validity(run, name, files, loaded, condition):
     log = [l for l in (run / "progress.log").read_text().splitlines() if f" {name}:" in l]
     bad = [l for l in log if re.search(r"STALL|invalid|limit|skipped|failed", l)]
@@ -107,6 +122,11 @@ def validity(run, name, files, loaded, condition):
         reasons.append("incomplete: " + (bad[0].split(": ", 1)[-1] if bad else "no done line"))
     if rate >= 0.10:
         reasons.append(f"refusals {refused}/{asked}")
+    # A session can stay under 10% overall while every shell command is refused (round 9: 3 of 4,
+    # among 80 file reads). Then it could not run the tests at all, so it cannot be scored.
+    shell, shell_refused = shell_refusals(files)
+    if shell_refused >= 2 and shell_refused * 2 > shell:
+        reasons.append(f"shell refusals {shell_refused}/{shell}")
     if condition == "skill" and not loaded:
         reasons.append("skill not loaded")
     if condition == "baseline" and loaded:
@@ -203,6 +223,12 @@ def probe(fixture, session_dir, cache):
     for m in re.finditer(r"^\s*(?:time|info)\s+([A-Z]+W?\d+[\w-]*):\s*(.*)$", text, re.M):
         timings[m.group(1)] = m.group(2).strip()[:160]
     exceeded = "RATE LIMIT EXCEEDED" in text
+    # A probe that cannot run is a failed check, never "no difference": in round 9 four baselines
+    # changed a public signature, the probe did not compile, and the session first scored as safe.
+    if "does not compile" in text:
+        diffs.append("public-signature-changed")
+    elif not re.search(r"^\s*(?:same|DIFF)\s", text, re.M):
+        diffs.append("probe-did-not-run")
     return {"diffs": diffs + (["rate-limit"] if exceeded else []), "timings": timings}
 
 

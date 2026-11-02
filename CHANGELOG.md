@@ -31,6 +31,9 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Evaluation
 
+- Round 9 ([results](evals/results/2026-11-02-round9.md)), Java project with three new cases, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 4 valid sessions with the skill and 3 of 3 without (each changed a public method's signature to make sums exact); with Opus, 0 of 2 and 0 of 1. 5 of 15 sessions were invalid because of harness permission refusals.
+- The evaluation cost cap is now hard: each turn may spend only what is left of it. Round 9 went $5.97 over its cap because the cap only stopped new sessions from starting.
+- `grade.py` counts a probe that cannot compile against a session's code as a behavior difference, not as "no difference", and marks a session invalid when more than half of its shell commands were refused.
 - Round 8 ([results](evals/results/2026-11-02-round8.md)), held-out Ruby project, 5 Haiku 5.5 pairs and 3 Opus 5.5 pairs: with Haiku, behavior differences in 0 of 3 valid sessions with the skill and 4 of 4 without (corrupted labels); with Opus, 0 of 2 and 0 of 3 (4 sessions invalid: harness permission refusals), and the baseline was faster and cheaper. With the skill, Haiku held back two speedups as behavior changes where equivalent versions exist.
 - Round 7 ([results](evals/results/2026-11-01-round7.md)), Haiku 5.5: on the held-out Ruby project, neither skill session changed behavior while the baseline corrupted user-visible labels; on the Java project, the baseline's "optimization" became 3.5 times slower on attacker-chosen keys, which none of 11 skill sessions did. Write mode loaded the skill with the README's recommended project-instruction line.
 

@@ -40,13 +40,18 @@ for fixture in ts-shop py-logistics java-clinic rb-clinic; do
 done
 
 # 3: the cost cap. The stub reports $0.60 as each session's running total, as the real CLI
-# reports cumulative cost, so each session counts $0.60: with a $1.00 cap, two run and two are skipped.
+# reports cumulative cost, so each session counts $0.60. With a $1.00 cap the cap is hard: the
+# first session runs all three turns, the second runs one turn ($0.40 was left) and stops, invalid,
+# and the last two never start.
 out="$work/cap"
 "$here/run-pilot.sh" --fixture rb-clinic --cases report --conditions skill,baseline --runs 2 --parallel 1 --max-total-usd 1 --out "$out" > /dev/null 2>&1
-if [ "$(grep -c ': done' "$out/progress.log")" = 2 ] && [ "$(grep -c 'cost cap reached' "$out/progress.log")" = 2 ]; then
-  pass "cost cap: 2 sessions ran, 2 skipped"
+turns="$(grep -c 'exit=' "$out/progress.log")"
+cut="$(grep -c 'turn apply skipped, cost cap reached' "$out/progress.log")"
+never="$(grep -c ': skipped, cost cap reached' "$out/progress.log")"
+if [ "$turns" = 4 ] && [ "$cut" = 1 ] && [ "$never" = 2 ]; then
+  pass "cost cap: 4 turns ran, the second session stopped at the cap, 2 sessions never started"
 else
-  bad "cost cap: $(grep -c ': done' "$out/progress.log") ran, $(grep -c 'cost cap reached' "$out/progress.log") skipped"
+  bad "cost cap: $turns turns ran, $cut sessions stopped at the cap, $never never started"
 fi
 
 # 4: the stall watchdog.
