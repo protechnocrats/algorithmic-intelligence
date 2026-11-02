@@ -22,6 +22,12 @@ module Clinic
     dispensed_records_per_batch: 50_000,
     lab_results_per_night: 500_000,
     lab_results_arrive_late_by_days_max: 10,
-    repeat_test_window_days_max: 30
+    repeat_test_window_days_max: 30,
+    lab_callbacks_per_day: 1_200_000,
+    analyzer_runs_per_day: 48,
+    samples_pending_per_run: 90,
+    analyzer_reagent_per_run_ul: 2_500,
+    vials_on_compounding_shelf: 6_000,
+    compounding_orders_per_day: 300
   }.freeze
 end

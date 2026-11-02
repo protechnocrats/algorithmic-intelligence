@@ -27,6 +27,9 @@ CHECKS = {
     "RB7": ("compare", 300),
     "RB8": ("compare", 120), "RB8-time": ("info", 60),
     "RB9": ("compare", 60),
+    "RB10": ("compare", 60), "RB10-leak": ("compare", 120),
+    "RB11": ("compare", 300), "RB11-time": ("info", 60),
+    "RB12": ("compare", 120), "RB12-time": ("info", 120),
     "RBW1": ("run", 600),
 }
 

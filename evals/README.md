@@ -15,8 +15,8 @@ evals/
 │   ├── c-shop/        ← 10 cases (C11, plain asserts, optional sanitizers)
 │   ├── rust-shop/     ← 12 cases (Cargo, no dependencies)
 │   ├── py-logistics/  ← 6 cases + 1 write-mode case (Python standard library); held out, never used for tuning
-│   ├── java-clinic/   ← 10 cases + 1 write-mode case (Java standard library, javac); tuning set, twin of rb-clinic
-│   └── rb-clinic/     ← 9 cases + 1 write-mode case (Ruby standard library, minitest); held out; tests languages/GENERIC.md
+│   ├── java-clinic/   ← 13 cases + 1 write-mode case (Java standard library, javac); tuning set, twin of rb-clinic
+│   └── rb-clinic/     ← 12 cases + 1 write-mode case (Ruby standard library, minitest); held out; tests languages/GENERIC.md
 ├── claims/            ← checks of language-file claims the docs do not settle (no agent)
 ├── answers/           ← answer keys; never let the agent see these
 ├── probes/            ← grading scripts: trap inputs run against the original and a run's final code

@@ -26,6 +26,7 @@ Probe results per case: **=** same behavior as the original, **✗** a behavior 
 | RB3 to RB9 | = (10 sessions) | = (9 sessions) |
 | RB2 (aliasing) | = in 10; fixed safely in 4 (1 Haiku, 3 Opus) | **✗** in 5 of 6 Haiku (labels corrupted); = and fixed in 3 of 3 Opus |
 | RBW1 (write mode) | = (1 session) | = (1 session) |
+| J11 to J13, RB10 to RB12 (added 2026-11-02: secrets, NP-hard, conjectured bound) | – | – |
 
 ## What is still missing
 

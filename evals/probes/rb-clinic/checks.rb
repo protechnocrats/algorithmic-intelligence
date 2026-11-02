@@ -187,6 +187,78 @@ CHECKS = {
       puts outcome { Clinic::Pharmacy.undispensed(a, b) }
     end
   },
+  "RB10" => lambda {
+    rng = Random.new(10)
+    300.times do
+      a = rng.bytes(rng.rand(40))
+      b = rng.rand(3).zero? ? rng.bytes(rng.rand(40)) : a.dup
+      if !b.empty? && rng.rand(2).zero?
+        i = rng.rand(b.bytesize)
+        b.setbyte(i, b.getbyte(i) ^ (1 + rng.rand(255)))
+      end
+      puts outcome { Clinic::LabCallbacks.signature_matches?(a, b) }
+    end
+    puts outcome { Clinic::LabCallbacks.signature_matches?("\x01".b, nil) }
+    puts outcome { Clinic::LabCallbacks.signature_matches?("".b, "".b) }
+  },
+  # Prints "same time" when a mismatch in the first byte takes as long as one in the last byte, else "timing leak".
+  "RB10-leak" => lambda {
+    n = 1 << 20
+    a = Random.new(110).bytes(n)
+    first = a.dup
+    first.setbyte(0, first.getbyte(0) ^ 1)
+    last = a.dup
+    last.setbyte(n - 1, last.getbyte(n - 1) ^ 1)
+    tf = []
+    tl = []
+    9.times do
+      tf << clock { Clinic::LabCallbacks.signature_matches?(a, first) }
+      tl << clock { Clinic::LabCallbacks.signature_matches?(a, last) }
+    end
+    puts tf.sort[4] * 4 < tl.sort[4] ? "timing leak" : "same time"
+  },
+  "RB11" => lambda {
+    rng = Random.new(111)
+    s = Clinic::AnalyzerBatch::Sample
+    300.times do
+      pending = Array.new(rng.rand(13)) { |i| s.new(sample_id: i, patient_id: rng.rand(5), reagent_ul: rng.rand(31), urgency: rng.rand(26) - 5) }
+      cap = rng.rand(84) - 4
+      puts outcome { Clinic::AnalyzerBatch.best_urgency(pending, cap) }
+    end
+    puts outcome { Clinic::AnalyzerBatch.best_urgency([], 100) }
+    puts outcome { Clinic::AnalyzerBatch.best_urgency([s.new(sample_id: 1, patient_id: 1, reagent_ul: 0, urgency: 5), s.new(sample_id: 2, patient_id: 1, reagent_ul: 0, urgency: 7)], 0) }
+    puts outcome { Clinic::AnalyzerBatch.best_urgency([s.new(sample_id: 1, patient_id: 1, reagent_ul: 0, urgency: 5)], -1) }
+  },
+  "RB11-time" => lambda {
+    rng = Random.new(1110)
+    s = Clinic::AnalyzerBatch::Sample
+    pending = Array.new(90) { |i| s.new(sample_id: i, patient_id: rng.rand(70), reagent_ul: 10 + rng.rand(60), urgency: rng.rand(100)) }
+    r = nil
+    t = clock { r = Clinic::AnalyzerBatch.best_urgency(pending, 2_500) }
+    puts format("90 samples, 2,500 uL: %.2f s (urgency %d)", t, r)
+  },
+  "RB12" => lambda {
+    rng = Random.new(12)
+    200.times do
+      vials = Array.new(rng.rand(30)) { rng.rand(12) * 50 }
+      copy = vials.dup
+      dose = rng.rand(30) * 50
+      dose = dose.to_f if rng.rand(3).zero?
+      r = outcome { Clinic::Compounding.three_vial_fills(vials, dose) }
+      puts vials == copy ? r : "#{r} INPUT CHANGED: #{vials.inspect}"
+    end
+    puts outcome { Clinic::Compounding.three_vial_fills([100, 200, 300, 250, 350], 600.0) }
+    puts outcome { Clinic::Compounding.three_vial_fills([100, 200, 300], 600.5) }
+    puts outcome { Clinic::Compounding.three_vial_fills(Array.new(40, 7), 21) }
+    puts outcome { Clinic::Compounding.three_vial_fills([10**20, 10**20, 1, 2], 2 * 10**20 + 1) }
+  },
+  "RB12-time" => lambda {
+    rng = Random.new(120)
+    vials = Array.new(1_000) { 50 * (1 + rng.rand(400)) }
+    r = nil
+    t = clock { r = Clinic::Compounding.three_vial_fills(vials, 30_000) }
+    puts format("1,000 vials: %.2f s (%d fills)", t, r)
+  },
   "RBW1" => lambda {
     unless File.exist?("lib/clinic/lab_alerts.rb")
       puts "no lib/clinic/lab_alerts.rb"

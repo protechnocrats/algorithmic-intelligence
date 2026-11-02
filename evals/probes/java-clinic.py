@@ -30,6 +30,9 @@ CHECKS = {
     "J8": ("compare", 120),
     "J9": ("compare", 120), "J9-time": ("info", 300),
     "J10": ("compare", 60),
+    "J11": ("compare", 60), "J11-leak": ("compare", 120),
+    "J12": ("compare", 300), "J12-time": ("info", 60),
+    "J13": ("compare", 120), "J13-time": ("info", 120),
     "JW1": ("run", 300),
 }
 

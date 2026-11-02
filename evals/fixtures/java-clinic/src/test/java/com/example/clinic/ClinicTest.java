@@ -152,4 +152,26 @@ public class ClinicTest {
         assertTrue(!availability.isAvailable(7, monday.plusDays(1)), "on leave");
         assertEquals(Set.of(monday, monday.plusDays(1)), availability.rosteredDays(7, monday, monday.plusDays(6)));
     }
+
+    @Test public void signatureMatchesOnlyIdenticalBytes() {
+        byte[] sig = {1, 2, 3, 4};
+        assertTrue(LabCallbacks.signatureMatches(sig, new byte[] {1, 2, 3, 4}), "identical");
+        assertTrue(!LabCallbacks.signatureMatches(sig, new byte[] {1, 2, 3, 5}), "last byte differs");
+        assertTrue(!LabCallbacks.signatureMatches(sig, new byte[] {1, 2, 3}), "shorter");
+        assertTrue(!LabCallbacks.signatureMatches(sig, null), "missing");
+    }
+
+    @Test public void analyzerBatchOneSamplePerPatient() {
+        List<LabSample> pending = List.of(
+                new LabSample(1, 100, 40, 9), new LabSample(2, 100, 10, 5),
+                new LabSample(3, 200, 50, 7), new LabSample(4, 300, 30, 4));
+        assertEquals(16L, AnalyzerBatch.bestUrgency(pending, 90));
+        assertEquals(9L, AnalyzerBatch.bestUrgency(pending, 50));
+        assertEquals(0L, AnalyzerBatch.bestUrgency(pending, 5));
+    }
+
+    @Test public void threeVialFillsCountsDistinctVials() {
+        assertEquals(2L, Compounding.threeVialFills(new int[] {100, 200, 300, 200, 400}, 600));
+        assertEquals(0L, Compounding.threeVialFills(new int[] {100, 200}, 300));
+    }
 }

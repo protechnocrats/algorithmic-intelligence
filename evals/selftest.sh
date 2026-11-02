@@ -79,8 +79,8 @@ if [ "${1:-}" = --probes ]; then
       bad "$fixture probe: the correct rewrite was flagged"; grep -E "DIFF|RATE|mismatch" "$out" | head -5
     fi
   done
-  expect_java="J1 J2 J5 J6 J7 J8 J10"
-  expect_rb="RB1 RB2 RB3 RB6 RB7 RB8 RB9"
+  expect_java="J1 J2 J5 J6 J7 J8 J10 J11-leak J12 J13"
+  expect_rb="RB1 RB2 RB3 RB6 RB7 RB8 RB9 RB10-leak RB11 RB12"
   for fixture in java-clinic rb-clinic; do
     out="$work/probe-$fixture-wrong.out"
     [ "$fixture" = java-clinic ] && expect="$expect_java" || expect="$expect_rb"

@@ -10,13 +10,13 @@ Which evaluation cases test each mandatory rule in `skills/SKILL.md`, and each s
 |---|---|---|
 | 1. Time is invaluable. Space is cheap, but not infinite | java-clinic J2 | 1 |
 | 2. Time first, then space | **none yet** | 0 |
-| 3. Understand before changing, and verify behavior is unchanged | c-shop C4, c-shop C5, kotlin-shop K3, py-logistics PW1, rust-shop R4, rust-shop R6, rust-shop R7, swift-shop S3, swift-shop S7, ts-shop T7 (1 held out) | 10 |
+| 3. Understand before changing, and verify behavior is unchanged | c-shop C4, c-shop C5, java-clinic J13, kotlin-shop K3, py-logistics PW1, rb-clinic RB12, rust-shop R4, rust-shop R6, rust-shop R7, swift-shop S3, swift-shop S7, ts-shop T7 (2 held out) | 12 |
 | 4. Bugs are always documented, and never fixed on purpose | c-shop C7, c-shop C8, java-clinic J7, kotlin-shop K4, kotlin-shop K5, kotlin-shop K6, py-logistics P3, rb-clinic RB7, rust-shop R8, rust-shop R9, swift-shop S5, swift-shop S9, ts-shop T5 (2 held out) | 13 |
-| 5. Behavior changes are never silent | java-clinic J3, java-clinic J8, kotlin-shop K10, py-logistics P2, rb-clinic RB2, ts-shop T4, ts-shop T6 (2 held out) | 7 |
-| 6. Strive for the best possible complexity | c-shop C1, c-shop C2, c-shop C6, c-shop C10, java-clinic J5, java-clinic J6, java-clinic J10, kotlin-shop K1, kotlin-shop K2, kotlin-shop K12, kotlin-shop K13, kotlin-shop K14, py-logistics P1, py-logistics P6, rb-clinic RB5, rb-clinic RB6, rb-clinic RB9, rust-shop R1, rust-shop R2, rust-shop R3, rust-shop R5, rust-shop R11, rust-shop R12, swift-shop S2, swift-shop S4, swift-shop S6, ts-shop T1, ts-shop T2, ts-shop T10, ts-shop T11, ts-shop T12 (5 held out) | 31 |
+| 5. Behavior changes are never silent | java-clinic J3, java-clinic J8, java-clinic J11, kotlin-shop K10, py-logistics P2, rb-clinic RB2, rb-clinic RB10, ts-shop T4, ts-shop T6 (3 held out) | 9 |
+| 6. Strive for the best possible complexity | c-shop C1, c-shop C2, c-shop C6, c-shop C10, java-clinic J5, java-clinic J6, java-clinic J10, java-clinic J12, java-clinic J13, kotlin-shop K1, kotlin-shop K2, kotlin-shop K12, kotlin-shop K13, kotlin-shop K14, py-logistics P1, py-logistics P6, rb-clinic RB5, rb-clinic RB6, rb-clinic RB9, rb-clinic RB11, rb-clinic RB12, rust-shop R1, rust-shop R2, rust-shop R3, rust-shop R5, rust-shop R11, rust-shop R12, swift-shop S2, swift-shop S4, swift-shop S6, ts-shop T1, ts-shop T2, ts-shop T10, ts-shop T11, ts-shop T12 (7 held out) | 35 |
 | 7. Data structures must earn their place | swift-shop S1, ts-shop T2 | 2 |
 | 8. Measure, do not only reason | c-shop C9, java-clinic J4, kotlin-shop K9, kotlin-shop K15, py-logistics P4, rb-clinic RB4, rb-clinic RB5, rust-shop R10, swift-shop S10, ts-shop T9 (3 held out) | 10 |
-| 9. State which case you mean | java-clinic J9, kotlin-shop K8, py-logistics P5 (1 held out) | 3 |
+| 9. State which case you mean | java-clinic J9, java-clinic J11, java-clinic J12, kotlin-shop K8, py-logistics P5, rb-clinic RB10, rb-clinic RB11 (3 held out) | 7 |
 | 10. Look beyond CPU loops | java-clinic J1, kotlin-shop K10, rb-clinic RB1 (1 held out) | 3 |
 | 11. Keep the public contract | ts-shop T3 | 1 |
 | 12. Start green | **none yet** | 0 |
@@ -29,8 +29,8 @@ Which evaluation cases test each mandatory rule in `skills/SKILL.md`, and each s
 |---|---|---|
 | `BEHAVIOR-TRAPS.md` | java-clinic J8, rb-clinic RB2 (1 held out) | 2 |
 | `DIFFERENTIAL-TESTING.md` | java-clinic J7 | 1 |
-| `DISCOVERY.md` | java-clinic J5, py-logistics P1, rb-clinic RB5 (2 held out) | 3 |
-| `languages/GENERIC.md` | rb-clinic RB8, rb-clinic RBW1 (2 held out) | 2 |
+| `DISCOVERY.md` | java-clinic J5, java-clinic J12, py-logistics P1, rb-clinic RB5, rb-clinic RB11 (3 held out) | 5 |
+| `languages/GENERIC.md` | rb-clinic RB8, rb-clinic RB12, rb-clinic RBW1 (3 held out) | 3 |
 | `techniques/hostile-inputs.md` | java-clinic J9, py-logistics P5 (1 held out) | 2 |
 
 ## Cases that name no rule
