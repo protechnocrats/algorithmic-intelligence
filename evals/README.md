@@ -167,6 +167,10 @@ evals/run-pilot.sh --fixture java-clinic --cases report --conditions baseline --
 
 Another agent (Codex CLI, Gemini CLI) is not supported by `run-pilot.sh` yet: it calls `claude -p` and parses Claude Code's stream format. Supporting one means a per-agent command, allowed-tools mapping, and transcript parser.
 
+## Grading
+
+Every round is graded on every category in [GRADING.md](GRADING.md), for every session, in both conditions, with `evals/grade.py`: validity, behavior safety, case outcomes, protocol, analysis, verification, measurement, report completeness, skill use, and cost. Never report a round on one category. The free run (`python3 -I evals/grade.py <run directory> ...`) covers everything a script can check; `--judge` adds the judged checks and costs money (validate the judge model first with `--judge-selftest`). Copy the combined scorecard into the round's results file in full.
+
 ## Getting meaningful results
 
 - **Run each fixture three times.** Agents vary between runs; one run proves little.

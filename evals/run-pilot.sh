@@ -38,6 +38,11 @@ Usage: evals/run-pilot.sh [--fixture NAME] [--cases report,write] [--conditions 
   --stall-seconds S  Stop a turn whose transcript has not grown for S seconds while no tool is
                      running (default 600). The session is then marked invalid and its later
                      turns are skipped.
+  --skip-permissions Run agents with every tool call allowed (claude --dangerously-skip-permissions).
+                     The allowed-command list refuses loops and VAR=value prefixes however wide it
+                     is, and those refusals bias against the skill's verification steps. Use ONLY
+                     inside the dev container or another disposable machine: the agent runs any
+                     command with your user's rights. See SECURITY.md.
   --allow-subagents  Also allow the agent's sub-agent tool (Agent, Task). Off by default, so
                      comparisons with earlier rounds are not changed by agents spawning sub-agents.
 
@@ -48,7 +53,7 @@ EOF
 }
 
 fixture=ts-shop; cases="report write"; conditions="skill baseline"; skill_ref=""; model=""
-runs=1; parallel=2; budget=5; out=""; instructions=""; max_total=""; effort=""; skill_dir=""; stall=600; subagents=0
+runs=1; parallel=2; budget=5; out=""; instructions=""; max_total=""; effort=""; skill_dir=""; stall=600; subagents=0; skip_permissions=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --fixture) fixture="$2"; shift 2 ;;
@@ -66,6 +71,7 @@ while [ $# -gt 0 ]; do
     --skill-src) skill_dir="$2"; shift 2 ;;
     --stall-seconds) stall="$2"; shift 2 ;;
     --allow-subagents) subagents=1; shift ;;
+    --skip-permissions) skip_permissions=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
@@ -176,9 +182,12 @@ session() {
   local common=("Bash(cd:*)" "Bash(ls:*)" "Bash(cat:*)" "Bash(head:*)" "Bash(tail:*)" "Bash(wc:*)"
     "Bash(grep:*)" "Bash(find:*)" "Bash(sort:*)" "Bash(diff:*)" "Bash(echo:*)" "Bash(printf:*)"
     "Bash(mkdir:*)" "Bash(mktemp:*)" "Bash(cp:*)" "Bash(sed:*)" "Bash(timeout:*)" "Bash(time:*)" "Bash(python3:*)"
+    "Bash(awk:*)" "Bash(which:*)" "Bash(env:*)" "Bash(tar:*)" "Bash(tr:*)" "Bash(uniq:*)" "Bash(xargs:*)" "Bash(cut:*)"
     "Bash(bash test.sh:*)" "Bash(bash ./test.sh:*)" "Bash(bash $dest/test.sh:*)" "Bash($dest/test.sh:*)")
   local allowed=(Read Edit Write Glob Grep Skill TodoWrite "Bash(git:*)" "${common[@]}" "${fixture_tools[@]}")
   [ "$subagents" = 1 ] && allowed+=(Agent Task)
+  local perm=(--allowedTools "${allowed[@]}")
+  [ "$skip_permissions" = 1 ] && perm=(--dangerously-skip-permissions)
   local turn=0 invalid=0
   ask() {  # ask <label> <prompt>
     local label="$1" prompt="$2" resume=(--session-id "$id") rc
@@ -189,7 +198,7 @@ session() {
     turn=$((turn + 1))
     local transcript="$log.$turn-$label.jsonl"
     (trap - TERM INT; cd "$dest" && exec timeout -k 60 2700 claude -p "$prompt" "${resume[@]}" "${model_args[@]}" \
-       --allowedTools "${allowed[@]}" --add-dir /tmp --max-budget-usd "$budget" \
+       "${perm[@]}" --add-dir /tmp --max-budget-usd "$budget" \
        --output-format stream-json --verbose > "$transcript" 2> "$log.$turn-$label.err") &
     local runner=$!
     # Stall watchdog: the transcript stopped growing and no tool process is running, so the API
@@ -253,7 +262,7 @@ PY
 export -f session note spent_usd
 export out repo budget progress fixture skill_src test_cmd write_prompt instructions max_total stall subagents
 
-note "pilot started: fixture=$fixture cases=$cases conditions=$conditions runs=$runs parallel=$parallel budget=\$$budget per turn model=${model:-default} skill=$skill_label instructions=${instructions:+yes} effort=${effort:-default} cost cap=${max_total:-none} subagents=$subagents"
+note "pilot started: fixture=$fixture cases=$cases conditions=$conditions runs=$runs parallel=$parallel budget=\$$budget per turn model=${model:-default} skill=$skill_label instructions=${instructions:+yes} effort=${effort:-default} cost cap=${max_total:-none} subagents=$subagents skip_permissions=$skip_permissions"
 for case_id in $cases; do for cond in $conditions; do for n in $(seq 1 "$runs"); do
   echo "$case_id $cond $n"
 done; done; done | xargs -P "$parallel" -L 1 bash -c "$(declare -p fixture_tools model_args); trap '' TERM INT; session \"\$0\" \"\$1\" \"\$2\"; exit 0"
