@@ -93,7 +93,7 @@ A function is not pure just because its arguments are unchanged. Before caching 
 
 ## Concurrency
 
-- **Thread safety.** Replacing a synchronized or concurrent structure with an unsynchronized one, or adding shared mutable caches, introduces races.
+- **Thread safety.** Replacing a synchronized or concurrent structure with an unsynchronized one, or adding shared mutable caches, introduces races. When the code can run on several threads, goroutines, or workers at once (request handlers usually do), synchronize any shared state you add and test it with concurrent callers, with the language's race detector or thread sanitizer where one exists. Locks that no test exercises concurrently are unverified.
 - **Iterator invalidation.** Modifying a collection while iterating it throws, skips elements, or (in C and C++) is undefined behavior, depending on the platform.
 - **Changed concurrency.** Running previously sequential work concurrently changes ordering, error behavior (fail-fast versus continue), rate limiting, and resource usage.
 - **Optimistic and speculative execution.** A reader that proceeds without a lock (sequence locks, optimistic concurrency) can see torn or inconsistent data before it validates. It must not act on that data first: no pointer dereference, division, array index, or output. A retry repeats every side effect of the attempt, and speculative work done for a guess that turns out wrong must leave no trace (no writes, logs, or messages).

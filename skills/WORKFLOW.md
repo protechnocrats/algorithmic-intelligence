@@ -53,7 +53,7 @@ For each remaining candidate, record:
 8. **Behavior risks.** Walk `BEHAVIOR-TRAPS.md` and list every trap the change could hit.
 9. **Verification plan.** The highest verification level the change can reach cheaply ("Verification levels" in `DIFFERENTIAL-TESTING.md`), the tool if one is needed, and which observable behavior no level can cover here (real database ordering, timing, platform rendering).
 10. **Known behavior changes.** Any observable behavior the approach changes, even for the better ("Behavior-changing techniques" in `ALGORITHM-ARSENAL.md` lists the usual ones). Before listing one, look for a version that keeps the behavior ("Look for a version that keeps the behavior" under rule 5 in "Rule details"); if one exists, it is the item, and the faster version is the option for review. Behavior changes go under the report's "Behavior changes for review" and are never applied without explicit approval (rule 5).
-11. **Bugs noticed.** Anything that looks wrong in the original. Record it for the bug log; do not fix it. Note whether the code will be optimized (rule 4): if not, it stays exactly as is; if so, whether the chosen approach keeps the bug or removes it as a side effect.
+11. **Bugs noticed.** Anything that looks wrong in the original, and in any other code you read along the way: other functions in the same file, callers, and helpers, including code you are not changing (for example a rounding or off-by-one error next to the function you optimize). Record it for the bug log; do not fix it. Note whether the code will be optimized (rule 4): if not, it stays exactly as is; if so, whether the chosen approach keeps the bug or removes it as a side effect.
 
 ## Phase 4: Report
 
