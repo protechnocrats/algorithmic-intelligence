@@ -1,10 +1,10 @@
 # Spatial Data
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Spatial data
 
-Spatial structures return candidates; the original exact geometric test still runs on each candidate, so results stay identical. The order in which results are returned usually changes: if callers observe it, sort the results back into the original order, or treat it as a behavior change. Workload shape decides the choice: dimensionality, object sizes, clustering, and how often objects move.
+Spatial structures return candidates; the original exact geometric test still runs on each one, so results stay identical. Result order usually changes: if callers observe it, restore the original order or treat it as a behavior change. The workload decides the choice: dimensionality, object sizes, clustering, and how often objects move.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -15,7 +15,6 @@ Spatial structures return candidates; the original exact geometric test still ru
 | Nearest-neighbor or range search over points in low dimensions | k-d tree | Low dimensionality (roughly under 10); data mostly static | Build: O(n log n). Query: O(log n) average for well-distributed data, degrading toward O(n) for skewed data or higher dimensions; workload-dependent |
 | Nearest neighbor in high dimensions (embeddings, feature vectors) | Exact: a well-vectorized linear scan usually beats trees above roughly 10 to 20 dimensions. Approximate: HNSW graphs, locality-sensitive hashing, product quantization | Approximate methods can miss true neighbors: **always a behavior change**, developer review | Exact scan: constant-factor gains only. Approximate: sublinear queries in practice |
 
-## References (for verifying claims; not required reading)
+## References
 
-- Hanan Samet, *Foundations of Multidimensional and Metric Data Structures* (2006).
-- de Berg, Cheong, van Kreveld, and Overmars, *Computational Geometry: Algorithms and Applications*, 3rd ed. (2008).
+Sources for the claims in this file are in `references/techniques/spatial-data.md`. Read them only to verify a claim.

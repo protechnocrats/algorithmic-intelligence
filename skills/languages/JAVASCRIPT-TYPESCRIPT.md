@@ -25,7 +25,7 @@ Load this file for JavaScript and TypeScript projects. Record the runtime (Node 
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -64,7 +64,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 - **String length** counts UTF-16 code units; `[...str]` and `Array.from(str)` iterate code points. Switching between them changes results for emoji and non-BMP characters.
 - **Sparse arrays and holes** are skipped by `forEach`, `map`, and `filter` but visited by `for` loops.
 - **Mutation:** `sort`, `reverse`, and `splice` mutate in place; `toSorted`, `toReversed`, and `toSpliced` (ES2023) return copies.
-- **Async ordering:** `Promise.all` rejects on the first error, while a sequential loop stops at the error after earlier side effects; `Promise.allSettled` continues. All three behave differently.
+- **Async ordering:** `Promise.all` rejects on the first error, while a sequential loop stops at the error after earlier side effects; `Promise.allSettled` continues.
 
 ## Testing and benchmarking
 
@@ -75,6 +75,6 @@ This table lists common traps, not every operation. Every call counts at its rea
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`): fast-check reaches level 2 with shrinking, and its model-based testing (`fc.commands`) checks stateful structures against a simple model. Reach level 3 by enumerating small domains exhaustively in tests. TypeScript's type checker proves type-level facts only, never equivalence.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `crypto.timingSafeEqual` in Node.js; in browsers, verify message authentication codes with Web Crypto's `crypto.subtle.verify` rather than comparing bytes.
 
-## References (for verifying claims; not required reading)
+## References
 
-- MDN JavaScript reference: developer.mozilla.org/en-US/docs/Web/JavaScript/Reference; ECMAScript specification: tc39.es/ecma262/
+Sources for the claims in this file are in `references/languages/JAVASCRIPT-TYPESCRIPT.md`. Read them only to verify a claim.

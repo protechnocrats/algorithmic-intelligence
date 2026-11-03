@@ -24,7 +24,7 @@ Not in the standard library: multisets, bidirectional maps, primitive-specialize
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -33,7 +33,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `list.contains(x)` inside a loop | O(n·m) | `HashSet` built once |
 | `a.removeAll(b)` / `retainAll(b)` where `b` is a `List` | O(n·m) | Pass a `HashSet`. For `AbstractSet.removeAll`, cost depends on which collection is larger |
 | `String s += x` in a loop | O(n²) copying (the compiler only optimizes single expressions) | `StringBuilder` |
-| `Pattern.compile` or `String.matches`/`replaceAll`/`split` with a regex in a hot loop | Recompiles each call (except `split` on one literal character, or one backslash-escaped character, which has a fast path with no regex) | Precompiled `static final Pattern`; leave a single-character `split` alone |
+| `Pattern.compile` or `String.matches`/`replaceAll`/`split` with a regex in a hot loop | Recompiles each call (except `split` on one literal or backslash-escaped character, which has a no-regex fast path) | Precompiled `static final Pattern`; leave a single-character `split` alone |
 | `String.format` in hot paths | Parses the format each call | `StringBuilder` |
 | `Map<Integer, Integer>`, `List<Long>` in hot numeric code | Boxing, GC pressure, cache misses | Primitive arrays or counting arrays |
 | `stream()` pipelines in very hot tight loops | Allocation overhead | Plain loop, only if a benchmark shows it matters |
@@ -56,7 +56,7 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 ## Java-specific traps
 
 - **`HashMap`/`HashSet` order** is unspecified and changes with capacity and Java version. `LinkedHashMap` keeps insertion order.
-- **Sort stability:** `Arrays.sort(Object[])`, `Collections.sort`, and `List.sort` are stable (TimSort). `Arrays.sort` on primitives is not stable, but stability is not observable for primitives.
+- **Sort stability:** `Arrays.sort(Object[])`, `Collections.sort`, and `List.sort` are stable (TimSort). `Arrays.sort` on primitives is not stable, which is unobservable for primitives.
 - **`Integer` caching:** `==` on boxed `Integer` compares references and works only for values -128 to 127 by default. A rewrite that changes boxing can change `==` results.
 - **`equals` without `hashCode`** works in lists but fails in hash structures.
 - **`Arrays.asList`** is fixed-size; `List.of` and `Stream.toList()` (Java 16+) are unmodifiable; `Collectors.toList()` makes no guarantee about mutability but returns an `ArrayList` in practice. Changing which one is returned changes what callers can do.
@@ -70,10 +70,10 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 - **Tests:** JUnit 5 (or 4), AssertJ, Mockito.
 - **Property-based testing, if already present:** jqwik, junit-quickcheck.
 - **Profiling:** async-profiler (CPU, allocation, and lock flame graphs) or Java Flight Recorder (`-XX:StartFlightRecording`, viewed in JDK Mission Control); VisualVM if nothing else is available.
-- **Benchmarks, if already present:** JMH (`-prof gc` reports allocation per operation). Otherwise use a timing harness with warmup in test code; note that JIT warmup, dead-code elimination, and GC make naive timings unreliable.
+- **Benchmarks, if already present:** JMH (`-prof gc` reports allocation per operation). Otherwise use a timing harness with warmup in test code; JIT warmup, dead-code elimination, and GC make naive timings unreliable.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): JBMC for bounded model checking of bytecode, including equivalence harnesses; jcstress for concurrency outcomes under the Java memory model; Java PathFinder for model checking thread interleavings; OpenJML for checking JML contracts.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `MessageDigest.isEqual` (time depends only on the first argument's length), never `Arrays.equals` or `String.equals` on secrets.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Java collections API: docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/package-summary.html
+Sources for the claims in this file are in `references/languages/JAVA.md`. Read them only to verify a claim.

@@ -1,6 +1,6 @@
 # Hostile Inputs, Secrets, and Hard Deadlines
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 Load this file when the exposure check (Phase 2 in `WORKFLOW.md`, or write mode step 2) finds that untrusted parties control the input, that the code handles secrets, or that it runs under a hard deadline. Friendly benchmark data says nothing about these cases: the attacker, the secret, or the deadline picks the input that matters.
 
@@ -12,7 +12,7 @@ Load this file when the exposure check (Phase 2 in `WORKFLOW.md`, or write mode 
 
 ## Adaptive adversaries: when outputs reveal the randomness
 
-The expected bounds of randomized structures assume that the input does not depend on the structure's random choices. That holds when an attacker picks the whole input in advance (an *oblivious* adversary). It fails when the attacker sees outputs that depend on those random choices and picks later inputs after seeing them (an *adaptive* adversary). Then the guarantee can collapse after a modest number of queries, even though each random choice was secret:
+The expected bounds of randomized structures assume the input does not depend on the structure's random choices. That holds when an attacker picks the whole input in advance (an *oblivious* adversary). It fails when the attacker sees outputs that depend on those random choices and picks later inputs after seeing them (an *adaptive* adversary). Then the guarantee can collapse after a modest number of queries, even though each random choice was secret:
 
 - **Sketches and estimators** (HyperLogLog and other distinct-count sketches, MinHash, Count-Min, AMS and other linear sketches): no linear sketch estimates the Euclidean norm within any fixed factor on polynomially many adaptively chosen inputs (Hardt and Woodruff, STOC 2013), and the standard estimators of distinct-count sketches with k registers (HyperLogLog and its variants) can be broken with a number of adaptive queries linear in k (Ahmadian and Cohen, ICML 2024), while about k² queries suffice against any estimator for such sketches, a bound that is tight (Cohen, Nelson, Sarlós, Singhal, and Stemmer, SODA 2026).
 - **Filters and caches** (Bloom and cuckoo filters, sampling or randomized-eviction caches): which requests hit, miss, or are rejected tells the attacker about the hidden state.
@@ -63,16 +63,6 @@ Measure the maximum and the highest percentiles over long runs, never the median
 - **Performance fuzzing:** fuzzers that search for inputs maximizing running time or resource use (PerfFuzz, SlowFuzz), or a coverage-guided fuzzer with a size and time objective. A fuzzer is a tool to install: ask first (rule 7).
 - **Report** the worst input found, its measured cost, and the worst-case bound it is consistent with.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Moritz Hardt and David P. Woodruff, "How Robust Are Linear Sketches to Adaptive Inputs?", STOC 2013.
-- Omri Ben-Eliezer, Rajesh Jayaram, David P. Woodruff, and Eylon Yogev, "A Framework for Adversarially Robust Streaming Algorithms," PODS 2020; Avinatan Hassidim, Haim Kaplan, Yishay Mansour, Yossi Matias, and Uri Stemmer, "Adversarially Robust Streaming Algorithms via Differential Privacy," NeurIPS 2020.
-- Sara Ahmadian and Edith Cohen, "Unmasking Vulnerabilities: Cardinality Sketches under Adaptive Inputs," ICML 2024; Edith Cohen, Jelani Nelson, Tamás Sarlós, Mihir Singhal, and Uri Stemmer, "One Attack to Rule Them All: Tight Quadratic Bounds for Adaptive Queries on Cardinality Sketches," SODA 2026.
-
-- Scott A. Crosby and Dan S. Wallach, "Denial of Service via Algorithmic Complexity Attacks," USENIX Security 2003.
-- M. Douglas McIlroy, "A Killer Adversary for Quicksort," *Software: Practice and Experience* 29(4), 1999; David R. Musser, "Introspective Sorting and Selection Algorithms," *Software: Practice and Experience* 27(8), 1997.
-- Jean-Philippe Aumasson and Daniel J. Bernstein, "SipHash: A Fast Short-Input PRF," INDOCRYPT 2012.
-- Paul C. Kocher, "Timing Attacks on Implementations of Diffie-Hellman, RSA, DSS, and Other Systems," CRYPTO 1996.
-- Oscar Reparaz, Josep Balasch, and Ingrid Verbauwhede, "Dude, Is My Code Constant Time?", DATE 2017.
-- Caroline Lemieux et al., "PerfFuzz: Automatically Generating Pathological Inputs," ISSTA 2018; Theofilos Petsios et al., "SlowFuzz: Automated Domain-Independent Detection of Algorithmic Complexity Vulnerabilities," CCS 2017.
-- Reinhard Wilhelm et al., "The Worst-Case Execution-Time Problem," *ACM Transactions on Embedded Computing Systems* 7(3), 2008.
+Sources for the claims in this file are in `references/techniques/hostile-inputs.md`. Read them only to verify a claim.

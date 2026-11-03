@@ -24,7 +24,7 @@ Load this file for Python projects. Record the interpreter and version (`require
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -55,7 +55,7 @@ A blocking call (`time.sleep`, synchronous network, file, or database calls, hea
 | Highest bit, lowest set bit | `x.bit_length()`, `x & -x` |
 | Fixed-width behavior | Integers never overflow: emulate 32- or 64-bit wraparound with `& 0xFFFFFFFF` and sign conversion |
 
-Python integers are arbitrary precision, so a bitmask holds any number of flags, but every operation costs time proportional to the integer's size and creates a new object. For many single-bit updates on a large set, a `bytearray` (one byte per flag) is faster.
+An integer bitmask holds any number of flags, but every operation costs time proportional to the integer's size and creates a new object. For many single-bit updates on a large set, a `bytearray` (one byte per flag) is faster.
 
 ## Python-specific traps
 
@@ -79,11 +79,9 @@ Python integers are arbitrary precision, so a bitmask holds any number of flags,
 - **Property-based testing, if already present:** Hypothesis, including stateful testing (`RuleBasedStateMachine`) against a simple model. Otherwise a seeded `random.Random(seed)` generator.
 - **Profiling:** `cProfile` with `pstats` (standard library, deterministic, inflates call-heavy code); py-spy (sampling, attaches to a running process, no code changes) or Scalene (CPU, memory, and native time per line) if installed; `tracemalloc` (standard library) for allocations and peak memory.
 - **Benchmarks:** `timeit` (standard library) for small snippets; pyperf or pytest-benchmark if present, which calibrate loops and report variance. Disable or account for garbage collection pauses only when the original runs with GC enabled.
-- **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; installs, so ask unless present): CrossHair checks contracts by symbolic execution with an SMT solver, and `crosshair diffbehavior` searches for inputs where two functions differ, which is an equivalence check within its search bounds; Nagini verifies annotated programs with a prover. Type checkers (mypy, pyright) prove type facts only, never equivalence.
+- **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; installs, so ask unless present): CrossHair checks contracts by symbolic execution with an SMT solver, and `crosshair diffbehavior` searches for inputs where two functions differ (an equivalence check within its search bounds); Nagini verifies annotated programs with a prover. Type checkers (mypy, pyright) prove type facts only, never equivalence.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `hmac.compare_digest` (also `secrets.compare_digest`), never `==` on tokens or digests.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Operation costs of built-in types: wiki.python.org/moin/TimeComplexity; standard library: docs.python.org/3/library/
-- Hashing of numeric types: docs.python.org/3/library/stdtypes.html#hashing-of-numeric-types
-- Integer string conversion limit: docs.python.org/3/library/stdtypes.html#int-max-str-digits
+Sources for the claims in this file are in `references/languages/PYTHON.md`. Read them only to verify a claim.

@@ -1,6 +1,6 @@
 # Data at Scale: Streaming and Storage
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Streaming and external memory
 
@@ -18,13 +18,13 @@ For data larger than memory, or when memory must stay within a fixed budget. Sta
 
 For storage engines, databases, file systems, and any index larger than memory, count block or page I/O, not comparisons: one page read from disk costs as much as many thousands of comparisons. Before choosing, record the workload: read and write mix, point versus range queries, key distribution, data size relative to memory, and the durability and crash-recovery contract.
 
-Three costs trade against each other: read amplification (pages read per lookup), write amplification (bytes written per byte of new data), and space amplification (bytes stored per byte of live data). Lowering one usually raises another (the RUM conjecture, a conjecture rather than a proven bound). State which one the workload needs lowered, and measure the other two.
+Three costs trade against each other: read amplification (pages read per lookup), write amplification (bytes written per byte of new data), and space amplification (bytes stored per byte of live data). Lowering one usually raises another (the RUM conjecture, not a proven bound). State which one the workload needs lowered, and measure the other two.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
 | Ordered index too large for memory, or point and range lookups through a page cache | B+ tree with node size matched to the page or block size; values only in leaves, leaves linked for range scans | Ordered keys with a fixed comparator | Page reads per lookup: O(log₂ n) for a binary tree → O(log_B n) for fanout B; a range scan reads consecutive leaves |
 | In-memory ordered map where pointer chasing in a binary tree dominates | B-tree with small fixed-size nodes (a few cache lines) | Iteration order and comparator unchanged | Same O(log n); fewer cache misses |
-| Write-heavy index where random in-place page updates dominate | Log-structured merge (LSM) tree: in-memory buffer plus write-ahead log, flushed to sorted immutable runs, merged by compaction | Deletes become tombstones; reads may check several runs; durability, crash recovery, and read-after-write timing must match the original contract, otherwise it is a behavior change | Random page writes → sequential batched writes; reads pay read amplification across runs |
+| Write-heavy index where random in-place page updates dominate | Log-structured merge (LSM) tree: in-memory buffer plus write-ahead log, flushed to sorted immutable runs, merged by compaction | Deletes become tombstones; reads may check several runs; durability, crash recovery, and read-after-write timing must match the original contract, or it is a behavior change | Random page writes → sequential batched writes; reads pay read amplification across runs |
 | Readers and writers block each other on row or page locks | Multi-version concurrency control (MVCC): writers create new versions, readers read a snapshot | The isolation level callers see is unchanged (snapshot isolation allows write skew that serializable execution prevents: a behavior change if the original was serializable); old versions are garbage-collected | Reads no longer wait for writes; storage pays for versions |
 | Choosing LSM compaction | Leveled compaction (lower read and space amplification, higher write amplification) or tiered compaction (the reverse) | Measured read and write mix | A trade-off, not a free win; benchmark both |
 | LSM or on-disk lookups for keys that are often absent | Bloom or cuckoo filter per run or file, plus fence pointers (the first key of each page) in memory | Filter used only to skip reads, never to answer a lookup | Most negative lookups need no disk read; a positive lookup reads about one page in the run that holds the key, plus a page for each other run whose filter gives a false positive |
@@ -32,11 +32,11 @@ Three costs trade against each other: read amplification (pages read per lookup)
 | Large static sorted integer sets (posting lists, ID sets) | Compressed representations: delta encoding with varint or bit packing, Elias-Fano, Roaring bitmaps | Set and order semantics unchanged | Several times less memory and I/O; intersections and unions run on compressed data |
 | Sparse map from integer keys (page offsets, file descriptors, IDs) with ordered iteration | Radix tree (for example, the Linux kernel XArray) | Keys are integers of bounded width | O(log n) comparisons → O(key bits / bits per level) steps; no rebalancing |
 | Scans of large tables or files where filters select a narrow range of values | Data skipping: minimum and maximum (zone maps, block range indexes) per block, page, or row group; skip blocks whose range cannot match | The statistics are updated on every write or marked stale; skipping uses the same comparison semantics as the filter, including nulls, collation, and NaN | Blocks read: all → only those whose range overlaps the filter. Works best when data is clustered by the filtered column |
-| Sequential or strided reads issued one block at a time, each paying full device or network latency | Readahead: fetch the next blocks before they are requested (the kernel's readahead window, `posix_fadvise`, `madvise`, asynchronous I/O such as `io_uring`), sized to the measured access pattern | Access pattern measured as sequential or predictable; memory for prefetched blocks is bounded; a wrong prefetch only wastes I/O and has no other effect | Latency per block overlapped with processing; throughput approaches device bandwidth |
+| Sequential or strided reads issued one block at a time, each paying full device or network latency | Readahead: fetch the next blocks before they are requested (the kernel's readahead window, `posix_fadvise`, `madvise`, asynchronous I/O such as `io_uring`), sized to the measured access pattern | Access pattern measured as sequential or predictable; memory for prefetched blocks is bounded; a wrong prefetch only wastes I/O | Latency per block overlapped with processing; throughput approaches device bandwidth |
 
 ## Change propagation
 
-Recomputing or rescanning everything to find what changed costs O(data) per update. When changes are small relative to the data, propagate the changes instead. Before choosing, record the read-after-write contract: how soon a reader must see a change. Any delay the original did not have is a behavior change.
+Recomputing or rescanning everything to find what changed costs O(data) per update. When changes are small relative to the data, propagate them instead. Before choosing, record the read-after-write contract: how soon a reader must see a change. Any delay the original did not have is a behavior change.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -55,8 +55,6 @@ No lossless encoding can average fewer bits per symbol than the data's entropy (
 | Transfer or storage bound by bytes moved, with CPU to spare | A fast general-purpose codec chosen by measured ratio and speed (for example LZ4, Zstandard, Snappy, or the platform's built-in compression) | CPU headroom measured; a codec outside the standard library is a dependency (rule 7); the format change is a behavior change for readers | Bytes moved reduced by the measured ratio |
 | Custom encoding of symbols whose frequencies are skewed (compressors, codecs, index formats) | Huffman coding, or arithmetic coding or asymmetric numeral systems (ANS) to get closer to the entropy | Encoder and decoder change together; output bits change, so compatibility is a behavior change | Average code length within 1 bit of the entropy (Huffman), or very close to it (arithmetic coding, ANS) |
 
-## References (for verifying claims; not required reading)
+## References
 
-- Alex Petrov, *Database Internals* (2019); Martin Kleppmann, *Designing Data-Intensive Applications* (2017).
-- Patrick O'Neil et al., "The Log-Structured Merge-Tree (LSM-Tree)," *Acta Informatica* 33(4), 1996.
-- Thomas M. Cover and Joy A. Thomas, *Elements of Information Theory*, 2nd ed. (2006).
+Sources for the claims in this file are in `references/techniques/data-at-scale.md`. Read them only to verify a claim.

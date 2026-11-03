@@ -1,16 +1,16 @@
 # Optimization, Scheduling, and Allocation
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
-For code that searches for the best assignment, schedule, route, packing, or allocation: job and task schedulers (operating systems, build systems, batch and cluster schedulers), compilers (instruction scheduling, register and memory allocation), query optimizers, logistics and routing, timetabling, ad and resource allocation, and capacity planning. The usual slow form is a loop over permutations, subsets, or candidate plans. Sometimes the fastest fix is not a faster loop but a better formulation of the problem.
+For code that searches for the best assignment, schedule, route, packing, or allocation: job and task schedulers (operating systems, build systems, batch and cluster schedulers), compilers (instruction scheduling, register and memory allocation), query optimizers, logistics and routing, timetabling, ad and resource allocation, and capacity planning. The usual slow form is a loop over permutations, subsets, or candidate plans. Sometimes the fastest fix is a better formulation of the problem, not a faster loop.
 
 ## Before choosing
 
-1. **Write the model.** Name the decision variables, the constraints, and the objective. Most code that searches for a "best" plan never states them, and many recognizable problems appear once they are written down.
+1. **Write the model.** Name the decision variables, the constraints, and the objective. Most code searching for a "best" plan never states them, and many recognizable problems appear once they are written.
 2. **Check for a polynomial special case** (first table). Many scheduling and assignment problems that look combinatorial have exact greedy or flow solutions.
-3. **Only then treat it as hard.** If the problem is NP-hard in general (move 6 in `DISCOVERY.md`), see "After NP-hardness" in `techniques/sequences-dp-search.md` for the options: structure that makes the instances easy, approximation with a guarantee, a solver, or a heuristic.
+3. **Only then treat it as hard.** If it is NP-hard in general (move 6 in `DISCOVERY.md`), "After NP-hardness" in `techniques/sequences-dp-search.md` gives the options: structure that makes the instances easy, approximation with a guarantee, a solver, or a heuristic.
 
-**Exact versus not exact.** If the original returns a provably optimal answer, anything that may return a different answer is a behavior change (rule 5): heuristics, approximation algorithms, solvers stopped by a time limit, and solvers that return a different optimal solution among several equally good ones. Ties between optimal solutions are common in scheduling and assignment, and callers often observe which one they get. State the tie-breaking rule of the original and reproduce it, or list the change for review.
+**Exact versus not exact.** If the original returns a provably optimal answer, anything that may return a different answer is a behavior change (rule 5): heuristics, approximation algorithms, solvers stopped by a time limit, and solvers returning a different one of several equally good optimal solutions. Ties between optimal solutions are common in scheduling and assignment, and callers often observe which one they get. State and reproduce the original's tie-breaking rule, or list the change for review.
 
 ## Polynomial special cases
 
@@ -31,7 +31,7 @@ For code that searches for the best assignment, schedule, route, packing, or all
 
 ## Modeling and solvers
 
-When no special case fits and the instances are large or the constraints change often, a declarative model handed to a solver usually beats custom search code, both in speed and in what it can express. Solvers are dependencies: ask first (rule 7), and check licenses (several commercial solvers need paid licenses; OR-Tools, HiGHS, and CBC are open source).
+When no special case fits and the instances are large or the constraints change often, a declarative model handed to a solver usually beats custom search code in both speed and expressiveness. Solvers are dependencies: ask first (rule 7), and check licenses (several commercial solvers need paid licenses; OR-Tools, HiGHS, and CBC are open source).
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -57,8 +57,8 @@ Use these only when exact answers are too slow for the measured sizes, and list 
 
 When the code trades off several goals (cost and time, latency and throughput), first decide how they combine:
 
-- **Lexicographic:** optimize the first objective, then the second among the solutions that tie on the first. Reproduces "sort by A, then B" rules exactly.
-- **Weighted sum:** one combined score. It finds only solutions on the convex part of the trade-off curve.
+- **Lexicographic:** optimize the first objective, then the second among solutions tying on the first. Reproduces "sort by A, then B" rules exactly.
+- **Weighted sum:** one combined score; finds only solutions on the convex part of the trade-off curve.
 - **Pareto front:** keep every solution that no other solution beats on all objectives, and let the caller choose. Computing the front of n points is O(n log n) in two or three dimensions (sort by one objective, then sweep), instead of comparing all O(n²) pairs.
 
 Changing how objectives combine changes which solution is chosen: a behavior change.
@@ -69,15 +69,11 @@ Many systems decisions must be made before the future is known: whether to keep 
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| Paying a repeated cost or a one-time cost without knowing how often the need recurs: spin or block (adaptive locks), scan or build an index, recompute or cache, interpret or compile (JIT tiers), reconnect or keep a connection | Ski rental: keep paying the repeated cost until it adds up to the one-time cost, then pay the one-time cost | The two costs are measured; changing the threshold changes timing, not results | Never more than twice the hindsight-optimal cost (deterministic); about 1.58 times with a randomized threshold |
+| Paying a repeated cost or a one-time cost without knowing how often the need recurs: spin or block (adaptive locks), scan or build an index, recompute or cache, interpret or compile (JIT tiers), reconnect or keep a connection | Ski rental: keep paying the repeated cost until it totals the one-time cost, then pay the one-time cost | The two costs are measured; changing the threshold changes timing, not results | Never more than twice the hindsight-optimal cost (deterministic); about 1.58 times with a randomized threshold |
 | Choosing a cache eviction policy and judging how good it is | Compare against Belady's optimal policy (evict the item used furthest in the future), computed offline on a recorded access trace; LRU and FIFO are k-competitive for a cache of k items | A representative trace is available; Belady's policy is optimal only when every item has the same size and miss cost (with variable sizes, as in byte-capacity caches, the exact offline optimum is NP-hard, so compare against a published bound instead); see "Caching and eviction" in `techniques/data-structures.md` for the policies | Shows how much hit rate any policy could still gain on this workload |
 | Jobs arriving one at a time must be assigned to identical machines | List scheduling: assign each job to the least-loaded machine (a heap of loads) | Jobs cannot be reassigned later; if all jobs are known first, sort them longest first ("Heuristics with guarantees") | Within 2 − 1/m of the optimal finishing time for m machines; O(log m) per job |
 | Items arriving one at a time must be packed into bins | First fit (place in the first bin with room) | Approximate packing accepted; if all items are known first, use first-fit decreasing | At most 1.7 times the optimal number of bins |
 
-## References (for verifying claims; not required reading)
+## References
 
-- Jon Kleinberg and Éva Tardos, *Algorithm Design* (2005): greedy algorithms, network flow.
-- Michael L. Pinedo, *Scheduling: Theory, Algorithms, and Systems*, 6th ed. (2022).
-- David P. Williamson and David B. Shmoys, *The Design of Approximation Algorithms* (2011).
-- Allan Borodin and Ran El-Yaniv, *Online Computation and Competitive Analysis* (1998); Daniel D. Sleator and Robert E. Tarjan, "Amortized Efficiency of List Update and Paging Rules," *CACM* 28(2), 1985; R. L. Graham, "Bounds for Certain Multiprocessing Anomalies" (1966).
-- Alexander Schrijver, *Theory of Linear and Integer Programming* (1986).
+Sources for the claims in this file are in `references/techniques/optimization-and-scheduling.md`. Read them only to verify a claim.

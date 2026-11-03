@@ -1,10 +1,10 @@
 # Computational Geometry and CAD
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Computational geometry and CAD
 
-For CAD and CAM, GIS, 3D modeling, mesh processing, and geometry kernels. Robustness decides correctness: a rewrite that evaluates the same predicate in a different order can flip an orientation or in-out test on nearly degenerate input and produce different topology. Keep the original predicates, or use exact or adaptive-precision ones, and test degenerate cases (collinear, coincident, touching, zero-area): see "Geometry" in `BEHAVIOR-TRAPS.md`.
+For CAD and CAM, GIS, 3D modeling, mesh processing, and geometry kernels. Robustness decides correctness: evaluating the same predicate in a different order can flip an orientation or in-out test on nearly degenerate input and change topology. Keep the original predicates, or use exact or adaptive-precision ones, and test degenerate cases (collinear, coincident, touching, zero-area): see "Behavior traps" below.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -18,10 +18,18 @@ For CAD and CAM, GIS, 3D modeling, mesh processing, and geometry kernels. Robust
 | Mesh adjacency queries (neighbors of a vertex, faces around an edge) answered by scanning all faces | Half-edge (or winged-edge) structure, or adjacency lists built once | Half-edge needs a manifold mesh; non-manifold meshes need a general adjacency structure | O(F) per query → O(degree) |
 | Merging nearby vertices (welding) by comparing every pair | Spatial hash with cell size equal to the tolerance, checking the neighboring cells | Same tolerance rule and same choice of the surviving vertex | O(n²) → O(n) expected |
 | Polygon Boolean operations (union, intersection, difference) by testing every edge pair | Sweep-line clipping (Vatti, Martinez-Rueda) | Robust predicates; output orientation and vertex order match, or the difference is approved | O(n·m) → O((n + m + k) log(n + m)) |
-| Evaluating Bezier or B-spline curves at many parameter values | Horner's method on the power form, or a Horner-style Bernstein evaluation; forward differencing for evenly spaced steps; de Casteljau or de Boor evaluation when numerical stability matters more than speed | De Casteljau and de Boor cost O(d²) per point, so they are for stability, not speed; converting to the power form is ill-conditioned at high degree. Forward differencing accumulates rounding error: behavior change. Changing the evaluation method changes floating-point results | Per point O(d²) → O(d) for degree d with Horner; O(d) additions per step with forward differencing (O(1) for a fixed degree such as cubics) |
+| Evaluating Bezier or B-spline curves at many parameter values | Horner's method on the power form, or a Horner-style Bernstein evaluation; forward differencing for evenly spaced steps; de Casteljau or de Boor evaluation when numerical stability matters more than speed | De Casteljau and de Boor cost O(d²) per point; converting to the power form is ill-conditioned at high degree. Forward differencing accumulates rounding error: behavior change. Changing the evaluation method changes floating-point results | Per point O(d²) → O(d) for degree d with Horner; O(d) additions per step with forward differencing (O(1) for a fixed degree such as cubics) |
 | Exact (arbitrary-precision) geometric predicates evaluated on every test | Floating-point filter with an exact fallback (adaptive-precision predicates, as in Shewchuk's) | Results identical to the exact predicate | Exact results at close to floating-point speed |
 
-## References (for verifying claims; not required reading)
+## Behavior traps
 
-- de Berg, Cheong, van Kreveld, and Overmars, *Computational Geometry: Algorithms and Applications*, 3rd ed. (2008).
-- Jonathan R. Shewchuk, "Adaptive Precision Floating-Point Arithmetic and Fast Robust Geometric Predicates" (1997).
+Rewrites in this domain that look equivalent but are not. Walk these with `BEHAVIOR-TRAPS.md` for every candidate in this domain, under the same rules.
+
+- **Predicate robustness.** Orientation, in-circle, and point-in-polygon tests on nearly degenerate input can flip sign when the same formula is evaluated in a different order or precision. A flipped test changes topology: a different hull, a missing intersection, an invalid mesh.
+- **Tolerances.** Changing an epsilon, where it is applied, or whether a comparison is strict changes which points merge, touch, or intersect.
+- **Degenerate input.** Collinear and coincident points, zero-length edges, zero-area faces, and self-touching polygons are where rewrites most often differ. Test them explicitly.
+- **Orientation and winding.** Output vertex order (clockwise or counterclockwise), face winding, and the starting vertex are observable to callers and renderers.
+
+## References
+
+Sources for the claims in this file are in `references/techniques/geometry-and-cad.md`. Read them only to verify a claim.
