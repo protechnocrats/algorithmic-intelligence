@@ -12,8 +12,6 @@ Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding a
 
 Sometimes the best engineering decision is to leave the code alone, and the skill says so when it is.
 
-**See it first:** [a real, unedited report](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/examples) from one session on a Java project, and one item compared with and without the skill.
-
 ## Quick start
 
 ```bash
@@ -117,7 +115,7 @@ Agents load a skill by matching your request against the skill's description. Re
 Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
 ```
 
-Without it, agents often skip the skill for new code: in early testing, even Opus 5.5 did not load it for 1 of 3 write-mode requests. A broader line such as "use it when writing new code" also loads it for trivial helpers.
+Without it, agents can skip the skill for new code. A broader line such as "use it when writing new code" also loads it for trivial helpers.
 
 ### Verify and update
 
@@ -242,18 +240,9 @@ Algorithmic reasoning is independent of the programming language, but costs and 
 
 Companion files cover the language and its standard library only. Frameworks and platforms (UI toolkits, ORMs, web frameworks, game engines) are deliberately not covered; the general rules (N+1 queries, main-thread blocking, I/O in loops) apply to them.
 
-## Evidence
+## Evaluation
 
-The skill was tested by running the same coding agent on small projects with planted problems, with and without the skill, and checking each session's final code against the original with trap inputs. The harness and every round's results are in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals); a new harness is being built ([docs/EVAL-PLAN.md](docs/EVAL-PLAN.md)).
-
-Results on Claude Opus 5.5 so far:
-
-- **Hostile input** (held-out Python project): every run without the skill shipped a hash-based fix that becomes quadratic when an attacker chooses colliding IDs, and applied a concurrency change nobody approved. No run with the skill did either. Report-flow cases passed at 1.00 with the skill against 0.50 without.
-- **Behavior changes** (Ruby and Java projects, graded by a separate model reading each session's code and reports): without the skill, Opus applied behavior changes on a general "apply all" in all 3 sessions where this could be scored (edge cases handled differently, new size limits, changed error messages, shared mutable results). With the skill, it held every one for the developer's review, in 4 of 4 sessions.
-- **Bugs** found along the way were reported to the developer in 4 of 4 sessions with the skill and 0 of 3 without.
-- **Cost:** sessions with the skill cost 1.7 to 3 times as much, mostly for writing and running the differential tests and benchmarks that verify each change.
-
-**Limits:** small samples, so treat these as early signals. All runs used Claude Code; other agents have not been evaluated. Claude Sonnet has not been tested yet.
+The skill will be evaluated by running the same coding agent on projects with planted problems, with and without the skill, and checking each session's final code and reports. The benchmarks are being built ([docs/EVAL-PLAN.md](docs/EVAL-PLAN.md)); results will be published here when they exist.
 
 ## Files
 
@@ -280,7 +269,7 @@ The skill's knowledge base is modular and organized around its workflow. The age
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): what each part of the repository does, what the agent loads in each mode, and where each idea lives.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes reach `main`, and the rules for changing the skill.
 - `.devcontainer/`: the JDK, Ruby, Node, Rust, Python, and Swift toolchains, and a sandbox for running agent sessions.
-- [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md): the plan for the next evaluations. Earlier rounds are in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals/results).
+- [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md): the plan for the next evaluations.
 
 ## Releases and security
 

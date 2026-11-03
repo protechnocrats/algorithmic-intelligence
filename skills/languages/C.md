@@ -10,7 +10,7 @@ C's standard library has almost no data structures. What it provides:
 |---|---|---|---|
 | Fixed array | `T a[n]`, `malloc(n * sizeof(T))` | index O(1) | No bounds checking |
 | Growable array | `realloc` with **geometric** growth (double the capacity) | append amortized O(1) | Growing by a fixed amount is O(n²) total |
-| Sorting | `qsort` | O(n log n) average; **not stable**; worst case is implementation-defined | Comparator called through a function pointer |
+| Sorting | `qsort` | O(n log n) average; **stability and worst case are not specified** by the standard (glibc's is a merge sort, stable when it can allocate memory; other C libraries' are not) | Comparator called through a function pointer |
 | Binary search | `bsearch` | O(log n) | Returns **any** matching element among duplicates, or `NULL` |
 | Strings | `<string.h>` | **`strlen` is O(n)**; `strcat` is O(length of destination + source) | Null-terminated; length is not stored |
 | Memory moves | `memmove`, `memcpy`, `memset` | O(n), highly optimized | `memcpy` requires non-overlapping regions |
@@ -58,7 +58,7 @@ Use **unsigned** types for bit manipulation. In C:
 ## C-specific traps
 
 - **Undefined behavior.** A rewrite must never introduce undefined behavior: signed integer overflow, out-of-bounds access, use after free, uninitialized reads, strict-aliasing violations, or invalid shifts. The compiler may assume undefined behavior never happens, so a rewrite that relies on it can behave differently at different optimization levels. Run differential tests under sanitizers (see Testing).
-- **`qsort` is not stable.** Switching to or from a stable sort changes the order of equal elements. Comparators written as `return a - b;` overflow for large values; keep the original comparator's exact behavior when replacing it.
+- **`qsort` is not guaranteed stable.** The standard promises nothing, but glibc's `qsort` is stable in practice when it can allocate memory, so code may depend on that order without knowing it. Replacing `qsort` with a hand-written unstable sort can change the order of equal elements on glibc; on other C libraries, assume the original order of equal elements was already unspecified, and test. Comparators written as `return a - b;` overflow for large values; keep the original comparator's exact behavior when replacing it.
 - **`bsearch` returns any matching element.** If the original linear search returned the first match, a `bsearch` replacement can return a different one.
 - **Unsigned wraparound.** `for (size_t i = n - 1; i >= 0; i--)` never ends; rewriting loop directions with unsigned indices is a common source of bugs.
 - **Integer promotions and implicit conversions** change results when rewriting arithmetic with narrower or wider types.

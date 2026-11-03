@@ -27,13 +27,13 @@ Most wrong optimizations come from a technique used outside its assumptions.
 
 | Big O | Name | Growth | Common examples |
 |---|---|---|---|
-| O(1) | Constant | Excellent. Runtime does not depend on input size. | Array index access, stack push/pop, hash lookup (expected) |
+| O(1) | Constant | Excellent. Runtime does not depend on input size. | Array index access, stack push/pop (amortized on a growable array), hash lookup (expected) |
 | O(log n) | Logarithmic | Good. Grows by a constant step when input doubles. | Binary search, balanced-tree lookup, heap push/pop |
 | O(n) | Linear | Fair. Grows in proportion to input. | Single loop, linear search, building a hash index |
 | O(n log n) | Linearithmic | Fair to bad. Typical of efficient comparison sorting. | Merge sort, heapsort, average-case quicksort |
 | O(n²) | Quadratic | Bad. Quadruples when input doubles. | Two nested loops, bubble sort, insertion sort |
 | O(n^c), c > 2 | Polynomial | Poor. Worse with each level of nesting. | Triple nested loops, naive matrix multiplication |
-| O(c^n), c > 1 | Exponential | Very inefficient. Doubles (or worse) with each added element. | Naive recursive Fibonacci, brute-force subsets |
+| O(c^n), c > 1 | Exponential | Very inefficient. Multiplies by c with each added element (about 1.6 for naive Fibonacci, 2 for subsets). | Naive recursive Fibonacci, brute-force subsets |
 | O(n!) | Factorial | Worst. Impractical beyond tiny inputs. | Brute-force permutations, naive traveling salesperson |
 
 "Expected" means averaged over the algorithm's randomness or hash behavior; "amortized" means averaged over a sequence of operations; neither is a worst-case guarantee (rule 9).
@@ -42,7 +42,7 @@ Most wrong optimizations come from a technique used outside its assumptions.
 
 Recursive code is where complexity is most often misjudged. Write the recurrence from the code, then solve it:
 
-- **Divide and conquer, T(n) = a·T(n/b) + f(n):** compare f(n) with n^(log_b a). If f grows polynomially slower, T(n) = Θ(n^(log_b a)). If they match up to a factor of log^k n, T(n) = Θ(n^(log_b a) · log^(k+1) n). If f grows polynomially faster (and a·f(n/b) ≤ c·f(n) for some c < 1), T(n) = Θ(f(n)). This is the master theorem. Example: T(n) = 2T(n/2) + n log n is Θ(n log² n), not Θ(n log n).
+- **Divide and conquer, T(n) = a·T(n/b) + f(n):** compare f(n) with n^(log_b a). If f grows polynomially slower, T(n) = Θ(n^(log_b a)). If they match up to a factor of log^k n with k ≥ 0, T(n) = Θ(n^(log_b a) · log^(k+1) n) (for k = −1 it is Θ(n^(log_b a) · log log n), and for k < −1 it is Θ(n^(log_b a))). If f grows polynomially faster (and a·f(n/b) ≤ c·f(n) for some c < 1), T(n) = Θ(f(n)). This is the master theorem. Example: T(n) = 2T(n/2) + n log n is Θ(n log² n), not Θ(n log n).
 - **Uneven splits,** such as T(n) = T(n/3) + T(2n/3) + n: use the Akra-Bazzi method, or sum the recursion tree level by level. This one is Θ(n log n).
 - **Shrinking by a constant:** T(n) = T(n − 1) + O(1) is O(n); T(n) = T(n − 1) + O(n) is O(n²); T(n) = 2T(n − 1) + O(1) is O(2ⁿ); T(n) = T(n − 1) + T(n − 2) + O(1) is Θ(φⁿ), about 1.618ⁿ.
 - **Memoized recursion** costs the number of distinct subproblems times the work per subproblem, whatever the recurrence looks like.

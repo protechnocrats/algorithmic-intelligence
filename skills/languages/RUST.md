@@ -8,12 +8,12 @@ Load this file for Rust projects. Record the toolchain, the edition, and the min
 |---|---|---|---|
 | Growable array | `Vec<T>` | index O(1), `push` amortized O(1), `insert(0, x)`/`remove(0)` O(n), `contains` O(n) | `with_capacity` avoids reallocations |
 | Double-ended queue | `VecDeque<T>` | push/pop at both ends O(1) amortized | Use for queues and BFS |
-| Hash map / set | `HashMap`, `HashSet` | O(1) expected | Default hasher (SipHash) resists hash flooding but is slower; **iteration order is randomized per process** |
+| Hash map / set | `HashMap`, `HashSet` | O(1) expected | Default hasher (SipHash) resists hash flooding but is slower; **iteration order is randomized per map** (each `RandomState`), so two maps with the same contents usually iterate differently even in one process |
 | Ordered map / set | `BTreeMap`, `BTreeSet` | O(log n); `range`, `first_key_value`, `last_key_value` | Sorted iteration |
-| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) worst; `pop` O(log n); `peek` O(1) | **Max-heap**; wrap in `std::cmp::Reverse` for a min-heap; no decrease-key |
+| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) amortized for the worst input order (a single push can cost O(n) when the heap reallocates); `pop` O(log n); `peek` O(1) | **Max-heap**; wrap in `std::cmp::Reverse` for a min-heap; no decrease-key |
 | Linked list | `LinkedList<T>` | O(1) at ends | Rarely the right choice |
 | String building | `String::push_str`, `write!`, `concat`, `join` | amortized O(1) per byte | |
-| Slice algorithms | `sort` (stable), `sort_unstable`, `sort_by_key`, `binary_search`, `select_nth_unstable` (O(n) expected), `partition_point`, `chunks`, `windows`, `retain`, `dedup`, `swap_remove` (O(1)) | | See traps |
+| Slice algorithms | `sort` (stable), `sort_unstable`, `sort_by_key`, `binary_search`, `select_nth_unstable` (O(n), guaranteed for all inputs), `partition_point`, `chunks`, `windows`, `retain`, `dedup`, `swap_remove` (O(1)) | | See traps |
 | Lazy iterators | `iter()`, `map`, `filter`, `take_while` | No intermediate allocation | Evaluate only when consumed |
 | Lazy statics | `std::sync::LazyLock`, `OnceLock` | One-time initialization | `LazyLock` stable since 1.80; `OnceLock` since 1.70 |
 
@@ -57,7 +57,7 @@ Shifting by a count greater than or equal to the bit width panics in debug build
 ## Rust-specific traps
 
 - **Debug and release overflow behavior differ.** Integer overflow panics in debug builds and wraps in release builds (unless `overflow-checks` is enabled). A closed-form formula that overflows where the loop did not can panic in tests and silently wrap in production. Match the original's behavior with the explicit `wrapping_*`/`checked_*` operations it implied.
-- **`HashMap`/`HashSet` iteration order is randomized per process.** Never iterate them where the original exposed a deterministic order.
+- **`HashMap`/`HashSet` iteration order is randomized per map,** not just per process: two maps with the same contents usually iterate in different orders. Never iterate them where the original exposed a deterministic order, and never rely on two maps iterating in step.
 - **Changing the hasher** (for example to `FxHashMap` or `ahash`) changes iteration order and removes hash-flooding resistance. For keys controlled by users or attackers, that is a security regression (see `BEHAVIOR-TRAPS.md`). It also needs a dependency.
 - **Sort stability.** `sort` and `sort_by_key` are stable; `sort_unstable` is not. Switching changes the order of equal elements.
 - **`dedup` removes only consecutive duplicates.** It is not equivalent to deduplicating with a set unless the input is sorted.

@@ -12,7 +12,7 @@ Load this file for Swift projects on any target: Apple platforms, Linux and Wind
 | Flag set | `OptionSet` | O(1) set operations on a raw integer | Idiomatic bitmask |
 | String | `String` | **`count` is O(n)**; index offsetting is O(n) | Indexed by `String.Index`, iterates `Character` (grapheme clusters) |
 | Contiguous storage | `ContiguousArray` | Like `Array`, without Objective-C bridging | Matters only on Apple platforms with class elements |
-| Fixed-size inline array | `InlineArray<N, T>` (Swift 6.2+) | O(1), no heap allocation | Size fixed at compile time; for small buffers and embedded targets |
+| Fixed-size inline array | `InlineArray<N, T>` (Swift 6.2+; on Apple platforms also an OS 26 deployment target, since it is not back-deployed) | O(1), no heap allocation | Size fixed at compile time; for small buffers and embedded targets |
 | Borrowed view | `Span`, `MutableSpan` (Swift 6.2+) | O(1) access, no copy, no reference counting | Safe replacement for `withUnsafeBufferPointer` in hot loops |
 | Unique ownership | `~Copyable` types, `borrowing`/`consuming` parameters (Swift 5.9+) | No implicit copies or copy-on-write checks | Changes how callers can use the type: a public-contract change (rule 11) |
 | Lazy pipeline | `.lazy` | Avoids intermediate arrays | Changes evaluation order (traps) |
@@ -73,7 +73,7 @@ Swift's `<<` and `>>` are "smart shifts": overshifting gives 0 (or -1 for negati
 - **`Equatable` versus `Hashable` consistency.** Custom types whose `==` and `hash(into:)` disagree break in sets and dictionaries.
 - **Concurrency.** Moving to `async let` or task groups changes ordering, error, and cancellation behavior; actor isolation changes threading. Actor state can change across every `await` (reentrancy), so reordering or batching awaits inside an actor can break its invariants. Ask first.
 - **Stack depth.** Secondary threads, concurrency tasks, and embedded targets have small stacks. A recursion that overflows on accepted input is a bug (rule 4).
-- **Embedded Swift** has no `any` existentials, no reflection, and possibly no heap allocation or Foundation. Techniques that need them are not candidates there; memory budgets are hard limits (rule 1).
+- **Embedded Swift** supports only class-bound existentials before Swift 6.4 (full `any` arrives in 6.4), has no reflection, and possibly no heap allocation or Foundation. Techniques that need them are not candidates there; memory budgets are hard limits (rule 1).
 
 ## Testing, profiling, and benchmarking
 

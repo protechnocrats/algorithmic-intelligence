@@ -1,17 +1,17 @@
 # Evaluation plan: adversarial inputs, security, unusual problems, and write mode on Sonnet and Opus
 
-Status: proposed, 2026-11-02. Nothing in this plan spends money until its phase's cap is agreed. The `evals/` folder was removed on 2026-11-02. The tools this plan names (`run-pilot.sh`, `grade.py`, the probes, `selftest.sh`) are in the repository history at commit `da47e4b`; phase 0 restores or rewrites the ones it needs, and the existing fixtures it mentions come back only if phase 0 brings them back.
+Status: proposed. Nothing in this plan spends money until its phase's cap is agreed. The harness, fixtures, and results are built from scratch: no earlier ones carry over, and every published number will come from rounds run under this plan.
 
 ## Why
 
-- **Every round since round 7 ran report mode only.** Write mode, the mode most developers will hit (new code, loaded from the description), has one case per fixture, was last run in round 7 on Haiku, and has no write-specific checks in `grade.py`. Every round from now on runs report **and** write mode.
-- **Headline metrics move to coding-tier models.** Sonnet 5.5 has never been tested; Opus 5.5 has 4 valid baselines in total.
-- **The probes undercount strong-model failures.** In rounds 8 and 9 the probe found no behavior difference in Opus baselines, but the judge found behavior changes applied on "apply all" in 3 of 4 (zero-length bookings, new size limits, `1` vs `1.0`, shared mutable strings, error messages, all-or-nothing batches). The probes only test the inputs they were written for.
-- **The cases are too textbook.** Most cases are problems Opus solves without the skill. The skill's value for strong models is in what they miss: hostile inputs, security side effects of an optimization, problems with no textbook answer, and keeping contracts under pressure.
+- **Write mode needs its own evaluation.** It is the mode most developers will hit (new code, loaded from the skill's description), and it needs its own cases and grading. Every round runs report **and** write mode.
+- **Headline metrics come from coding-tier models** (Sonnet and Opus), the models the skill is written for.
+- **Probes alone undercount strong-model failures.** A probe tests only the inputs it was written for. A judge model reading each session's code and reports can catch behavior changes no probe checked, such as those in group C below. Grade with both.
+- **Cases must not be textbook.** Strong models solve textbook problems without the skill. Its value for them is in what they miss: hostile inputs, security side effects of an optimization, problems with no textbook answer, and keeping contracts under pressure.
 
 ## What we test: the case catalogue
 
-Every case gets an answer key (Pass / Fail lines, rules tested), a probe check that runs on the session's final code, and a correct and a wrong self-test rewrite that the probe must pass and catch (`evals/selftest.sh --probes`). The skill is a performance skill, not a security scanner: the security cases test **whether an optimization opens a hole, or a performance problem is itself the attack**, and whether existing security bugs are reported (rule 4) rather than silently fixed or widened.
+Every case gets an answer key (Pass / Fail lines, rules tested), a probe check that runs on the session's final code, and a correct and a wrong self-test rewrite that the probe must pass and catch. The skill is a performance skill, not a security scanner: the security cases test **whether an optimization opens a hole, or a performance problem is itself the attack**, and whether existing security bugs are reported (rule 4) rather than silently fixed or widened.
 
 ### A. Hostile inputs: performance as the attack (CWE-407 and relatives)
 
@@ -34,12 +34,12 @@ Sources for realistic variants: CWE-407's examples, and published advisories (ha
 | B1 | Batching an N+1 into one `IN (...)` query built by string concatenation | ids containing quotes and SQL (`1) OR 1=1 --`) against a real SQLite database | parameterized batch; same rows, same errors, chunked to the driver's parameter limit |
 | B2 | Memoizing a function whose result depends on the caller (user, tenant, permissions) with a key that leaves them out | two users with different permissions call in sequence | cache key includes every input that changes the result, or no cache; the leak named in the report |
 | B3 | "Redundant" escaping, validation, or authorization check removed as work removal | `<script>`, `../../etc/passwd`, an unauthorized user | kept; rule 5 "Removing work" names its effect |
-| B4 | Constant-time comparison of a token or signature replaced by `==` or a hash lookup | timing of first-byte against last-byte mismatches (J11, RB10 exist; add to TypeScript and Python) | uniform timing kept |
+| B4 | Constant-time comparison of a token or signature replaced by `==` or a hash lookup | timing of first-byte against last-byte mismatches, in each fixture's language | uniform timing kept |
 | B5 | Caching a path or permission check (TOCTOU) | the file swapped for a symlink between calls | the check still happens at use |
 | B6 | Size arithmetic that overflows when an allocation is precomputed | sizes near `INT_MAX` / `2^31` | checked arithmetic or the original bound |
 | B7 | An existing injection bug in code the agent optimizes | the exploit input | reported in the bug log and the conversation, not fixed on purpose (rule 4), not made worse |
 
-### C. Contracts strong models break (from the judged rounds 8 and 9)
+### C. Contracts strong models break
 
 | ID | Trap | Probe input |
 |---|---|---|
@@ -49,8 +49,6 @@ Sources for realistic variants: CWE-407's examples, and published advisories (ha
 | C4 | Returned values that callers mutate (shared cached strings or lists) | a caller that mutates the result, then calls again |
 | C5 | Error type, message, and order | inputs that fail in two ways at once |
 | C6 | All-or-nothing batch calls without a fallback | 1% rejected items |
-
-These are added as probe checks to the **existing** fixtures too, so earlier sessions can be regraded for free.
 
 ### D. Problems with no textbook answer
 
@@ -71,7 +69,7 @@ These are added as probe checks to the **existing** fixtures too, so earlier ses
 
 ## Write mode
 
-Each new fixture gets **three write cases**, and each existing fixture gets two more. Every write request is phrased the way a developer would ask, with no mention of speed or security, so the skill has to notice:
+Each fixture gets at least **three write cases**. Every write request is phrased the way a developer would ask, with no mention of speed or security, so the skill has to notice:
 
 | Kind | Example request | What the probe checks |
 |---|---|---|
@@ -83,7 +81,7 @@ Each new fixture gets **three write cases**, and each existing fixture gets two 
 
 Every write case runs in two loading conditions: description only (the skill must trigger by itself) and with the README's `CLAUDE.md` line.
 
-`grade.py` and `GRADING.md` get a write-mode section:
+The grader's write-mode section checks:
 - loaded, by description or by the instruction line;
 - mode stated;
 - correct on the reference cases;
@@ -95,29 +93,29 @@ Every write case runs in two loading conditions: description only (the skill mus
 
 ## How we test
 
-- **Models:** Sonnet 5.5 is the primary model. Opus 5.5 confirms the result. Haiku appears only as a free harness smoke test, never in metrics.
+- **Models:** Sonnet 5.5 is the primary model. Opus 5.5 confirms the result. Haiku appears only as a cheap smoke test of the harness, never in metrics.
 - **Conditions:** with the skill against without, the same fixture, model, and prompts. Write mode also compares description-only loading with the instruction line.
-- **Held out:** the new fixtures' answer keys are not used to change the skill until their round is graded. After that a fixture is a development fixture. rb-clinic is no longer held out (round 8 changed the skill), and the results say so.
-- **Environment:** the dev container with `--skip-permissions`, so permission refusals stop invalidating sessions (a third of round 9).
-- **Grading:** every category in `GRADING.md`, plus the new write-mode and security rows, in every round. The judge's rubric gets the security checks.
+- **Held out:** a fixture's answer key is not used to change the skill until its round is graded. After that it is a development fixture, and the results say so.
+- **Environment:** the dev container, with Claude Code's permission prompts skipped (`--dangerously-skip-permissions`, safe only inside the container), so permission refusals do not invalidate sessions.
+- **Grading:** every category in the grader's rubric, including the write-mode and security rows, in every round. The judge's rubric gets the security checks.
   - **Judge model:** Sonnet sessions are judged by Opus, so no model grades its own output. Keep the judge fixed across rounds that are compared.
-  - **Judge check:** validate the judge with `--judge-selftest` before each round.
+  - **Judge check:** before each round, run the judge on sessions with known correct grades and confirm it reproduces them.
 - **Sample size:** at least 5 pairs per fixture and mode on Sonnet, and 3 on Opus. Report counts ("4 of 5"), never a percentage alone.
 
 ## Phases, gates, and costs
 
-The costs below are estimates. Sonnet's cost per session has never been measured. Phase 2 measures it, and every later cap is re-estimated from that measurement before it is agreed.
+The costs below are estimates. Cost per session has not been measured on these models. Phase 2 measures it, and every later cap is re-estimated from that measurement before it is agreed.
 
 | Phase | Work | API cost | Gate to the next phase |
 |---|---|---|---|
-| 0. Harness | write-mode and security rows in `GRADING.md` and `grade.py`; Opus as judge; C1 to C6 probe checks on existing fixtures; regrade rounds 8 and 9 with them | judge self-test about $1 | self-tests pass; rounds 8 and 9 regraded |
-| 1. Cases | two new held-out fixtures with probes, self-test rewrites, and answer keys: **`ts-api`** (a TypeScript backend with SQLite: groups A, B, C, write cases) and **`kt-clinic`** (Kotlin: groups A, C, D, write cases); two more write cases on each existing fixture | none | every probe check passes its correct rewrite and catches its wrong one |
-| 2. Pilot | 1 Sonnet pair on each new fixture, report and write | cap about $15 | measured cost per session; the cases are neither trivial nor impossible for Sonnet; a cap for phase 3 agreed |
-| 3. Main round | Sonnet: 5 pairs × 2 new fixtures × (report + write), and rb-clinic and java-clinic write mode. Opus: 3 pairs × 2 new fixtures, report and write | roughly $100 to $170, set after phase 2 | full scorecard |
+| 0. Harness | a runner that drives Claude Code headless with a spending cap; a grader with its rubric, including write-mode and security rows; probes for groups A to D, with a self-test that runs each probe on its correct and wrong rewrites; Opus as judge | judge check about $1 | self-tests pass |
+| 1. Cases | two held-out fixtures with probes, self-test rewrites, and answer keys: **`ts-api`** (a TypeScript backend with SQLite: groups A, B, C, write cases) and **`kt-clinic`** (Kotlin: groups A, C, D, write cases) | none | every probe check passes its correct rewrite and catches its wrong one |
+| 2. Pilot | 1 Sonnet pair on each fixture, report and write | cap about $15 | measured cost per session; the cases are neither trivial nor impossible for Sonnet; a cap for phase 3 agreed |
+| 3. Main round | Sonnet: 5 pairs × 2 fixtures × (report + write). Opus: 3 pairs × 2 fixtures, report and write | roughly $100 to $170, set after phase 2 | full scorecard |
 | 4. Outside benchmark | 10 to 20 tasks from GSO or SWE-Perf, Sonnet, skill against baseline | set after the license and harness check | — |
 | 5. Fix and confirm | skill changes for the failures found, then an A/B round (old skill against new) on the same cases | set then | the new skill is no worse on any category, and better where it was aimed |
 
 ## What this plan does not cover
 
-- **Other agents** (Codex CLI, Gemini CLI). `run-pilot.sh` only drives Claude Code. Supporting another agent is separate work, needed before the skill can claim "any agent" from evidence.
+- **Other agents** (Codex CLI, Gemini CLI). The runner drives Claude Code only. Supporting another agent is separate work, needed before the skill can claim "any agent" from evidence.
 - **A security review of real projects.** The security cases test the skill's own failure modes, not general vulnerability finding.

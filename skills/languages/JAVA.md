@@ -15,7 +15,7 @@ Load this file for Java projects. Kotlin projects consult it only for JVM struct
 | Sorted map / set | `TreeMap`, `TreeSet` | O(log n); `floorKey`, `ceilingKey`, `headMap`, `subMap` | Red-black tree |
 | Priority queue | `PriorityQueue` | offer/poll O(log n), peek O(1), **`remove(Object)` and `contains` O(n)** | Binary min-heap; iteration order is not sorted |
 | Bitset | `BitSet` | O(1) per bit; `and`, `or`, `cardinality`, `nextSetBit` | Grows automatically |
-| Enum set / map | `EnumSet`, `EnumMap` | O(1), bit-vector backed | Ideal for flag sets |
+| Enum set / map | `EnumSet`, `EnumMap` | O(1); `EnumSet` is a bit vector, `EnumMap` an array indexed by ordinal | Ideal for flag sets |
 | Concurrent | `ConcurrentHashMap`, `ConcurrentLinkedDeque`, `CopyOnWriteArrayList` | `CopyOnWriteArrayList` writes are O(n) | Keep thread-safety when replacing |
 | Search / sort helpers | `Arrays.sort`, `Collections.sort`, `Arrays.binarySearch`, `Collections.binarySearch` | O(n log n), O(log n) | `Collections.binarySearch` on a `LinkedList` is O(n) |
 | String building | `StringBuilder`, `String.join`, `Collectors.joining` | append amortized O(1) | |
@@ -33,7 +33,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `list.contains(x)` inside a loop | O(n·m) | `HashSet` built once |
 | `a.removeAll(b)` / `retainAll(b)` where `b` is a `List` | O(n·m) | Pass a `HashSet`. For `AbstractSet.removeAll`, cost depends on which collection is larger |
 | `String s += x` in a loop | O(n²) copying (the compiler only optimizes single expressions) | `StringBuilder` |
-| `Pattern.compile` or `String.matches`/`replaceAll`/`split` with a regex in a hot loop | Recompiles each call | Precompiled `static final Pattern` |
+| `Pattern.compile` or `String.matches`/`replaceAll`/`split` with a regex in a hot loop | Recompiles each call (except `split` on one literal character, or one backslash-escaped character, which has a fast path with no regex) | Precompiled `static final Pattern`; leave a single-character `split` alone |
 | `String.format` in hot paths | Parses the format each call | `StringBuilder` |
 | `Map<Integer, Integer>`, `List<Long>` in hot numeric code | Boxing, GC pressure, cache misses | Primitive arrays or counting arrays |
 | `stream()` pipelines in very hot tight loops | Allocation overhead | Plain loop, only if a benchmark shows it matters |

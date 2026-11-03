@@ -1,5 +1,5 @@
 name: Bug or wrong advice
-description: The skill made an agent do something wrong, unsafe, or slower, or the docs or eval scripts are broken.
+description: The skill made an agent do something wrong, unsafe, or slower, or the docs are wrong.
 labels: [bug]
 body:
   - type: markdown

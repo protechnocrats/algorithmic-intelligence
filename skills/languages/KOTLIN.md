@@ -4,7 +4,7 @@ Load this file for Kotlin projects. First determine the target, which decides wh
 
 - **Kotlin/JVM**: the full Java standard library is available. `JAVA.md` documents it; consult it only for structures Kotlin lacks.
 - **Multiplatform common code**: only `kotlin.collections`. No sorted map or set, priority queue, bitset, or `java.util.*`. Options: `expect`/`actual` wrappers over platform types, a small in-project implementation with tests, or a dependency (ask first, rule 7).
-- **Kotlin/Native, JS, or Wasm**: `kotlin.collections` has its own implementations; do not assume JVM behavior. On Kotlin/JS, `Long` is a `BigInt` only on ES2020 targets or with an experimental flag; check before using it in a hot loop. A Kotlin collection passed to Swift is copied in full, so crossing that boundary in a loop is O(n) per crossing.
+- **Kotlin/Native, JS, or Wasm**: `kotlin.collections` has its own implementations; do not assume JVM behavior. On Kotlin/JS, `Long` is a `BigInt` only on ES2020 targets or with an experimental flag; check before using it in a hot loop. A read-only Kotlin `List`, `Set`, or `Map` passed to Swift is converted to a Swift `Array`, `Set`, or `Dictionary` by copying it, so crossing that boundary in a loop is O(n) per crossing; mutable collections map to `NSMutableArray` and the like without that conversion.
 
 ## Kotlin first (rule 14)
 
@@ -20,7 +20,7 @@ When Kotlin provides an equivalent, use the Kotlin structure or factory, not the
 | Sorting and searching | `sort()`, `sortBy { }`, `sortedWith()`, `binarySearch()`, `IntArray.sort()` | `Collections.sort`, `Arrays.sort`, `Collections.binarySearch` |
 | String building | `buildString { }`, `joinToString()` | `StringBuilder` used directly (fine inside `buildString`) |
 
-Use Java classes only when Kotlin has no equivalent, and state this in the report: `PriorityQueue`, `BitSet`, `EnumSet`, `EnumMap`, `java.util.concurrent` collections, `LinkedHashMap` with access order and `removeEldestEntry` (a bounded LRU cache), and `TreeMap`/`TreeSet` navigation (`floorKey`, `ceilingKey`, `headMap`, `pollFirst`): `sortedMapOf` is typed as `SortedMap`, which lacks these, so declare a `TreeMap` or `NavigableMap` when navigation is needed.
+Use Java classes only when Kotlin has no equivalent, and state this in the report: `PriorityQueue`, `BitSet`, `EnumSet`, `EnumMap`, `java.util.concurrent` collections, `LinkedHashMap` with access order and `removeEldestEntry` (a bounded LRU cache), and `TreeMap` navigation (`floorKey`, `ceilingKey`, `headMap`, `pollFirstEntry`): `sortedMapOf` is typed as `SortedMap`, which lacks these, so declare a `TreeMap` or `NavigableMap` when navigation is needed. `sortedSetOf` already returns a `java.util.TreeSet`, with `floor`, `ceiling`, and `pollFirst`.
 
 Only new code follows this preference; do not swap existing Java structures, since behavior can differ (`java.util.ArrayDeque` throws on `null`; Kotlin's `ArrayDeque` accepts it, measured on Kotlin 2.4).
 
@@ -48,7 +48,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `list = list + item` or `+=` on a `var` of read-only `List` in a loop | Copies each step: O(n²) | `mutableListOf` and `add`, `buildList { }`, or a persistent list |
 | `item in list`, `indexOf`, `first { }`, `find` inside a loop | O(n) per call | `toHashSet()` or `associateBy { }` once (traps: duplicates, exception type, floating-point equality) |
 | `list - other`, `removeAll(other)`, `retainAll(other)` where `other` is a `List` | Linear search per element: O(n·m) (measured on Kotlin 2.4; the docs state no cost) | Pass a `Set` |
-| `set.elementAt(i)`, `Iterable.last()`, `count()` on a non-`List` in a loop | O(n) per call | Index a list, or keep the value |
+| `set.elementAt(i)` or `Iterable.last()` on a non-`List`, or `count()` on a `Sequence` or an `Iterable` that is not a `Collection`, in a loop | O(n) per call (`count()` on any `Collection`, including a `Set`, returns `size` in O(1); on a `Sequence` it also re-runs the chain) | Index a list, or keep the value |
 | `list.removeAt(0)` as a queue; `remove` inside an index loop | O(n) per removal, O(n²) total | `ArrayDeque.removeFirst()`; `removeAll { }` or `retainAll { }`, which filter in place in O(n) (measured on Kotlin 2.4; the docs state no cost) |
 | `windowed(k)` then aggregating each window | Allocates n lists of k: O(n·k) | Sliding aggregate in one loop: O(n) |
 | `sorted()`, `sortedBy`, `maxBy` inside a loop | O(n log n) or O(n) per iteration | Sort once, or keep a `TreeMap` or heap |
