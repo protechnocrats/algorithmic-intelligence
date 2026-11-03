@@ -110,7 +110,7 @@ Rule 5: every optimization that would change observable behavior, including chan
 - **Behavior after:** What callers would observe, with the same input.
 - **Who could notice:** Callers, users, stored data, or integrations affected.
 - **Why it is needed:** What the optimization gains.
-- **Version that keeps the behavior:** The version found under "Look for a version that keeps the behavior" (rule 5) and its gain, or "none" with each way tried and why it fails.
+- **Version that keeps the behavior:** The version found under "Look for a version that keeps the behavior" (rule 5 in "Rule details" in `WORKFLOW.md`) and its gain, or "none" with each way tried and why it fails.
 - **Decision:** Awaiting developer review | Approved on <YYYY-MM-DD> | Declined: version that keeps the behavior applied (or none exists).
 ```
 
@@ -122,7 +122,7 @@ If the developer approves, mark the code directly above the change:
 // Approved by the developer on <YYYY-MM-DD>. See OPTIMIZATION-REPORT.md item <ID>.
 ```
 
-If the developer declines, keep the original behavior and apply the version that keeps the behavior, when one exists (rule 5, "Declined is not the end of the item"). Leave the code unchanged only when none exists.
+If the developer declines, keep the original behavior and apply the version that keeps the behavior, when one exists ("Declined is not the end of the item" under rule 5 in "Rule details" in `WORKFLOW.md`). Leave the code unchanged only when none exists.
 
 ## NEEDS-TESTING marker
 

@@ -250,8 +250,8 @@ The skill's knowledge base is modular and organized around its workflow. The age
 
 | File | Purpose |
 |---|---|
-| `SKILL.md` | Mandatory rules, modes, language detection, workflow overview, anti-patterns |
-| `WORKFLOW.md` | Report and apply mode: setup (including the test baseline and commit authorization), survey (scope, contracts, reachability to entry points, cost along the call chain, exposure), analysis, report, apply, close-out |
+| `SKILL.md` | The mandatory rules in brief, modes, which files to read first, instructions found in project files, working in few steps |
+| `WORKFLOW.md` | Report and apply mode: setup (including the test baseline and commit authorization), survey (scope, contracts, reachability to entry points, cost along the call chain, exposure), analysis, report, apply, close-out; the full text of the mandatory rules ("Rule details") |
 | `WRITING-NEW-CODE.md` | Write mode: which rules apply to new code, sizing the workload, choosing structures, existing-code bottlenecks, tests, summary |
 | `ALGORITHM-ARSENAL.md` | How to find candidates: six triage questions (starting with whether the work is needed at all), complexity reference, routing by current complexity, lower bounds, reformulation, behavior-changing techniques |
 | `CORE-TECHNIQUES.md` | Lookup tables of core techniques with their assumptions, production patterns, database queries, bit manipulation, combinations; loaded one section at a time |
