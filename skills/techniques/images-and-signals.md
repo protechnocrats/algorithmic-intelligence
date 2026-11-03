@@ -1,10 +1,10 @@
 # Image, Video, and Signal Processing
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Image, video, and signal processing
 
-For photo editing, image and video pipelines, computer vision, rendering, and audio. N is the number of pixels or samples and k the filter width. Outputs must match the original exactly, including border handling, rounding, clamping to the channel range, color space, and alpha handling: see "Images and signals" in `BEHAVIOR-TRAPS.md`. Filters that only approximate the original are behavior changes, however close they look.
+For photo editing, image and video pipelines, computer vision, rendering, and audio. N is the number of pixels or samples and k the filter width. Outputs must match the original exactly, including border handling, rounding, clamping to the channel range, color space, and alpha handling: see "Behavior traps" below. Filters that only approximate the original are behavior changes, however close they look.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -23,8 +23,16 @@ For photo editing, image and video pipelines, computer vision, rendering, and au
 | Video frames reprocessed in full when little changes between them | Process only changed regions (dirty rectangles, exact change masks) | Change detection compares exact pixel values; motion-estimated reuse is a behavior change | Work proportional to the change |
 | Audio or signal filtering with a long FIR filter | FFT convolution with overlap-add or overlap-save | Floating-point differences: behavior change | O(n·k) → O(n log k) |
 
-## References (for verifying claims; not required reading)
+## Behavior traps
 
-- Rafael C. Gonzalez and Richard E. Woods, *Digital Image Processing*, 4th ed. (2018).
-- Franklin C. Crow, "Summed-Area Tables for Texture Mapping," SIGGRAPH 1984.
-- Richard Szeliski, *Computer Vision: Algorithms and Applications*, 2nd ed. (2022).
+Rewrites in this domain that look equivalent but are not. Walk these with `BEHAVIOR-TRAPS.md` for every candidate in this domain, under the same rules.
+
+- **Border handling.** Filters treat pixels outside the image differently (clamp to edge, mirror, wrap, zero). A rewrite, a separable split, or an FFT must reproduce the original's choice at every border.
+- **Rounding, clamping, and saturation.** 8-bit and 16-bit channels round and clamp at every stored step. Splitting a filter into passes, fusing passes, or using SIMD saturating arithmetic changes where rounding happens, and therefore the output.
+- **Color space and gamma.** Averaging, blending, or resizing in gamma-encoded values gives different results than doing it in linear light. Keep the original's color space for each step.
+- **Premultiplied alpha.** Converting between straight and premultiplied alpha, or filtering one as if it were the other, changes edges and transparent pixels.
+- **Channel order and layout.** RGBA versus BGRA, planar versus interleaved, and row padding (stride) must be preserved where callers or files observe them.
+
+## References
+
+Sources for the claims in this file are in `references/techniques/images-and-signals.md`. Read them only to verify a claim.

@@ -21,13 +21,13 @@ Load this file for Rust projects. Record the toolchain, the edition, and the min
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
 | `vec.contains(&x)` inside a loop | O(n·m) | `HashSet` built once (check the ordering trap) |
 | `vec.remove(0)` or `insert(0, x)` as a queue | O(n) per operation | `VecDeque` |
-| `s.chars().nth(i)` inside a loop | O(i) per call, O(n²) total | Iterate once, or collect `chars()` once, or use byte indices when the semantics allow |
+| `s.chars().nth(i)` inside a loop | O(i) per call, O(n²) total | Iterate once, collect `chars()` once, or use byte indices when the semantics allow |
 | `s.chars().count()` in a loop condition | O(n) each time | Compute once (note `s.len()` is bytes, not characters) |
 | `.clone()` of large values inside loops | Allocation and copying | Borrow, use `&T`, `Rc`/`Arc`, or move |
 | `collect::<Vec<_>>()` only to iterate again | Intermediate allocation | Chain the iterator directly |
@@ -82,6 +82,6 @@ Shifting by a count greater than or equal to the bit width panics in debug build
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; dependencies or installs, so ask unless present): Kani for bounded model checking with `#[kani::proof]` harnesses, including equivalence of the old and new function over bounded inputs; loom to run concurrent code under every thread interleaving up to a bound; Verus, Prusti, or Creusot for proofs of contracts.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): the `subtle` crate's `ConstantTimeEq` (a dependency, so ask unless present), never `==` on secret slices.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Rust collections, with a table of operation costs: doc.rust-lang.org/std/collections/index.html
+Sources for the claims in this file are in `references/languages/RUST.md`. Read them only to verify a claim.

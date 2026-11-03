@@ -31,7 +31,7 @@ Every line of `skills/SKILL.md` is loaded on every run, so a rule there must ear
 
 ## Language companion files
 
-Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist, follow the structure of the existing files, and add a row to `skills/languages/INDEX.md`. A profile the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only, not frameworks. Cite official documentation for every complexity and ordering claim, and where a claim is implementation behavior rather than documented behavior, say so.
+Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist, follow the structure of the existing files, and add a row to `skills/languages/INDEX.md`. A profile the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only, not frameworks. Cite official documentation for every complexity and ordering claim, and where a claim is implementation behavior rather than documented behavior, say so. Sources go in `skills/references/languages/<LANGUAGE>.md`, not in the language file, which ends with a pointer to them.
 
 ## Evaluation
 

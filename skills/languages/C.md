@@ -23,7 +23,7 @@ C's standard library has almost no data structures. What it provides:
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -31,7 +31,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `strcat(buf, piece)` in a loop | Rescans `buf` each time: O(n²) | Track the end pointer or current length and copy there |
 | `realloc(p, size + 1)` or growth by a constant per append | O(n²) total copying | Geometric growth (multiply capacity by 1.5 or 2) |
 | Removing from the front of an array with `memmove` | O(n) per removal | Head index or ring buffer |
-| Linear search with a loop over an array inside another loop | O(n·m) | Sort plus `bsearch`, or an in-project hash table |
+| Linear search over an array inside another loop | O(n·m) | Sort plus `bsearch`, or an in-project hash table |
 | `malloc`/`free` per element in hot loops | Allocator overhead and fragmentation | Preallocate, use an arena or pool, or embed elements in an array |
 | Linked lists traversed in hot paths | Cache misses on every node | Arrays or index-based links |
 | `sprintf`/`snprintf` or `printf` in hot loops | Format parsing and locking | Direct conversion, buffered output |
@@ -58,7 +58,7 @@ Use **unsigned** types for bit manipulation. In C:
 ## C-specific traps
 
 - **Undefined behavior.** A rewrite must never introduce undefined behavior: signed integer overflow, out-of-bounds access, use after free, uninitialized reads, strict-aliasing violations, or invalid shifts. The compiler may assume undefined behavior never happens, so a rewrite that relies on it can behave differently at different optimization levels. Run differential tests under sanitizers (see Testing).
-- **`qsort` is not guaranteed stable.** The standard promises nothing, but glibc's `qsort` is stable in practice when it can allocate memory, so code may depend on that order without knowing it. Replacing `qsort` with a hand-written unstable sort can change the order of equal elements on glibc; on other C libraries, assume the original order of equal elements was already unspecified, and test. Comparators written as `return a - b;` overflow for large values; keep the original comparator's exact behavior when replacing it.
+- **`qsort` is not guaranteed stable.** glibc's `qsort` is stable in practice when it can allocate memory, so code may depend on that order without knowing it. Replacing `qsort` with a hand-written unstable sort can change the order of equal elements on glibc; on other C libraries, assume the original order of equal elements was already unspecified, and test. Comparators written as `return a - b;` overflow for large values; keep the original comparator's exact behavior when replacing it.
 - **`bsearch` returns any matching element.** If the original linear search returned the first match, a `bsearch` replacement can return a different one.
 - **Unsigned wraparound.** `for (size_t i = n - 1; i >= 0; i--)` never ends; rewriting loop directions with unsigned indices is a common source of bugs.
 - **Integer promotions and implicit conversions** change results when rewriting arithmetic with narrower or wider types.
@@ -66,7 +66,7 @@ Use **unsigned** types for bit manipulation. In C:
 - **Reentrancy and thread safety.** Static buffers, `strtok`, and global caches make functions non-reentrant and unsafe across threads.
 - **`errno` and error returns.** Callers may check `errno` or specific return codes; a rewrite must set them identically.
 - **Floating point.** `-ffast-math`, `-ffp-contract`, and vectorization can change results. Do not change floating-point compiler flags as an optimization without developer review.
-- **Compiler flags are part of behavior.** Changing optimization levels, enabling LTO, or adding `restrict` can expose existing undefined behavior; `restrict` that is not actually true is undefined behavior.
+- **Compiler flags are part of behavior.** Changing optimization levels, enabling LTO, or adding `restrict` can expose existing undefined behavior; `restrict` that does not hold is undefined behavior.
 
 ## Testing and benchmarking
 
@@ -77,6 +77,6 @@ Use **unsigned** types for bit manipulation. In C:
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; installs, so ask unless present): CBMC for bounded model checking, including equivalence harnesses that assert `old(x) == new(x)` for every input within stated bounds; KLEE for symbolic execution; Frama-C with WP (proofs of ACSL contracts) or E-ACSL (runtime checking of the same contracts).
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `CRYPTO_memcmp` (OpenSSL), `sodium_memcmp` (libsodium), or `timingsafe_bcmp` where the C library provides it, never `memcmp`.
 
-## References (for verifying claims; not required reading)
+## References
 
-- C standard library reference: en.cppreference.com/w/c; GNU C Library manual: www.gnu.org/software/libc/manual/
+Sources for the claims in this file are in `references/languages/C.md`. Read them only to verify a claim.

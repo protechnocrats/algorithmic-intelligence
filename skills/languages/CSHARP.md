@@ -25,7 +25,7 @@ Not in the base library: deque, interval tree, trie, multimap. Ask before adding
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -76,6 +76,6 @@ Shift counts are masked to 5 bits for `int` and 6 bits for `long`.
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Coyote for systematic testing of concurrent and asynchronous code, which explores interleavings and replays failures; Dafny for proofs, compiling verified code to C#.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): `CryptographicOperations.FixedTimeEquals`, never `SequenceEqual` on secrets.
 
-## References (for verifying claims; not required reading)
+## References
 
-- .NET collections: learn.microsoft.com/en-us/dotnet/standard/collections/; API: learn.microsoft.com/en-us/dotnet/api/system.collections.generic
+Sources for the claims in this file are in `references/languages/CSHARP.md`. Read them only to verify a claim.

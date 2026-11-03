@@ -1,6 +1,9 @@
-# The JDK, Ruby, Python, and C toolchains, and the libraries Swift needs, for running agent
-# sessions on projects in those languages, the same way on any machine and sandboxed in the
-# container. Node and Rust come from devcontainer.json; Swift from post-create.sh.
+# A contributor environment for trying the skill with a coding agent on Java, Python, C,
+# JavaScript/TypeScript, Rust, Swift, or Ruby code (Ruby has no language file, so it exercises
+# languages/GENERIC.md), the same way on any machine and sandboxed in the container. Kotlin
+# and C# toolchains are not included. This file installs the JDK, Ruby, Python, and C
+# toolchains and the libraries Swift needs; Node and Rust come from devcontainer.json, and
+# Swift and Claude Code from post-create.sh.
 # Base: the dev container project's Ubuntu image (non-root user "vscode").
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 

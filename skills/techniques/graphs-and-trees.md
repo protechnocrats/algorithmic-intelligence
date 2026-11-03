@@ -1,6 +1,6 @@
 # Graphs and Trees
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Graphs
 
@@ -52,10 +52,6 @@ Program analyses are graph problems over the control-flow graph. A faster analys
 | Path queries and updates between arbitrary nodes | Heavy-light decomposition + segment tree | Tree shape does not change | O(n) per query → O(log² n) |
 | Distance-based counting over all pairs of nodes | Centroid decomposition | — | O(n²) → O(n log n) or O(n log² n) |
 
-## References (for verifying claims; not required reading)
+## References
 
-- Robert E. Tarjan, *Data Structures and Network Algorithms* (1983).
-- Keith D. Cooper and Linda Torczon, *Engineering a Compiler*, 3rd ed. (2022): dataflow analysis, SSA, register allocation.
-- Daniel D. Sleator and Robert E. Tarjan, "A Data Structure for Dynamic Trees," *Journal of Computer and System Sciences* 26(3), 1983.
-- Keith D. Cooper, Timothy J. Harvey, and Ken Kennedy, "A Simple, Fast Dominance Algorithm" (2001).
-- Massimiliano Poletto and Vivek Sarkar, "Linear Scan Register Allocation," *ACM TOPLAS* 21(5), 1999.
+Sources for the claims in this file are in `references/techniques/graphs-and-trees.md`. Read them only to verify a claim.

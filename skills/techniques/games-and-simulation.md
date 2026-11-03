@@ -1,10 +1,10 @@
 # Games and Real-Time Simulation
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Games and real-time simulation
 
-A frame has a fixed budget (16.7 ms at 60 frames per second), so the worst frame matters more than the average: measure frame-time percentiles and spikes, not only means. Games that rely on determinism (lockstep multiplayer, replays) must produce identical results on every machine: see "Simulation and games" in `BEHAVIOR-TRAPS.md`. Spatial queries and broad-phase collision are under "Spatial data" in `techniques/spatial-data.md`; ray casts and visibility use the BVH under "Computational geometry and CAD" in `techniques/geometry-and-cad.md`.
+A frame has a fixed budget (16.7 ms at 60 frames per second), so the worst frame matters more than the average: measure frame-time percentiles and spikes, not only means. Games that rely on determinism (lockstep multiplayer, replays) must produce identical results on every machine: see "Behavior traps" below. Spatial queries and broad-phase collision are under "Spatial data" in `techniques/spatial-data.md`; ray casts and visibility use the BVH under "Computational geometry and CAD" in `techniques/geometry-and-cad.md`.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -15,14 +15,14 @@ A frame has a fixed budget (16.7 ms at 60 frames per second), so the worst frame
 | Every object updated or polled every frame although few change | Event-driven updates, timers (timing wheel), sleeping physics bodies | Update order and the timing of effects are preserved, or the change is approved | Work proportional to active objects |
 | Every object drawn or tested for visibility each frame | Frustum culling over a BVH or grid; occlusion culling | Culling is conservative: it never removes a visible object | O(objects) → about O(log n + visible objects) |
 | Distant objects rendered or simulated at full detail | Level of detail (LOD) for meshes, animation, and simulation | **Changes what is rendered or simulated: behavior change**, developer review | Work roughly proportional to screen-space importance |
-| Narrow-phase collision between convex shapes by testing all pairs of features | GJK, with EPA for penetration depth; the separating axis theorem for boxes and simple polyhedra | GJK and EPA are iterative with tolerances, so contact points and depths can differ from the original: compare them, and treat a difference as a behavior change. In 3D the separating axis theorem tests every face normal and every pair of edges, so it is not linear for complex hulls | Feature pairs O(n·m) → about O(n + m) per query with GJK |
+| Narrow-phase collision between convex shapes by testing all pairs of features | GJK, with EPA for penetration depth; the separating axis theorem for boxes and simple polyhedra | GJK and EPA are iterative with tolerances, so contact points and depths can differ from the original: compare them; any difference is a behavior change. In 3D the separating axis theorem tests every face normal and every pair of edges, so it is not linear for complex hulls | Feature pairs O(n·m) → about O(n + m) per query with GJK |
 | Allocation, garbage collection, or asset loading during gameplay | Object pools, preallocated buffers, asynchronous asset streaming | Pooled objects are fully reset before reuse | Removes frame-time spikes |
 | Game objects with their data scattered across memory | Entity-component-system storage: each component type in a contiguous array | See "Memory locality" in `techniques/hardware-and-concurrency.md` | Fewer cache misses per frame |
 | Assets, events, or properties looked up by string name during frames | Hash names to integer IDs once at load time | IDs are unique; collisions detected at load time | String hashing and comparison removed from frames |
 
 ## Game-tree search
 
-For game AI, puzzle solvers, and any adversarial or turn-based decision search (two players, or a player against nature). The search returns a move and usually a score; both are observable. A faster search must return the same move and score, or the change is a behavior change.
+For game AI, puzzle solvers, and any adversarial or turn-based decision search (two players, or a player against nature). The search returns a move and usually a score; both are observable. A faster search must return the same move and score, or it is a behavior change.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -30,11 +30,17 @@ For game AI, puzzle solvers, and any adversarial or turn-based decision search (
 | Alpha-beta that searches poor moves first | Move ordering: the best move from the previous iteration first, then captures, killer moves, and the history heuristic | Ordering changes only pruning, never the value; tie-breaking among equal moves checked as above | Closer to the O(b^(d/2)) best case |
 | The same position reached by different move orders and searched again | Transposition table keyed by a Zobrist hash (XOR of a random number per piece and square, updated incrementally), with a fixed size and a replacement policy | Hash collisions verified or made negligible with 64-bit keys; stored bounds (exact, lower, upper) used correctly with the alpha-beta window; table size bounded (rule 1). Reusing an entry from a deeper search, or a position whose value depends on how it was reached (repetition rules), returns a different score than the fixed-depth search: require an exact depth match and path-independent evaluation, or treat it as a behavior change | Repeated subtrees searched once; position hashing O(1) per move instead of O(board) |
 | A fixed-depth search that must finish within a time budget | Iterative deepening: search depth 1, 2, 3, … until time runs out, reusing the previous iteration's best move for ordering | Depth reached now depends on time and machine speed: a behavior change if the original searched a fixed depth | Uses the budget fully; the overhead of shallower iterations is small, since the last depth dominates |
-| Branching factor too large for alpha-beta (Go, large strategy games), or no reliable evaluation function | Monte Carlo tree search with UCT selection | Results are randomized and approximate: a behavior change unless replacing another randomized search with the same seeding | Effort concentrated on promising moves; anytime, with quality improving with time |
+| Branching factor too large for alpha-beta (Go, large strategy games), or no reliable evaluation function | Monte Carlo tree search with UCT selection | Results are randomized and approximate: a behavior change unless replacing another randomized search with the same seeding | Effort concentrated on promising moves; anytime: quality improves with time |
 
-## References (for verifying claims; not required reading)
+## Behavior traps
 
-- Christer Ericson, *Real-Time Collision Detection* (2004); Jason Gregory, *Game Engine Architecture*, 3rd ed. (2018).
-- Donald E. Knuth and Ronald W. Moore, "An Analysis of Alpha-Beta Pruning," *Artificial Intelligence* 6(4), 1975.
-- Albert L. Zobrist, "A New Hashing Method with Application for Game Playing" (1970).
-- Cameron B. Browne et al., "A Survey of Monte Carlo Tree Search Methods," *IEEE Transactions on Computational Intelligence and AI in Games* 4(1), 2012.
+Rewrites in this domain that look equivalent but are not. Walk these with `BEHAVIOR-TRAPS.md` for every candidate in this domain, under the same rules.
+
+- **Determinism.** Lockstep multiplayer, replays, and saved simulations need identical results on every machine and every run. Reordering floating-point operations, parallelizing, or using fused multiply-add breaks determinism even when results look the same.
+- **Update order.** Object update order within a frame affects outcomes (which collision resolves first, which event fires first). Spatial structures and parallel updates change that order.
+- **Time step.** Changing from variable to fixed time steps, or the step size, changes simulation results.
+- **Frame timing of effects.** Moving work to another frame, a background thread, or an event changes when its effects appear, which players and other systems can observe.
+
+## References
+
+Sources for the claims in this file are in `references/techniques/games-and-simulation.md`. Read them only to verify a claim.

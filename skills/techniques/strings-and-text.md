@@ -1,6 +1,6 @@
 # Strings and Text
 
-Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` apply to every table in this file; read them first. Tables are read as described there.
+Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
 
 ## Strings
 
@@ -12,9 +12,9 @@ Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` ap
 | Longest palindromic substring, all palindromes | Manacher's algorithm | Same unit of text as the original: bytes, code units, code points, or user-visible characters give different palindromes | O(n²) → O(n) |
 | Border and period detection | Prefix function (KMP failure function) | — | O(n²) → O(n) |
 | Edit distance when only small distances matter | Banded (Ukkonen) edit distance | A threshold k is known | O(n·m) → O(n·k) |
-| Regular expression with nested or overlapping quantifiers (`(a+)+`, `(a\|a)*`, `.*.*x`), run by a backtracking engine on long or untrusted input | Rewrite the pattern to remove the ambiguity (atomic groups or possessive quantifiers where supported), or switch to a linear-time engine (Thompson NFA or lazy DFA, such as RE2, Rust's `regex`, Go's `regexp`) | Linear-time engines do not support backreferences or lookaround; match semantics must be checked one by one: leftmost-first versus leftmost-longest, capture group contents, Unicode classes, anchors and line modes. A new engine is usually a dependency (rule 7) | Exponential worst case for nested quantifiers such as `(a+)+`, polynomial (cubic for an unanchored search) for patterns such as `.*.*x` → O(n·m) for text length n and pattern size m |
+| Regular expression with nested or overlapping quantifiers (`(a+)+`, `(a\|a)*`, `.*.*x`), run by a backtracking engine on long or untrusted input | Rewrite the pattern to remove the ambiguity (atomic groups or possessive quantifiers where supported), or switch to a linear-time engine (Thompson NFA or lazy DFA, such as RE2, Rust's `regex`, Go's `regexp`) | Linear-time engines do not support backreferences or lookaround; check these match semantics one by one: leftmost-first versus leftmost-longest, capture group contents, Unicode classes, anchors and line modes. A new engine is usually a dependency (rule 7) | Exponential worst case for nested quantifiers such as `(a+)+`, polynomial (cubic for an unanchored search) for patterns such as `.*.*x` → O(n·m) for text length n and pattern size m |
 | Many regular expressions tried one after another on the same input | One combined alternation, or a regex set that reports every pattern that matched in one pass | Which pattern wins, and in which priority order, matches the original | k passes over the input → one pass |
-| Keyword or term search across many documents by scanning each one | Inverted index: each term maps to a sorted list of the documents (and positions) containing it; ranking such as BM25 computed over those lists only; multi-term queries intersect lists | Tokenization, normalization, matching rules, and result order reproduce the original | O(total text) per query → O(length of the posting lists for the query terms) |
+| Keyword or term search across many documents by scanning each | Inverted index: each term maps to a sorted list of the documents (and positions) containing it; ranking such as BM25 computed over those lists only; multi-term queries intersect lists | Tokenization, normalization, matching rules, and result order reproduce the original | O(total text) per query → O(length of the posting lists for the query terms) |
 | Multi-term ranked search that scores every document in the union of the posting lists, then sorts | Dynamic pruning for top-k retrieval: MaxScore, WAND, or Block-Max WAND, using per-term (and per-block) upper bounds on score contributions to skip documents that cannot enter the current top k | The scoring function is a sum of per-term contributions with known maxima; ties at the k-th score are broken as in the original | Most postings skipped; same top k as exhaustive scoring |
 | Intersecting posting lists or sorted ID sets of very different lengths | Galloping (exponential) search from the shorter list into the longer one, or skip pointers stored in the lists | Lists sorted by the same order; duplicates handled as the original does | O(m + n) → O(m · (1 + log(n / m))) for lists of lengths m ≤ n |
 | Sorting many strings that share long prefixes (paths, URLs, composite keys), where each comparison rescans the shared prefix | Multikey (three-way radix) quicksort: partition on one character at a time, recursing into the "equal" part on the next character | The order equals the original comparator's: plain code-unit or byte order, not locale collation or case-insensitive comparison | O(n log n) full-string comparisons → O(n log n + D) character comparisons expected, where D is the total length of the distinguishing prefixes |
@@ -31,7 +31,7 @@ For lexers, tokenizers, regular-expression engines, protocol and file-format par
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
 | A lexer that tries each token pattern in turn at every position | One combined deterministic finite automaton (DFA) over all token patterns, generated or hand-built | Longest-match and pattern-priority rules match the original. Longest match makes the DFA back up after overshooting, which is O(n²) in the worst case for some token sets (tokens `a` and `a*b` on `aaaa…`); Reps' memoized tokenizer restores O(n) | O(n · patterns) → O(n) for typical token sets |
-| Large DFA tables (many states, poor cache fit) | DFA minimization (Hopcroft's algorithm), equivalence classes of input bytes to shrink the alphabet | The recognized language is unchanged, which minimization guarantees | Build O(s · σ log s) for s states and alphabet σ; fewer states and smaller tables |
+| Large DFA tables (many states, poor cache fit) | DFA minimization (Hopcroft's algorithm), equivalence classes of input bytes to shrink the alphabet | Minimization guarantees the recognized language is unchanged | Build O(s · σ log s) for s states and alphabet σ; fewer states and smaller tables |
 | A protocol or format parser that rescans the buffer, or restarts when input arrives in pieces (network packets, streamed files) | Explicit state machine that consumes each byte once and keeps its state across buffer boundaries | Same results for every way the input can be split into chunks; limits on header and field sizes kept | O(n · chunks) when each chunk restarts the scan → O(n) |
 | A backtracking parser (recursive descent with backtracking, parsing expression grammars) that is slow or exponential on some inputs | Packrat parsing: memoize each (rule, position) result | Rules are pure; ordered-choice semantics kept; memory O(n · rules) is acceptable, or memoize only the rules that backtrack | Exponential worst case → O(n · rules) |
 | Arithmetic or filter expressions evaluated by repeatedly scanning for the highest-precedence operator and rewriting the string | Dijkstra's shunting-yard algorithm: one pass with an operator stack produces postfix order (or a tree), then one evaluation pass | Same precedence, associativity, unary-operator handling, and errors for malformed input | O(n²) → O(n) |
@@ -43,15 +43,6 @@ For lexers, tokenizers, regular-expression engines, protocol and file-format par
 |---|---|---|
 | Aho-Corasick + failure links + DP | Counting or avoiding many patterns in generated strings | Repeated scans → linear in text and automaton size |
 
-## References (for verifying claims; not required reading)
+## References
 
-- Dan Gusfield, *Algorithms on Strings, Trees, and Sequences* (1997).
-- Russ Cox, "Regular Expression Matching Can Be Simple And Fast" (2007), swtch.com/~rsc/regexp/regexp1.html.
-- Aho, Lam, Sethi, and Ullman, *Compilers: Principles, Techniques, and Tools*, 2nd ed. (2006): lexers, finite automata, parsing.
-- Jon L. Bentley and Robert Sedgewick, "Fast Algorithms for Sorting and Searching Strings," SODA 1997.
-- Edsger W. Dijkstra, "ALGOL 60 Translation" (1961), Mathematisch Centrum report MR 35: the shunting-yard algorithm.
-- Eugene W. Myers, "An O(ND) Difference Algorithm and Its Variations," *Algorithmica* 1, 1986.
-- Donald E. Knuth and Michael F. Plass, "Breaking Paragraphs into Lines," *Software: Practice and Experience* 11(11), 1981.
-- Hans-J. Boehm, Russ Atkinson, and Michael Plass, "Ropes: An Alternative to Strings," *Software: Practice and Experience* 25(12), 1995.
-- Bryan Ford, "Packrat Parsing: Simple, Powerful, Lazy, Linear Time" (2002).
-- Manning, Raghavan, and Schütze, *Introduction to Information Retrieval* (2008); Ding and Suel, "Faster Top-k Document Retrieval Using Block-Max Indexes," SIGIR 2011.
+Sources for the claims in this file are in `references/techniques/strings-and-text.md`. Read them only to verify a claim.

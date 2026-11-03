@@ -1,6 +1,6 @@
 # Language Companion Files
 
-Load the file for each language the analysis touches. In a project with several languages, load one file per language. Also record the language and runtime version (Kotlin/JVM versus Kotlin Multiplatform, Java version, Python interpreter and version, Swift version and target, Node or browser target, .NET version): standard-library availability depends on it.
+Load the file for each language the analysis touches. Also record the language and runtime version (Kotlin/JVM versus Kotlin Multiplatform, Java version, Python interpreter and version, Swift version and target, Node or browser target, .NET version): standard-library availability depends on it.
 
 | Signals | Load |
 |---|---|

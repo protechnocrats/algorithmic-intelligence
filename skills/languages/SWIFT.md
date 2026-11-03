@@ -27,7 +27,7 @@ Load this file for Swift projects on any target: Apple platforms, Linux and Wind
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -84,7 +84,6 @@ Swift's `<<` and `>>` are "smart shifts": overshifting gives 0 (or -1 for negati
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`): Thread Sanitizer (`-sanitize=thread`) and Address Sanitizer; the Swift 6 language mode's complete concurrency checking, which rejects data races at compile time. No mainstream bounded model checker targets Swift: reach level 3 by enumerating small domains exhaustively in tests.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): message-authentication-code and digest types from CryptoKit (Apple platforms) or `swift-crypto` (elsewhere; a dependency) compare in constant time with `==`; raw byte arrays do not, so compare those with a loop that combines every byte difference without exiting early.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Swift standard library: developer.apple.com/documentation/swift; sort stability: stdlib/public/core/Sort.swift in github.com/swiftlang/swift; geometric growth: "Preserving an Array's Geometric Growth Strategy" under `Array.reserveCapacity(_:)`
-- Swift Collections package: github.com/apple/swift-collections; Swift Evolution SE-0453 (`InlineArray`), SE-0447 (`Span`), SE-0390 (noncopyable types)
+Sources for the claims in this file are in `references/languages/SWIFT.md`. Read them only to verify a claim.

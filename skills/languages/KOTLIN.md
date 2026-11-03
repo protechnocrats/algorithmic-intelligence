@@ -4,7 +4,7 @@ Load this file for Kotlin projects. First determine the target, which decides wh
 
 - **Kotlin/JVM**: the full Java standard library is available. `JAVA.md` documents it; consult it only for structures Kotlin lacks.
 - **Multiplatform common code**: only `kotlin.collections`. No sorted map or set, priority queue, bitset, or `java.util.*`. Options: `expect`/`actual` wrappers over platform types, a small in-project implementation with tests, or a dependency (ask first, rule 7).
-- **Kotlin/Native, JS, or Wasm**: `kotlin.collections` has its own implementations; do not assume JVM behavior. On Kotlin/JS, `Long` is a `BigInt` only on ES2020 targets or with an experimental flag; check before using it in a hot loop. A read-only Kotlin `List`, `Set`, or `Map` passed to Swift is converted to a Swift `Array`, `Set`, or `Dictionary` by copying it, so crossing that boundary in a loop is O(n) per crossing; mutable collections map to `NSMutableArray` and the like without that conversion.
+- **Kotlin/Native, JS, or Wasm**: `kotlin.collections` has its own implementations; do not assume JVM behavior. On Kotlin/JS, `Long` is a `BigInt` only on ES2020 targets or with an experimental flag; check before using it in a hot loop. A read-only Kotlin `List`, `Set`, or `Map` passed to Swift is copied into a Swift `Array`, `Set`, or `Dictionary`, so crossing that boundary in a loop is O(n) per crossing; mutable collections map to `NSMutableArray` and the like without that conversion.
 
 ## Kotlin first (rule 14)
 
@@ -41,7 +41,7 @@ Only new code follows this preference; do not swap existing Java structures, sin
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Every call counts at its real cost, including ones not listed here ("Count every call at its real cost" under rule 6 in `SKILL.md`).
+This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
 
 | Pattern | Cost | Fix |
 |---|---|---|
@@ -58,7 +58,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `filter { }.size`, `filter { }.isNotEmpty()`, `map { }.sum()` | Builds a whole intermediate list | `count { }`, `any { }`, `sumOf { }` |
 | `Pair(a, b)` or a `data class` as a hash key in hot code | Allocation and boxing per lookup; a data class's generated `hashCode` recomputes over every property on each call, so a key holding a large list rehashes it every lookup | Index an `IntArray` (`r * width + c`) when keys are dense; pack two `Int`s into one `Long` (still boxed as a key, but one object instead of three) |
 | `List<Int>`, `Map<Int, Int>`, a `value class` in a generic or nullable position | Boxing, GC pressure, poor locality | `IntArray`, counting arrays, bitsets |
-| `foo(*array)` in a loop | The compiler copies the array: O(n) per call, and the callee's writes do not reach the caller's array (undocumented; measured on Kotlin 2.4) | Pass the array, if measured to matter; a rewrite that passes it directly lets the callee change the caller's data, which is a behavior change |
+| `foo(*array)` in a loop | The compiler copies the array: O(n) per call, and the callee's writes do not reach the caller's array (undocumented; measured on Kotlin 2.4) | Pass the array, if measured to matter; a rewrite that passes it directly lets the callee change the caller's data: a behavior change |
 | `string += x` in a loop; `Regex(...)` or `toRegex()` in a hot function | O(n²) copying; recompilation | `buildString { }`; hoist the `Regex` to a top-level or companion `val` |
 
 ## Bit manipulation
@@ -100,7 +100,6 @@ Shifts use only the low 5 bits (`Int`) or 6 bits (`Long`) of the count, so `1 sh
 - **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; ask unless present): Lincheck checks concurrent structures for linearizability, with a model-checking mode that enumerates interleavings; on JVM targets, jcstress and JBMC from `JAVA.md` also apply.
 - **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): on the JVM, `java.security.MessageDigest.isEqual`, whose time depends only on the length of its first argument, so pass the expected value first; never `contentEquals` or `==`.
 
-## References (for verifying claims; not required reading)
+## References
 
-- Kotlin collections: kotlinlang.org/docs/collections-overview.html; API reference: kotlinlang.org/api/core/kotlin-stdlib/
-- Floating-point comparison: kotlinlang.org/docs/numbers.html#floating-point-numbers-comparison
+Sources for the claims in this file are in `references/languages/KOTLIN.md`. Read them only to verify a claim.
