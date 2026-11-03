@@ -6,7 +6,7 @@ For a small result (one or two items), present the report in the conversation. O
 
 - `OPTIMIZATION-REPORT.md` — written in Phase 4: the ranked items, behavior changes for review, and tried-and-rejected candidates from the analysis.
 - `BUGS-FOUND.md` — written in Phase 4: every bug noticed during the analysis. None are fixed on purpose.
-- `APPLY-RESULTS.md` — written at the end of apply mode (Phase 6): what was applied and how it was verified and measured, changes marked as needing testing, behavior changes decided, changes tried and rejected while applying, and bugs found while applying. It refers to items by the IDs in `OPTIMIZATION-REPORT.md`.
+- `APPLY-RESULTS.md` — written at the end of apply mode (Phase 6 in `APPLYING.md`): what was applied and how it was verified and measured, changes marked as needing testing, behavior changes decided, changes tried and rejected while applying, and bugs found while applying. It refers to items by the IDs in `OPTIMIZATION-REPORT.md`.
 
 **Write each file once, and do not edit it afterward.** Text you write stays in the conversation, and every later step sends the whole conversation to the model again: a report's size is paid again on every step after it, and every edit adds another copy of the changed text.
 - Keep findings in your working notes while you analyze. Write `OPTIMIZATION-REPORT.md` and `BUGS-FOUND.md` once, after Phase 3 is complete for every candidate.
