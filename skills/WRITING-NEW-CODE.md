@@ -70,18 +70,21 @@ End with the developer's normal summary of the work, plus a short "Performance d
 - **Location** and what it does.
 - **Size assumption** and its source (request, existing code, configuration, documentation, or estimate), and any source that gave a different number.
 - **Memory** of every cache, memo table, or index: its bound, its estimated size in bytes across every copy that can exist at once, and the memory limit it was compared with (rule 1).
-- **Complexity** in time and space, in every size variable, with the case labeled (rule 9), and the lower bound with its reason when the problem is nontrivial.
 - **Why this approach,** and the alternative you rejected when the choice was not obvious. Mark an approach you derived rather than took from a known technique.
 - **Verification level** reached against the reference version or the contract checks.
 
 Then list:
 
 - Any bottleneck in existing code (see "When existing code is the bottleneck"), as a proposed item awaiting the developer's decision.
-- Bugs noticed in existing code (rule 4).
 - Dependencies you would have used and did not, because they need permission (rule 7).
 - Which performance claims are measured and which are estimated.
 
 Keep the list short: parts of the code that are small and cold need no entries.
+
+End the summary with these two lines, always, written "none" when empty:
+
+- **Complexity:** each part covered, in time and space, in every size variable, with the case labeled (rule 9), and the lower bound with its reason, or "unknown, because …".
+- **Bugs noticed:** every bug seen in existing code you read, including code next to where you worked, each with one line; or "none" (rule 4). Before writing this line, look again over every file you opened.
 
 ## Anti-patterns in write mode
 

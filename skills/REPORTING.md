@@ -106,7 +106,12 @@ When the developer decides, mark the code and record the decision as "Code marke
 
 ## Final summary
 
-End every run with a short summary in the conversation. When the report is in files, give each point below in a line or two and point to the files for the detail, without restating them. When the report itself is in the conversation, it already carries these points and needs no separate summary:
+End every run with a short summary in the conversation. When the report is in files, give each point below in a line or two and point to the files for the detail, without restating them. When the report itself is in the conversation, it already carries these points and needs no separate summary, except the two lines below, which every summary ends with, written "none" when empty:
+
+- **Complexity:** each ranked item, current → recommended in every size variable, with the case and the lower bound (rule 9 in `SKILL.md`).
+- **Bugs noticed:** every bug seen in any code read, each with its ID and one line; or "none".
+
+The other points:
 
 - Items applied and verified, with the verification level and a one-line summary of the evidence for each, and each item's complexity before → after in every size variable with its lower bound.
 - Items applied with developer approval but marked `NEEDS-TESTING`.
