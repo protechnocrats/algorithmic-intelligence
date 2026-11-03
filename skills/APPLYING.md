@@ -22,11 +22,12 @@ Write `APPLY-RESULTS.md` once, in one pass ("Apply results format" below), and l
 
 ## Apply results format
 
-`APPLY-RESULTS.md` starts with the test suite status before and after (from runs on the final code), then one entry per item the developer approved, using its ID from `OPTIMIZATION-REPORT.md`:
+`APPLY-RESULTS.md` (or, for a small result, the summary in the conversation) starts with the test suite status before and after (from runs on the final code), and the input sizes used with their sources and any disagreement between sources, then one entry per item the developer approved, using its ID from `OPTIMIZATION-REPORT.md`:
 
 ```markdown
 ### <ID>. <Short title> — <Applied (verified: level) | Applied (NEEDS-TESTING, developer approved) | Applied (BEHAVIOR-CHANGE, developer approved) | Not applied (reason; original restored)>
 
+- **Complexity:** before → after in every size variable (for example O(n·k) → O(n), not only O(n²) → O(n)), with the case labeled (rule 9); the lower bound with its reason and basis, or "unknown" with why; and whether the new version reaches it.
 - **Verification:** Level reached (tested | property-checked | exhaustively checked, with the domain | proven, with the tool and what it proved); inputs and properties covered (edge cases, generated cases, seeds, sizes); the planted differences the tests caught and the A/A result ("Check the check" in `DIFFERENTIAL-TESTING.md`); tests and tools actually run, with results; behavior left unverified. "Proven" only at that level.
 - **Performance:** Measured time and memory before and after at realistic n, at a larger n, and on worst-case inputs where relevant, with environment, run count, median, and spread, as absolute values and percentage change; the measured growth exponent against the prediction, and the explanation when they disagree. If measurement could not be completed, say why; the item is not a confirmed win.
 - **End-to-end:** The share of the whole operation's time (the request, job, frame, or command) the changed code took before the change, and the resulting saving for that operation, each labeled measured or estimated (rule 8). When it cannot be measured here, estimate it from the call frequency and sizes found in the survey, and say so. Never leave this field out.
