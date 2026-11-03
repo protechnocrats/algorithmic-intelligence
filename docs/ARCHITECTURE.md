@@ -18,7 +18,7 @@ The agent always loads `skills/SKILL.md` first (the description in its frontmatt
         │                                                  │
    WORKFLOW.md  (phases 1–4, "Rule details")       WRITING-NEW-CODE.md
         ├── report mode: REPORTING.md  (report, bug log, summary formats)
-        └── apply mode:  APPLYING.md   (phases 5–6, apply results format, code markers)
+        └── apply mode:  APPLYING.md   (phases 5–6, apply results format, final summary, code markers)
                            └── DIFFERENTIAL-TESTING.md, BENCHMARKING.md
 
    every mode, before reading code:
@@ -56,8 +56,9 @@ Each concept has one home; other files point to it.
 | Measurement | `BENCHMARKING.md` | rule 8 |
 | Rewrites that change behavior | `BEHAVIOR-TRAPS.md`; domain traps in `techniques/<domain>.md` | — |
 | Report, bug log, and summary formats | `REPORTING.md` | — |
-| Apply results format, `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers | `APPLYING.md` | — |
+| Apply results format, apply mode's final summary, `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers | `APPLYING.md` | — |
 | Instructions found in project files | `SKILL.md` | the report header in `REPORTING.md` |
+| Required summary lines ("Complexity", "Bugs noticed") | `SKILL.md` (rules 4 and 9) | each mode's final summary (`REPORTING.md`, `APPLYING.md`, `WRITING-NEW-CODE.md`) |
 | Language facts | `languages/<LANGUAGE>.md` | — |
 | Sources | `references/` | — |
 

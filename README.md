@@ -109,10 +109,10 @@ For performance, time complexity, or data-structure work, follow skills/SKILL.md
 
 ### Make sure it loads for new code
 
-Agents load a skill by matching your request against the skill's description. Requests about speed or complexity match easily. Requests for new code match only when the code loops over data (aggregating, counting, searching, filtering, sorting, ranking, joining, merging, deduplicating, or grouping), runs per request, item, frame, or keystroke, calls databases or services in loops, or needs a data-structure choice; for a small, ordinary feature the agent may not load it. To make sure it is used, add this line to the project's agent instructions (`CLAUDE.md`, `AGENTS.md`, or your agent's equivalent):
+Agents load a skill by matching your request against the skill's description. Requests about speed or complexity match easily. Requests for new code match less reliably. The description covers code that loops over data (aggregating, counting, searching, filtering, sorting, ranking, joining, merging, deduplicating, or grouping), parses or imports input, walks trees or graphs, handles input from users or public APIs, runs per request, item, frame, or keystroke, calls databases or services in loops, adds a cache, or needs a data-structure choice. Even so, agents often skip it for new code, most of all for parsers and tree code, and for a small, ordinary feature they may not load it at all. The reliable way to make sure it is used is this line in the project's agent instructions (`CLAUDE.md`, `AGENTS.md`, or your agent's equivalent):
 
 ```
-Use the algorithmic-intelligence skill when writing new code that loops over collections or data, and for any question about the speed or complexity of existing code.
+Use the algorithmic-intelligence skill when writing new code that loops over collections or data, parses or imports input, walks trees or graphs, or adds a cache, and for any question about the speed or complexity of existing code.
 ```
 
 Without it, agents can skip the skill for new code. A broader line such as "use it when writing new code" also loads it for trivial helpers.
@@ -254,7 +254,7 @@ The skill's knowledge base is modular and organized around its workflow. The age
 |---|---|
 | `SKILL.md` | The mandatory rules in brief, modes, which files to read first, instructions found in project files, working in few steps |
 | `WORKFLOW.md` | Report and apply mode: setup (including the test baseline and commit authorization), survey (scope, contracts, reachability to entry points, cost along the call chain, exposure), analysis, report; the full text of the mandatory rules ("Rule details") |
-| `APPLYING.md` | Apply mode only: applying each item (differential tests first, change, verify, benchmark, behavior changes held back, commits only if authorized), close-out, the apply results format, and the `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers |
+| `APPLYING.md` | Apply mode only: applying each item (differential tests first, change, verify, benchmark, behavior changes held back, commits only if authorized), close-out, the apply results format, the final summary, and the `NEEDS-TESTING` and `BEHAVIOR-CHANGE` markers |
 | `WRITING-NEW-CODE.md` | Write mode: which rules apply to new code, sizing the workload, choosing structures, existing-code bottlenecks, tests, summary |
 | `ALGORITHM-ARSENAL.md` | How to find candidates: six triage questions (starting with whether the work is needed at all), complexity reference, routing by current complexity, lower bounds, reformulation, behavior-changing techniques |
 | `CORE-TECHNIQUES.md` | Lookup tables of core techniques with their assumptions, production patterns, database queries, bit manipulation, combinations; loaded one section at a time |

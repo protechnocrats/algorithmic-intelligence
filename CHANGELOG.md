@@ -6,6 +6,17 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-03
+
+Two instructions that agents skipped on unfamiliar code are now required lines of every final summary, and the README's project instruction covers more of the new code the skill is for. Install or update with `npx skills add https://github.com/protechnocrats/algorithmic-intelligence --skill algorithmic-intelligence`.
+
+### Fixed
+
+- **Complexity is always stated.** Every final summary, in every mode, has a "Complexity" line: for each item changed, proposed, or written, before → after in every size variable, with the case and the lower bound (or "unknown, because …"). Before, it was a field of `APPLY-RESULTS.md` and was left out when the result was reported in the conversation.
+- **Bugs near the changed code are reported.** Every final summary has a "Bugs noticed" line, "none" when empty, covering any code read, including functions next to the one changed. The agent looks again over the files it opened before writing it.
+- **Apply mode has its own final summary** in `APPLYING.md`, since apply mode does not read `REPORTING.md`.
+- **Loading for new code:** the README's recommended project instruction now names parsing and importing input, walking trees or graphs, and adding a cache, and says it is the reliable way to load the skill for new code.
+
 ## [0.2.0] - 2026-11-03
 
 Agents follow the skill more reliably and load less of it. `SKILL.md` is half as long, and each mode reads only its own files. In every mode, the agent now reads the language file for the code it works on, and sizes the work from the project's configuration. It reports instructions planted in project files. It also catches more of what breaks optimizations: caches that serve stale data across processes, callers that change a returned value, and code that nothing runs. Install or update with `npx skills add https://github.com/protechnocrats/algorithmic-intelligence --skill algorithmic-intelligence`.
