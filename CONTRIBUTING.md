@@ -20,6 +20,7 @@ Thank you for helping. This project is a skill: Markdown instructions that codin
 
 - **Put each instruction where it belongs.** A mandatory rule goes in `skills/SKILL.md`, stated briefly, with its full text in "Rule details" in `skills/WORKFLOW.md` and its steps in the file that carries it out. Anything else lives in exactly one file, and others point to it.
 - **Write for coding-tier models** such as Claude Sonnet and Opus. Every instruction must be followable without guessing: explicit, no shorthand, and an example where a rule is easy to misread.
+- **Keep sources out of loaded files.** Each skill file's references go in `skills/references/` at the same path (for example `skills/references/techniques/hostile-inputs.md`), and the file ends with a pointer to them.
 - **Keep generic files language-neutral.** Name concepts ("an operation that copies a collection"), not one language's functions. Language-specific names belong in `skills/languages/`.
 - **Keep references whole.** When you rename a file or a section, or renumber a rule, update every link, file name, quoted section name, and rule number that points at it. An agent that follows a reference to nothing skips that step.
 - **Do not trim instructions to save tokens.** Every file is loaded only when a step names it. Remove repetition, never content.
@@ -39,7 +40,7 @@ A new evaluation harness is being built from scratch. [docs/EVAL-PLAN.md](docs/E
 
 ## Toolchains
 
-The dev container in `.devcontainer/` has the JDK, Ruby, Node, Rust, Python, and Swift toolchains.
+The dev container in `.devcontainer/` has the JDK, Python, C, Node, Rust, Swift, and Ruby toolchains, and Claude Code. It has no Kotlin or C# toolchain.
 
 ## Reporting problems
 
