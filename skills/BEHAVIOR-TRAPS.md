@@ -158,6 +158,7 @@ If an existing security weakness is found, it is a bug: document it and report i
 - **Different exceptions.** A new structure may throw a different exception type, at a different point, or not at all.
 - **New size limits.** An optimization that works only up to a size the original never limited (a bitmask over at most 64 items, a table sized for the test data, a fixed-size buffer) adds an error or a wrong result above that size. Check the largest size callers can pass, not the sizes in the tests.
 - **Recursion depth.** Turning iteration into recursion (or the reverse) changes stack overflow behavior on large inputs. Removing an overflow on valid input is a bug fixed as a side effect (rule 4); introducing one is a regression and is never acceptable.
+- **Cycles.** A recursive walk over linked data (trees, graphs, threads, nested objects) that may contain a cycle fails fast with a stack overflow. An iterative rewrite without a visited set or depth bound loops forever or runs out of memory instead. Keep a visited set or a bound that fails the same way, or list the change for review (rule 5), even if the data "should" be acyclic.
 - **Resource limits.** A faster algorithm that uses more memory may hit OOM where the original did not (rule 1: memory must stay bounded).
 
 ## I/O and databases
