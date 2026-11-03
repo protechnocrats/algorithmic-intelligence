@@ -63,6 +63,7 @@ Use both hand-written edge cases and generated inputs.
 - Strings: empty string, whitespace, mixed case, non-ASCII, emoji and other characters outside the basic multilingual plane, combining characters.
 - Ties for any ordering or "first match" logic.
 - Aliased arguments: the same object passed for two parameters, an argument that contains or views another argument, and an output parameter that is also an input. The original and the optimized version must agree on these too.
+- Cyclic or self-referencing structures, when the code follows references (a node that is its own descendant). Run these with a timeout, so a version that loops forever fails the test instead of hanging it.
 - Inputs at and around every threshold, boundary, or special case visible in the original code.
 - Malformed or unexpected input the function can receive (invalid formats, out-of-range values, inconsistent state), when callers can pass it.
 

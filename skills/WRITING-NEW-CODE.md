@@ -54,6 +54,7 @@ Sometimes the best the new code can do is still slow because of existing code it
 ## Tests
 
 - Test the behavior the request specifies, including edge cases: empty input, one element, duplicates, ties, and invalid input the code can receive.
+- When the new code reads what existing code writes (or writes what existing code reads), test the round trip on generated data that includes every special case the existing code handles (quoting, escaping, separators and line breaks inside values), and the variants the request mentions.
 - Where a design choice exists for performance, add at least one test with input at the realistic size from step 2. The test checks correctness on that input and must finish in reasonable time. Do not assert on timing; timing assertions are flaky.
 - **Reference version.** For every part that steps 4 to 6 covered, write a slow, obviously correct version in test code, usually the straightforward loop you chose not to ship, and compare the shipped code against it on edge cases and generated inputs, exactly as a differential test compares old and new code (`DIFFERENTIAL-TESTING.md`). This gives new code the same evidence that changes to existing code get.
 - **Contract checks.** Check the request's postconditions on every generated case, and the invariant of any algorithm you derived (`DISCOVERY.md`, move 3). Where no simple reference is practical, check metamorphic relations instead ("The contract as executable properties" in `DIFFERENTIAL-TESTING.md`).
