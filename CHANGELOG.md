@@ -6,6 +6,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-03
+
+Agents follow the skill more reliably and load less of it. `SKILL.md` is half as long, and each mode reads only its own files. In every mode, the agent now reads the language file for the code it works on, and sizes the work from the project's configuration. It reports instructions planted in project files. It also catches more of what breaks optimizations: caches that serve stale data across processes, callers that change a returned value, and code that nothing runs. Install or update with `npx skills add https://github.com/protechnocrats/algorithmic-intelligence --skill algorithmic-intelligence`.
+
 ### Changed
 
 - **Clearer instructions throughout:** `SKILL.md`, `WORKFLOW.md`, `REPORTING.md`, `DIFFERENTIAL-TESTING.md`, `BENCHMARKING.md`, and `ALGORITHM-ARSENAL.md` rewritten in shorter sentences, with each instruction stated once and the rest pointing to it. No rule, step, threshold, example, or named section was removed.
@@ -31,7 +35,11 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 - **Every file loads less.** The source lists at the end of each file moved to `references/`, which the agent reads only to verify a claim. The machine-learning, image, geometry, and simulation traps moved from `BEHAVIOR-TRAPS.md` to a "Behavior traps" section in the matching `techniques/` file, which `BEHAVIOR-TRAPS.md` names for code in those domains. All files were reworded to be shorter, with no rule, step, fact, or example removed.
 - **Caches see writes from other processes.** A new trap, "Writers outside this process": when other processes, machines, or jobs share the data, a cache inside one process must detect their writes on every read (a version number or change counter the data source keeps) or cache only data they never change. In write mode the agent decides this before writing: it writes the version that keeps exact results and offers the faster, possibly stale version as an option, instead of shipping it and asking afterwards.
 - **Fewer wasted steps.** The agent runs tests the way the project documents them instead of guessing a runner, and gives commands that can hang a time limit.
-- **Conflicting size sources are reported.** When the README, configuration, code, or tests give different input sizes, the agent lists each source and number, says which one it used and why, and asks the developer to confirm when the choice changes a ranking or a design.
+- **Conflicting size sources are reported.** When the README, configuration, code, or tests give different input sizes, the agent lists each source and number, says which one it used and why, and asks the developer to confirm when the choice changes a ranking or a design. The report header has a required "Input sizes" section that lists each size, its source, and every disagreement between sources.
+- **Complexity is reported in every size variable, with the lower bound.** Apply results, the final summary, and write mode's performance decisions give each item's complexity before and after in every size variable (O(n·k) → O(n), not only O(n²) → O(n)) and the lower bound with its reason, or "unknown" with why.
+- **Sizes come from the project's configuration first.** Before estimating sizes, in every mode and even for one named function, the agent reads the configuration and deployment files and the README for production sizes. Apply results open with the sizes used and their sources.
+- **Callers' use of a result is part of the contract.** For each caller, the agent reads what it does after the call (changes, appends to, keeps, or encodes the result, or changes the arguments it passed) and names those callers, so a rewrite that returns shared memory or a different empty value is caught.
+- **The skill loads for more new-code requests:** code that walks trees, graphs, or parent/child links, or that handles input from users or public APIs, even when the request does not mention speed.
 - **New traps and tests:** cyclic structures (an iterative rewrite without a visited set loops forever where recursion failed fast), and round-trip tests when new code reads what existing code writes.
 
 ### Fixed
