@@ -19,7 +19,7 @@ Rewrites that look equivalent but are not. Walk this list for every candidate in
 - **Mutable keys.** An object used as a hash key and mutated afterward can no longer be found.
 - **Case, culture, and normalization.** String comparisons that ignore case or depend on locale must use the same comparer in the new structure.
 - **Floating-point keys.** `NaN`, `-0.0` versus `0.0`, and rounding make float keys unsafe in hash structures.
-- **Numeric identity.** `1` and `1.0`, or `2.50` and `2.5` as decimals, may be equal under `==` but not as hash keys (Ruby `eql?`, Java `Integer` versus `Long`, `BigDecimal` scale), or the reverse. A list scan with `==` matched them; a hash structure may not.
+- **Numeric identity.** `1` and `1.0`, or `2.50` and `2.5` as decimals, can be equal under one comparison and different under the one a hash structure uses. Ruby: `==` matches them, but hash keys use `eql?`, which does not. Java: primitive `==` and `compareTo` match them, but `equals` (used by `HashMap`, `HashSet`, and `List.contains`) treats `Integer` 1 and `Long` 1 as different and compares `BigDecimal` scale, so a `TreeSet` and a `HashSet` disagree. Python is the reverse: `1`, `1.0`, and `True` are one key. Check which comparison the original used and which one the new structure uses.
 
 ## Duplicates and nulls
 
@@ -60,7 +60,7 @@ For numerical code, matching outputs on ordinary inputs is not enough evidence. 
 - **Nondeterministic kernels.** Some GPU operations (atomic accumulation, some convolution and scatter algorithms) give different bits on every run. Differential tests need the framework's deterministic mode, or a tolerance the developer approves (`DIFFERENTIAL-TESTING.md`).
 - **Batch-dependent numerics.** Batching, padding, or changing batch size can change results: batch normalization statistics, kernel selection by shape, and reduction order all depend on the batch.
 - **Training versus inference mode.** Dropout and batch normalization behave differently in each mode. A rewrite that runs in the wrong mode, or switches mode, changes outputs.
-- **Data types and promotion.** Lower precision, implicit type promotion, or a different accumulator type changes results, and can overflow (16-bit floats overflow above 65,504).
+- **Data types and promotion.** Lower precision, implicit type promotion, or a different accumulator type changes results, and can overflow or lose precision. IEEE half precision (fp16) has a largest finite value of 65,504, and values from 65,520 up round to infinity; bfloat16 has the range of 32-bit floats, so it rarely overflows, but keeps only about 8 bits of precision.
 - **Tokenization.** Any change to tokenization (merge order, normalization, special tokens) changes model inputs and outputs, even when the text is the same.
 
 ## Images and signals
@@ -124,7 +124,7 @@ A function is not pure just because its arguments are unchanged. Before caching 
 ## Concurrency
 
 - **Thread safety.** Replacing a synchronized or concurrent structure with an unsynchronized one, or adding shared mutable caches, introduces races.
-- **Iterator invalidation.** Modifying a collection while iterating it throws or skips elements, depending on the platform.
+- **Iterator invalidation.** Modifying a collection while iterating it throws, skips elements, or (in C and C++) is undefined behavior, depending on the platform.
 - **Changed concurrency.** Running previously sequential work concurrently changes ordering, error behavior (fail-fast versus continue), rate limiting, and resource usage.
 - **Optimistic and speculative execution.** A reader that proceeds without a lock (sequence locks, optimistic concurrency) can see torn or inconsistent data before it validates. It must not act on that data first: no pointer dereference, division, array index, or output. A retry repeats every side effect of the attempt, and speculative work done for a guess that turns out wrong must leave no trace (no writes, logs, or messages).
 - **Missed changes.** Code that switches from rescanning to consuming changes (change feeds, file-system notifications, incremental maintenance) misses updates when the feed overflows, restarts, or is truncated. The original rescan never missed them. Every gap must be detected and fall back to a full rescan.

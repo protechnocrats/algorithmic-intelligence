@@ -20,10 +20,10 @@ How to read the tables in this file and in the domain files under `techniques/`:
 | Grouping by a key with repeated filters | Single-pass grouping into a map | Group order and item order match the original | O(n·g) → O(n) expected |
 | Keys are small dense integers | Plain array indexed by key | Key range is known and small enough to allocate | Same Big-O as hashing, but worst-case O(1) with smaller constants |
 | Duplicate detection | Hash set; or sort then compare neighbors | Sorting: the input may be copied or reordered, and an ordering exists | O(n²) → O(n) expected, or O(n log n) |
-| Repeated range sums | Prefix sums | Data does not change between queries (otherwise use a Fenwick tree or rebuild); sums cannot overflow differently | O(n) per query → O(1) per query after O(n) setup |
+| Repeated range sums | Prefix sums | Data does not change between queries (otherwise use a Fenwick tree or rebuild); sums cannot overflow differently; for floating point, a difference of prefix sums rounds differently from a direct sum and can lose precision to cancellation (behavior change) | O(n) per query → O(1) per query after O(n) setup |
 | Many range increments, read at the end | Difference array, then one prefix-sum pass | All updates happen before reads | O(n·q) → O(n + q) |
 | Repeated range XOR | Prefix XOR | Data does not change between queries | O(n) per query → O(1) per query after O(n) setup |
-| Many range minimum/maximum queries | Sparse table | Data does not change; the operation is idempotent (min, max, gcd, and, or) | O(n) per query → O(1) per query after O(n log n) setup |
+| Many range minimum/maximum queries | Sparse table | Data does not change; the operation is idempotent (min, max, gcd, and, or) | O(n) per query → O(1) per query after O(n log n) setup and O(n log n) memory |
 | Union, intersection, difference of integer sets | Bitset, or merge of sorted lists | Bitset: small integer universe. Merge: both inputs sorted | O(n·m) → O(u/w) word operations or O(n + m) |
 
 ### Order and search
@@ -35,7 +35,7 @@ How to read the tables in this file and in the domain files under `techniques/`:
 | Searching sorted data when the target is usually near the start, or the length is unknown (streams, merge loops) | Exponential (galloping) search: probe 1, 2, 4, 8, … then binary search the last range | Sorted by the same comparator; same match among duplicates | O(log n) → O(log i) for a target at position i |
 | First index or smallest value that satisfies a condition | Binary search on a monotonic predicate | The predicate is monotonic over the search range (false…false, true…true); the comparator is consistent; boundary behavior (empty range, no match, all match, duplicates) matches the original | O(range · check) → O(log range · check) |
 | Pair or triple search over sorted data | Two pointers | Sorted; moving a pointer provably excludes the skipped candidates | O(n²) → O(n) after sorting |
-| Aggregate over every fixed-size window | Running aggregate updated as the window slides | The aggregate is invertible (sum, count, XOR) | O(n·k) → O(n) |
+| Aggregate over every fixed-size window | Running aggregate updated as the window slides | The aggregate is invertible (sum, count, XOR); for floating point, adding and subtracting as the window slides rounds differently from summing each window (behavior change) | O(n·k) → O(n) |
 | Minimum or maximum of every fixed-size window (not invertible, so a running aggregate cannot remove elements) | Monotonic deque | — | O(n·k) → O(n) amortized total: each element enters and leaves the deque at most once |
 | Longest or shortest contiguous run meeting a condition | Variable sliding window | The condition is monotonic as the window grows or shrinks (for example, sums of non-negative values, or "at most k distinct"). **Negative values usually break it.** | O(n²) → O(n) |
 | Subarrays with an exact target sum, values of any sign | Prefix sum + hash map of prefix counts | Exact-equality condition | O(n²) → O(n) expected |
@@ -43,9 +43,9 @@ How to read the tables in this file and in the domain files under `techniques/`:
 | Next greater or smaller element, spans, histogram areas | Monotonic stack | Strict versus non-strict comparison matches the original for equal elements ("next greater" versus "next greater or equal") | O(n²) → O(n) amortized total: each element is pushed and popped at most once |
 | Overlapping intervals, merging ranges | Sort by start, then sweep | Endpoint semantics match the original: closed or half-open intervals, and whether touching intervals merge; output order matches | O(n²) → O(n log n) |
 | Events over time (concurrent sessions, resource counts) | Sweep line over sorted endpoints | Tie order of start and end events matches the original semantics | O(n²) → O(n log n) |
-| Sorting input that is often already partly sorted, or has many equal keys | Adaptive sorting: natural merge sort or Timsort (uses existing runs; stable), pattern-defeating quicksort (detects sorted and reversed input; unstable), three-way partitioning for duplicates | Stability matches the original: replacing a stable sort with pdqsort or introsort reorders equal elements (behavior change). Measure how sorted real inputs are | O(n log n) → O(n) on presorted input; O(n log d) with d distinct keys |
-| Sorting bounded integers | Counting sort or radix sort | Keys are bounded integers or fixed-width; use the stable variant when equal keys carry other data | O(n log n) → O(n + k) |
-| Removing from the front or inserting in the middle of an array | Deque or ring buffer; swap-with-last removal | Swap-with-last changes element order: only when no caller observes order, confirmed from every caller. Otherwise it is a behavior change | O(n) per operation → O(1) |
+| Sorting input that is often already partly sorted, or has many equal keys | Adaptive sorting: natural merge sort or Timsort (uses existing runs; stable), pattern-defeating quicksort (detects sorted and reversed input; unstable), three-way partitioning for duplicates | Stability matches the original: replacing a stable sort with pdqsort or introsort reorders equal elements (behavior change). Measure how sorted real inputs are | O(n log n) → O(n) on presorted input (natural merge sort, Timsort, pdqsort); O(n log d) expected with d distinct keys (three-way partitioning quicksort with random pivots) |
+| Sorting bounded integers | Counting sort or radix sort | Counting sort: the key range k is small relative to n (a 32-bit key range makes the count array far larger than the input). Radix sort: keys are fixed-width. Use the stable variant when equal keys carry other data | O(n log n) → O(n + k) for counting sort over a key range k; O(d·(n + b)) for radix sort with d digits in base b |
+| Removing from or adding at the front of an array; removing from the middle when order does not matter | Deque or ring buffer for the ends; swap-with-last removal for the middle | Swap-with-last changes element order: only when no caller observes order, confirmed from every caller. Otherwise it is a behavior change. Neither helps inserting in the middle, which stays O(n) in an array or deque; that needs a linked list with node handles, a gap buffer when edits cluster, or a balanced tree | O(n) per operation → O(1) (deque: amortized at the ends) |
 | Longest increasing or non-decreasing subsequence | Patience sorting + binary search | Strict versus non-strict comparison matches the original | O(n²) → O(n log n) |
 | Merging k sorted sequences | k-way merge with a heap | Inputs sorted by the same comparator; tie order matches the original | O(N·k) → O(N log k) |
 
@@ -72,20 +72,20 @@ How to read the tables in this file and in the domain files under `techniques/`:
 | Range updates and range queries together | Segment tree with lazy propagation | Updates compose with each other and with the aggregate | O(n) per operation → O(log n) worst case per operation |
 | Floor, ceiling, predecessor, successor, ordered iteration with inserts | Balanced BST / sorted map | The comparator is a consistent total order, and consistent with equality, so lookups and iteration order match the original | O(n) → O(log n) |
 | Fixed set of keys known in advance | Precomputed lookup table, or perfect hashing for a static key set | Key set never changes at runtime | O(1) worst case |
-| LRU or bounded cache | Hash map + doubly linked list (often built in, see language files) | The cached function is pure | O(1) per operation, bounded memory |
+| LRU or bounded cache | Hash map + doubly linked list (often built in, see language files) | The cached function is pure | O(1) expected per operation, bounded memory |
 
 ### Graphs
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
 | Shortest path, unweighted | BFS | Every edge has the same cost; with different costs see Dijkstra; which shortest path is returned among equals matches if observable | Path enumeration → O(V + E) |
-| Shortest path from many sources at once | Multi-source BFS | Unweighted | k BFS runs → one O(V + E) |
-| Shortest path, weighted | Dijkstra with a heap | **Non-negative weights only.** Negative weights: see "Graphs" in `techniques/graphs-and-trees.md` | O(V²) → O((V + E) log V) |
+| Shortest path from many sources at once | Multi-source BFS | Unweighted; each node needs only its distance to the nearest source (and which source), not its distance from every source. Per-source distances still need k runs | k BFS runs → one O(V + E) |
+| Shortest path, weighted | Dijkstra with a heap | **Non-negative weights only.** Negative weights: see "Graphs" in `techniques/graphs-and-trees.md`. A heap pays off only on sparse graphs: when E is close to V², the O(V²) array version is faster than the heap's O(V² log V) | Repeated path search → O((V + E) log V) with a binary heap on sparse graphs, O(V²) with an array on dense graphs |
 | Shortest path, weights 0 or 1 | 0-1 BFS with a deque | Weights are exactly 0 or 1 | O((V + E) log V) → O(V + E) |
 | Dependency order, build order | Topological sort (Kahn or DFS) | Graph is a DAG; detect and report cycles the same way the original did | O(V + E) |
 | Directed cycle or deadlock detection | Three-color DFS, or topological-sort failure | — | O(V + E) |
 | Connected regions in a grid | Flood fill with iterative BFS or DFS | Recursion depth (see "Errors and limits" in `BEHAVIOR-TRAPS.md`) | O(V + E) |
-| Repeated reachability or recomputation over a static graph | Precompute components, memoize per node | Graph does not change between queries | Per-query traversal → O(1) per query |
+| Repeated reachability or recomputation over a static graph | Precompute components, memoize per node | Graph does not change between queries. Components answer reachability only in undirected graphs; in a directed graph, condense strongly connected components and precompute reachability over the resulting DAG (transitive closure: O(V·(V + E)) time and O(V²) bits), only when the query count justifies it | Per-query traversal → O(1) per query |
 | Minimum spanning tree | Kruskal (sort + union-find) or Prim (heap) | Tie-breaking among equal-weight edges matches the original when the chosen tree is observable | O(E log E) |
 
 ### Reusing work
@@ -101,7 +101,7 @@ How to read the tables in this file and in the domain files under `techniques/`:
 | Counting the number of ways, not enumerating them | DP with counting | A numeric type or modulus that cannot overflow differently from the original | Enumeration → O(states × transitions per state) |
 | Enumerating solutions with many dead ends | Backtracking with pruning, constraint propagation, branch and bound (conditions for each under "Combinatorial search" in `techniques/sequences-dp-search.md`) | Pruning rules never discard a valid solution; result order matches if observable | Large practical speedups; worst case stays exponential |
 | Loops that compute sums of series, counts, arithmetic progressions | Closed-form formula | The formula cannot overflow or round differently from the loop | O(n) → O(1) |
-| Repeated exponentiation, linear recurrences | Binary exponentiation; matrix exponentiation | The operation is associative | O(n) → O(log n) |
+| Repeated exponentiation, linear recurrences | Binary exponentiation; matrix exponentiation | The operation is associative; with exact big integers each multiplication grows costlier as the numbers grow, so count bit operations, not multiplications | O(n) → O(log n) multiplications; for an order-k linear recurrence by k×k matrix powers, O(k·n) → O(k³ log n), which loses when k is large and n small |
 | Work that splits into independent halves | Divide and conquer | The halves are independent and the combine step costs less than the work saved (linear combine gives O(n log n)); recursion depth bounded | O(n²) → O(n log n) in many cases |
 
 ### Strings
@@ -110,7 +110,7 @@ How to read the tables in this file and in the domain files under `techniques/`:
 |---|---|---|---|
 | String concatenation in a loop | Builder or join | — | O(n²) → O(n) |
 | Substring search with long patterns or many searches | KMP, Z-algorithm, or the platform's optimized search | Same matching semantics (case, culture, overlapping matches) | O(n·m) → O(n + m) |
-| Comparing many substrings | Rolling hash with prefix hashes and powers | Every hash match is confirmed with a direct comparison, so collisions cannot change results | O(n·m) → O(n) expected; O(1) per substring hash after O(n) setup |
+| Comparing many substrings | Rolling hash with prefix hashes and powers | Every hash match is confirmed with a direct comparison, so collisions cannot change results; each confirmed match costs O(m), so text with many true matches ("aaaa…") is back to O(n·m): use KMP or the Z-algorithm there | O(n·m) → O(n + m + z·m) expected for z true matches; O(1) per substring hash after O(n) setup |
 | Anagram or character-frequency checks | Fixed-size count array | Small, known alphabet | O(n log n) → O(n) |
 | Many patterns against one text | Aho-Corasick | Same matching semantics: overlapping matches, case and normalization, and which match is reported first when patterns share positions | O(n·p) → O(n + L + z), where L is total pattern length and z is the number of matches |
 | Many repeated string comparisons or groupings | Canonical keys, interned IDs, or sorted signatures | Canonicalization preserves the original equality exactly | Repeated O(length) comparisons → O(1) ID comparisons |
@@ -165,8 +165,8 @@ Bits win cleanly in specific cases in any kind of codebase. Use them when they r
 | Power of two check | `x > 0 && (x & (x - 1)) == 0` | O(1) |
 | Find the unique element when all others appear twice | XOR of all elements | O(n) time, O(1) space |
 | Enumerate all subsets of a small set | Iterate masks 0 until 2^n | Simpler and faster than recursive subset generation |
-| Enumerate all submasks of every mask | `for (s = m; s > 0; s = (s - 1) & m)` | O(3^n) total across all masks, instead of O(4^n) |
-| Subset DP (assignments, small traveling salesperson) | DP indexed by bitmask | O(n!) → O(2^n · n²) |
+| Enumerate all submasks of every mask | `for (s = m; s > 0; s = (s - 1) & m)`, which skips the empty submask: handle it separately if the original included it | O(3^n) total across all masks, instead of O(4^n) |
+| Subset DP (assignments, small traveling salesperson) | DP indexed by bitmask | O(n!) → O(2^n · n²) time, with O(2^n · n) memory |
 | Packing several small fields into one key | Shifts and masks into a `Long` | Composite hash keys without allocating pair objects |
 
 Watch for: signed versus unsigned shifts, integer width (JavaScript bitwise operators work on 32-bit signed integers), overflow when shifting by the full width, and readability. See the language files for exact operators. More bit-based techniques are in `techniques/math-and-numerics.md` (XOR basis, GF(2) elimination) and `techniques/sequences-dp-search.md` (sum over subsets DP).
@@ -182,13 +182,13 @@ The best solution often connects two techniques. Check these whenever a problem 
 | Sort + two pointers | Pair/triple sums, closest pairs, merging | O(n²) or O(n³) → O(n log n) or O(n²) |
 | Sort + binary search | Many lookups against a fixed collection when hashing is not possible (ranges, nearest value) | O(n·m) → O((n + m) log n) |
 | Binary search + monotonic predicate (often a greedy check) | Minimize the maximum, minimum feasible capacity, splitting into groups | O(range · check) → O(log range · check) |
-| Heap + hash map | LRU/LFU caches, Dijkstra with decrease-key, top-k frequent | O(n) operations → O(log n) or O(1) |
+| Heap + hash map | LFU caches, Dijkstra with decrease-key, top-k frequent (an LRU cache uses a linked list instead; see the hash map + doubly linked list row) | O(n) operations → O(log n) |
 | Monotonic deque + DP | DP whose transition takes the minimum or maximum over a sliding window of earlier states | O(n·k) → O(n) |
 | Sort + union-find | Kruskal MST; offline connectivity under edge-weight thresholds | Repeated traversal → O(E log E) |
 | Trie + DFS | Word search in a grid, prefix enumeration | Per-word search → shared prefix search |
 | DP + bitmask | Small-set assignment and ordering problems | Factorial → exponential with small base |
 | Prefix sums + binary search | Weighted random choice, "first index where the cumulative total exceeds x" | O(n) per query → O(log n) |
-| Hash map + doubly linked list | O(1) ordered cache with eviction | Bounded memory and O(1) operations |
+| Hash map + doubly linked list | O(1) ordered cache with eviction | Bounded memory and O(1) expected operations |
 | Sweep line + heap | Meeting rooms, skyline, interval scheduling with resources | O(n²) → O(n log n) |
 | Coordinate compression + Fenwick tree | Counting inversions, rank queries over large value ranges (compression preserves order and equality among known values, not distances between them) | O(n²) → O(n log n) |
 | Coordinate compression + segment tree | Changing rank and range queries over large values | Avoids structures indexed by raw values |

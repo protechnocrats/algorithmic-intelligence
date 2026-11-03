@@ -7,7 +7,7 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 **Before running**
 - **Predict first.** Write down the expected speedup at realistic `n` and the expected growth exponent of each version (the report's "Prediction" field), and compare the measurement with it afterward. A prediction that misses badly means the analysis is wrong somewhere: find out where before keeping the change.
 - Use the project's existing benchmark tooling when present (see the language files). Otherwise write a simple timing harness in test code: warm up, run many iterations, report the median, and keep the result in a variable the compiler cannot discard.
-- Give both versions the same inputs, the same machine, the same build type, and the same load. Prefer release builds: JIT, garbage collection, and debug builds distort results.
+- Give both versions the same inputs, the same machine, the same build type, and the same load. Prefer release builds, since debug builds distort results; JIT compilation and garbage collection distort them too, which warm-up and repeated runs handle (below).
 - **Use representative inputs.** Uniform random data can hide or exaggerate gains: real inputs are often partly sorted, skewed, or full of duplicates. Benchmark on production-like data (or a recorded sample) as well as generated data.
 - **Include worst-case and adversarial inputs** where relevant: already-sorted or reverse-sorted data for sorting and selection, colliding hash keys for hash-based structures, deep or degenerate shapes for trees and recursion. When untrusted parties control the input, search for the worst inputs as in "Finding worst-case inputs" in `techniques/hostile-inputs.md`.
 

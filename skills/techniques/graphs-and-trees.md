@@ -9,7 +9,7 @@ Part of the advanced techniques. The shared rules in `ADVANCED-TECHNIQUES.md` ap
 | Shortest paths with negative edge weights | Bellman-Ford | No negative cycles reachable, or the code must detect them (Bellman-Ford can) | Handles cases Dijkstra cannot; O(V·E) |
 | All-pairs shortest paths, negative edges, sparse graph | Johnson's algorithm (Bellman-Ford reweighting + Dijkstra from each node) | No negative cycles | O(V·E log V) |
 | All-pairs shortest paths on a small or dense graph | Floyd-Warshall | Replaces V separate single-source runs; wins when E is close to V² or V is small | O(V³), simple, cache-friendly |
-| Path search in a very large state space with a good estimate of remaining cost | A* | The heuristic is admissible (never overestimates) for optimal paths; consistent to avoid reopening nodes | Explores far fewer states than Dijkstra in practice; same worst case |
+| Path search in a very large state space with a good estimate of remaining cost | A* | The heuristic is admissible (never overestimates) for optimal paths; consistent to avoid reopening nodes | Explores far fewer states than Dijkstra in practice; same worst case with a consistent heuristic (an admissible but inconsistent one can reopen nodes exponentially often) |
 | Path between two known endpoints in a huge, uniform search space | Bidirectional BFS | Edges can be traversed backward | O(b^d) → O(b^(d/2)) for branching factor b and depth d |
 | Strongly connected components, condensing cycles | Tarjan or Kosaraju | — | O(V + E) |
 | Critical links or single points of failure | Bridges and articulation points via low-link DFS | Undirected graph | O(V + E) |
@@ -25,7 +25,7 @@ A static-graph algorithm rerun after every change costs its full price per chang
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| Topological order recomputed after each added edge | Incremental topological ordering (Pearce-Kelly, or Bender-Fineman-Gilbert-Tarjan) | Edges are mostly added; a new edge that closes a cycle is detected and reported the same way the original reports it | O(V + E) re-sort per insertion → work proportional to the region of the order that must shift, in practice; worst case per insertion is no better than re-sorting |
+| Topological order recomputed after each added edge | Incremental topological ordering (Pearce-Kelly, or Bender-Fineman-Gilbert-Tarjan) | Edges are mostly added; a new edge that closes a cycle is detected and reported the same way the original reports it | O(V + E) re-sort per insertion → work proportional to the region of the order that must shift, in practice; worst case for a single insertion is no better than re-sorting, but the total over m insertions is O(m · min(√m, V^(2/3))) for Bender-Fineman-Gilbert-Tarjan, against O(m · (V + E)) for re-sorting each time |
 | Unions that must be undone in last-in, first-out order (backtracking search, versioned state) | Union-find with rollback: union by rank or size, **no** path compression, a stack of changes | Undo order is last-in, first-out | Rebuild per undo → O(log n) per union, find, and undo |
 | Connectivity queries interleaved with edge additions and deletions, all known up front | Offline dynamic connectivity: segment tree over time, each edge inserted into the intervals where it exists, DFS with rollback union-find | All operations known in advance | O(V + E) per query → O((E + Q) log Q log V) total |
 | Connectivity queries with online edge additions and deletions | Fully dynamic connectivity (Holm-de Lichtenberg-Thorup) | Large, subtle implementation: prefer a reviewed library and ask (rule 7) | O(V + E) per query → O(log² V) amortized per update, O(log V / log log V) per query |
@@ -47,7 +47,7 @@ Program analyses are graph problems over the control-flow graph. A faster analys
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| Subtree sums, counts, or updates | Euler tour (flatten the tree to a range) + Fenwick or segment tree | The tree's shape does not change between queries (values may); the aggregate is associative | O(subtree size) per query → O(log n) |
+| Subtree sums, counts, or updates | Euler tour (flatten the tree to a range) + Fenwick or segment tree | The tree's shape does not change between queries (values may); the aggregate is associative for a segment tree, and also invertible (sum, count, XOR; not min or max) for a Fenwick tree | O(subtree size) per query → O(log n) |
 | An answer computed for every possible root | Tree DP with rerooting | The per-root answer can be combined from child and parent contributions | O(n²) → O(n) |
 | Path queries and updates between arbitrary nodes | Heavy-light decomposition + segment tree | Tree shape does not change | O(n) per query → O(log² n) |
 | Distance-based counting over all pairs of nodes | Centroid decomposition | — | O(n²) → O(n log n) or O(n log² n) |

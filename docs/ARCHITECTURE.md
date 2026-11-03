@@ -4,7 +4,7 @@ A map of the repository for contributors: what each part does, what loads when, 
 
 ## The skill
 
-`skills/` is everything an installed user gets: Markdown instructions that a coding agent loads. The skill has no code. Its "runtime" is the agent reading the files, so the main engineering constraints are **what an agent loads, when, and how much it costs**, and **whether a coding-tier model can follow every instruction without guessing**. The evaluation harness is being rebuilt ([EVAL-PLAN.md](EVAL-PLAN.md)).
+`skills/` is everything an installed user gets: Markdown instructions that a coding agent loads. The skill has no code. Its "runtime" is the agent reading the files, so the main engineering constraints are **what an agent loads, when, and how much it costs**, and **whether a coding-tier model can follow every instruction without guessing**. A new evaluation harness is being built from scratch ([EVAL-PLAN.md](EVAL-PLAN.md)).
 
 ## What loads when
 

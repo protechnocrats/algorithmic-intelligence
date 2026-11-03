@@ -1,5 +1,6 @@
-# Every toolchain the skill's evaluation fixtures need, so the evals run the same way
-# on any machine and stay sandboxed in the container (see SECURITY.md).
+# The JDK, Ruby, Python, and C toolchains, and the libraries Swift needs, for running agent
+# sessions on projects in those languages, the same way on any machine and sandboxed in the
+# container. Node and Rust come from devcontainer.json; Swift from post-create.sh.
 # Base: the dev container project's Ubuntu image (non-root user "vscode").
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 

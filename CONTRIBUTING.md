@@ -19,7 +19,7 @@ Thank you for helping. This project is a skill: Markdown instructions that codin
 ## Changing the skill
 
 - **Put each instruction where it belongs.** A mandatory rule goes in `skills/SKILL.md` and in the file that carries it out. Anything else lives in exactly one file, and others point to it.
-- **Write for coding-tier models.** The skill is tested with Claude Sonnet and Opus. Every instruction must be followable without guessing: explicit, no shorthand, and an example where a rule is easy to misread.
+- **Write for coding-tier models** such as Claude Sonnet and Opus. Every instruction must be followable without guessing: explicit, no shorthand, and an example where a rule is easy to misread.
 - **Keep generic files language-neutral.** Name concepts ("an operation that copies a collection"), not one language's functions. Language-specific names belong in `skills/languages/`.
 - **Keep references whole.** When you rename a file or a section, or renumber a rule, update every link, file name, quoted section name, and rule number that points at it. An agent that follows a reference to nothing skips that step.
 - **Do not trim instructions to save tokens.** Every file is loaded only when a step names it. Remove repetition, never content.
@@ -35,7 +35,7 @@ Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklis
 
 ## Evaluation
 
-The evaluation harness is being rebuilt. [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md) describes what it will test (hostile inputs, security side effects of optimizations, unusual problems, and write mode, on Sonnet and Opus). Earlier rounds and their tooling are in the git history before the `evals/` folder was removed.
+A new evaluation harness is being built from scratch. [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md) describes what it will test (hostile inputs, security side effects of optimizations, unusual problems, and write mode, on Sonnet and Opus).
 
 ## Toolchains
 

@@ -36,7 +36,7 @@ This table lists common traps, not every operation. Every call counts at its rea
 | `s[i:]` or `lst[1:]` in a loop or recursion | Each slice copies: O(n²) total | Pass indices; `memoryview` for bytes |
 | `bisect.insort` to keep a growing list sorted | O(n) per insert, O(n²) total | `heapq` if only the minimum is needed; sort once at the end; `sortedcontainers` (ask) |
 | `sorted(...)`, `min`, or `max` over a whole collection inside a loop | O(n log n) or O(n) per iteration | Sort once, keep a heap, or carry the running answer |
-| `statistics.mean`, `median` on large float data | Exact `Fraction` arithmetic, much slower | `statistics.fmean` (3.8+) or `sum/len`, which can change the last digits: a behavior change |
+| `statistics.mean` on large float data | Exact rational arithmetic, much slower | `statistics.fmean` (3.8+) or `sum/len`, which can change the last digits: a behavior change. (`median` does no exact arithmetic: it sorts, O(n log n); never replace it with a mean) |
 | `copy.deepcopy` in a loop | Walks the whole object graph | Copy only what changes, or share immutable parts |
 | Deep recursion (DFS, recursive descent, memoized recursion) | `RecursionError` near 1000 frames, and per-call overhead | An explicit stack; raising the recursion limit can crash the interpreter on the C stack. A `RecursionError` on accepted input is a bug (rule 4) |
 | CPU-bound threads on a build with the global interpreter lock | No parallel speedup | Processes (pickling and side-effect order change), vectorization, or a free-threaded build; all need approval |

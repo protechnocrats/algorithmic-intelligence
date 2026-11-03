@@ -12,11 +12,31 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 - **Before filing a speedup as a behavior change, the agent looks for a version that keeps the behavior:** redo costly work only when its input changed, hand out copies of cached values, take the fast path and fall back to the original where it cannot match (for example, resend a failed batch one item at a time), or read data that something outside the operation may change once per operation. A behavior change is listed only when no such version exists, with each way tried. When the developer declines a behavior change, the agent applies the version that keeps the behavior.
 - **Changes to how code calls another system are now verifiable.** Batching, deduplicating, or caching calls to a database or service is checked against a fake that implements the collaborator's documented contract (limits, missing items, partial failure, error order), comparing everything callers observe and the requested items as a set. Only behavior the documentation does not settle stays unverified.
 - **The agent states its mode first, then reads the file for that mode before looking at code** (`WORKFLOW.md` or `WRITING-NEW-CODE.md`), and `DIFFERENTIAL-TESTING.md` before writing differential tests.
-- **The agent says when it runs on a small model.** If it knows its model and the model is a small, fast, or low-cost tier, it adds one line after the mode: the skill is tested with coding-tier models such as Claude Sonnet and Opus.
-- **New behavior traps,** from changes coding-tier models made in testing: numeric identity in hash keys (`1` against `1.0`), new size limits an optimization introduces, and batched queries that must keep values as bound parameters. In write mode, a cache key must include the user, tenant, and permissions when they change the result.
+- **The agent says when it runs on a small model.** If it knows its model and the model is a small, fast, or low-cost tier, it adds one line after the mode: the skill is built for coding-tier models such as Claude Sonnet and Opus.
+- **New behavior traps:** numeric identity in hash keys (`1` against `1.0`), new size limits an optimization introduces, and batched queries that must keep values as bound parameters. In write mode, a cache key must include the user, tenant, and permissions when they change the result.
 - **The A/A run of a differential test is required only when the behavior can vary between runs** (time, randomness, hash or iteration order, concurrency, external systems); deterministic code records "not needed".
 - **The end-to-end share is its own field** in the apply results and part of each item's prediction.
 - **One "Reproduce" section can cover every item** in `APPLY-RESULTS.md` when one harness tests them all.
+
+### Fixed
+
+- **Complexity and behavior claims checked across every skill file, and about 60 corrected.** The ones that could lead an agent to a slower or wrong choice:
+  - Dijkstra with a heap is slower than the array version on dense graphs.
+  - A deque does not make inserting in the middle O(1).
+  - One multi-source BFS gives only the distance to the nearest source.
+  - Components answer reachability only in undirected graphs.
+  - A rolling hash returns to O(n·m) when there are many matches.
+  - De Casteljau evaluation is O(d²), not O(d).
+  - A Fenwick tree cannot answer subtree minimum or maximum.
+  - Total unimodularity gives integer solutions only with integer data.
+  - Welford's method is no more accurate than the two-pass variance.
+  - Standard cardinality sketches fail after about k adaptive queries, not k².
+  - Rust's `HashMap` order varies per map, not only per process.
+  - glibc's `qsort` is stable in practice.
+  - Python's `median` does no exact arithmetic.
+  - Java's single-character `split` compiles no regex.
+  - C build files alone no longer select the C companion file for C++ projects.
+- **Citations corrected:** the LCS hardness result (Abboud, Backurs, and Vassilevska Williams), the differential-privacy method for robust streaming (Hassidim et al.), and the author list of the SODA 2026 cardinality-sketch paper.
 
 ### Added
 
@@ -26,15 +46,8 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Removed
 
-- **The evaluation harness (`evals/`) and the examples (`examples/`),** to be rebuilt per `docs/EVAL-PLAN.md`. Both stay readable in the [repository history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b), with every round's results.
-- **The CI checks that depended on it** (token budgets, cross-references, rule evidence) and `docs/RULE-EVIDENCE.md`.
-
-### Evaluation
-
-Results on Claude Opus 5.5 from the rounds since 0.1.0 ([results in the history](https://github.com/protechnocrats/algorithmic-intelligence/tree/da47e4b/evals/results)), graded on every category including a judge reading each session's code and reports:
-- Without the skill, Opus applied behavior changes on a general "apply all" in all 3 sessions where this could be scored. With it, Opus held every one for review, in 4 of 4 sessions.
-- Bugs were reported to the developer in 4 of 4 sessions with the skill and 0 of 3 without.
-- Sessions with the skill cost 1.7 to 3 times as much.
+- **The evaluation harness (`evals/`), the examples (`examples/`), and all their results,** including the results quoted in the README and in the 0.1.0 notes below (the published v0.1.0 release page keeps its original notes). The skill will be benchmarked from scratch under `docs/EVAL-PLAN.md`, and only those results will be published.
+- **The CI checks that depended on the harness** (token budgets, cross-references, rule evidence), `docs/RULE-EVIDENCE.md`, and the harness's `.gitignore`.
 
 ## [0.1.0] - 2026-11-01
 
@@ -52,14 +65,8 @@ The first release. Install it with `npx skills add https://github.com/protechnoc
 - **Techniques:** core tables plus 16 domain files (graphs and trees; sequences, DP, search, and NP-hard problems; strings and text; math and numerics; machine learning; images and signals; geometry and CAD; games and simulation; spatial data; hardware and concurrency; data at scale; optimization and scheduling; hostile inputs; distributed systems; queues and latency; specialized data structures).
 - **Reports:** `OPTIMIZATION-REPORT.md` written once in report mode and never rewritten, `APPLY-RESULTS.md` written once in apply mode, and `BUGS-FOUND.md`. Bugs are documented, never fixed on purpose. Behavior changes are listed for review and marked in the code once approved.
 
-### Evaluation
-
-- Test projects in Kotlin, TypeScript, Swift, C, Rust, Java, Ruby, and Python with planted cases and answer keys; held-out Python and Ruby projects; grading probes for the Python, TypeScript, Java, and Ruby projects; a headless runner with a spending cap and a stall watchdog; cost, token, and permission-refusal statistics; trigger tests; token budgets; and checks of Kotlin claims the official documentation does not settle.
-- Results so far are in `evals/results/`. On the held-out Python project (round 3), report-flow cases passed at 1.00 with the skill against 0.50 without it on Opus 5.5, and 0.83 against 0.39 on Haiku 5.5. On the Java tuning project (rounds 4 to 6, Haiku 5.5, with the skill only) no session changed the code's behavior.
-
 ### Known limitations
 
-- Only Claude Code has been evaluated; the skill is written to be agent-neutral.
-- The Java and Ruby projects have no baseline runs yet, the Ruby held-out project has not been run, and the Swift project has not been run on a Swift toolchain.
-- Smaller models do not always load the skill for new-code requests from its description alone; the README gives a one-line project instruction that fixes most of it.
+- The skill is written to be agent-neutral, but has only been used with Claude Code.
+- Smaller models do not always load the skill for new-code requests from its description alone; the README gives a one-line project instruction for this.
 - Formal verification (proofs, model checking) is the least developed of the skill's roles.

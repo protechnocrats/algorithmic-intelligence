@@ -9,7 +9,7 @@ Load the file for each language the analysis touches. In a project with several 
 | `*.swift`, `Package.swift`, `*.xcodeproj` | [SWIFT.md](SWIFT.md) |
 | `*.js`, `*.mjs`, `*.cjs`, `*.jsx`, `*.ts`, `*.mts`, `*.cts`, `*.tsx`, `package.json`, `tsconfig.json`, `deno.json` | [JAVASCRIPT-TYPESCRIPT.md](JAVASCRIPT-TYPESCRIPT.md) |
 | `*.cs`, `*.csproj`, `*.sln` | [CSHARP.md](CSHARP.md) |
-| `*.c`, `*.h` (without C++ sources), C build files (`Makefile`, `CMakeLists.txt`, `meson.build`) | [C.md](C.md) |
+| `*.c`, `*.h`, and C build files (`Makefile`, `CMakeLists.txt`, `meson.build`), when the project has no C++ sources (`*.cpp`, `*.cc`, `*.cxx`, `*.hpp`); build files alone do not identify C, since C++ projects use them too | [C.md](C.md) |
 | `*.rs`, `Cargo.toml` | [RUST.md](RUST.md) |
 | `*.py`, `*.pyi`, `pyproject.toml`, `setup.py`, `requirements.txt` | [PYTHON.md](PYTHON.md) |
 | Any other language | [GENERIC.md](GENERIC.md), after first looking for a profile saved in the project at `.algorithmic-intelligence/languages/<LANGUAGE>.md` (for example `ERLANG.md`). `GENERIC.md` says how to use it, and how to build and save one when none exists |
