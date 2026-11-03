@@ -48,7 +48,7 @@ Full format, one line per field unless the item needs more (see "Keep each file 
 ```markdown
 ### <ID>. <Short title>
 
-- **Where:** `path/to/File.kt:123` — `functionName`. Reached from <entry point: route, job, listener, command, UI handler, public API> <how often>. Callers, thread, and input sizes (typical and maximum, with the source of the assumption).
+- **Where:** `path/to/File.kt:123` — `functionName`. Reached from <entry point: route, job, listener, command, UI handler, public API> <how often>. Callers, thread, and input sizes (typical and maximum, with the source of the assumption, and any source that gives a different number).
 - **Contract:** Requires (preconditions); returns (including order, ties, and duplicates); changes, throws, or calls (effects). Mark anything inferred rather than shown by the code and its callers.
 - **Cost now:** Time O(...) [worst | average | expected | amortized], space O(...), in named variables, including the cost of every call it makes (built-in and library calls as well as project functions) and the total along the call chain when callers loop. Name the calls that make up the dominant term, each with its cost and its source (documentation, language file, or measurement). Bottleneck: CPU | memory | I/O | network | lock | queue, with the evidence (profile, trace, query plan, benchmark, developer report, or static estimate only).
 - **Lower bound:** Ω(...) because ...; basis: proven | conditional (state the assumption) | conjectured | workload-dependent | unknown (the reason, and the strongest bound you can support). Never invent a bound (rule 6).
