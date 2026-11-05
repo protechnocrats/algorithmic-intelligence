@@ -4,8 +4,7 @@ Sources for the claims in `techniques/hostile-inputs.md`. Read only to verify a 
 
 - Moritz Hardt and David P. Woodruff, "How Robust Are Linear Sketches to Adaptive Inputs?", STOC 2013.
 - Omri Ben-Eliezer, Rajesh Jayaram, David P. Woodruff, and Eylon Yogev, "A Framework for Adversarially Robust Streaming Algorithms," PODS 2020; Avinatan Hassidim, Haim Kaplan, Yishay Mansour, Yossi Matias, and Uri Stemmer, "Adversarially Robust Streaming Algorithms via Differential Privacy," NeurIPS 2020.
-- Sara Ahmadian and Edith Cohen, "Unmasking Vulnerabilities: Cardinality Sketches under Adaptive Inputs," ICML 2024; Edith Cohen, Jelani Nelson, Tamás Sarlós, Mihir Singhal, and Uri Stemmer, "One Attack to Rule Them All: Tight Quadratic Bounds for Adaptive Queries on Cardinality Sketches," arXiv preprint, 2024 (conference venue unverified).
-
+- Sara Ahmadian and Edith Cohen, "Unmasking Vulnerabilities: Cardinality Sketches under Adaptive Inputs," ICML 2024; Edith Cohen, Jelani Nelson, Tamás Sarlós, Mihir Singhal, and Uri Stemmer, "One Attack to Rule Them All: Tight Quadratic Bounds for Adaptive Queries on Cardinality Sketches," arXiv preprint, 2024 (a later conference publication is reported but was not verified; the skill file cites the preprint).
 - Scott A. Crosby and Dan S. Wallach, "Denial of Service via Algorithmic Complexity Attacks," USENIX Security 2003.
 - M. Douglas McIlroy, "A Killer Adversary for Quicksort," *Software: Practice and Experience* 29(4), 1999; David R. Musser, "Introspective Sorting and Selection Algorithms," *Software: Practice and Experience* 27(8), 1997.
 - Jean-Philippe Aumasson and Daniel J. Bernstein, "SipHash: A Fast Short-Input PRF," INDOCRYPT 2012.

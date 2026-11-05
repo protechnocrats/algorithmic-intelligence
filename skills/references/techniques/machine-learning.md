@@ -4,6 +4,7 @@ Sources for the claims in `techniques/machine-learning.md`. Read only to verify 
 
 - Tri Dao et al., "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness," NeurIPS 2022.
 - Woosuk Kwon et al., "Efficient Memory Management for Large Language Model Serving with PagedAttention," SOSP 2023.
+- Gyeong-In Yu et al., "Orca: A Distributed Serving System for Transformer-Based Generative Models," OSDI 2022 (iteration-level, or continuous, batching); Lianmin Zheng et al., "SGLang: Efficient Execution of Structured Language Model Programs," NeurIPS 2024 (prefix caching in a radix tree).
 - Yaniv Leviathan, Matan Kalman, and Yossi Matias, "Fast Inference from Transformers via Speculative Decoding," ICML 2023.
 - Charles Elkan, "Using the Triangle Inequality to Accelerate k-Means," ICML 2003; Greg Hamerly, "Making k-means Even Faster," SDM 2010.
 - Tianqi Chen, Bing Xu, Chiyuan Zhang, and Carlos Guestrin, "Training Deep Nets with Sublinear Memory Cost," 2016 (arXiv:1604.06174): gradient checkpointing, activation memory O(√L) for one extra forward pass.

@@ -2,7 +2,8 @@
 
 Sources for the claims in `ALGORITHM-ARSENAL.md`. Read only to verify a claim.
 
-- Cormen, Leiserson, Rivest, and Stein, *Introduction to Algorithms*, 4th ed. (2022), chapter 4 (recurrences and the master theorem).
+- Cormen, Leiserson, Rivest, and Stein, *Introduction to Algorithms*, 4th ed. (2022), chapter 4 (recurrences and the master theorem), chapter 8 (the comparison-sorting lower bound, counting and radix sort), chapter 34 (NP-hard problems).
+- Anka Gajentaan and Mark H. Overmars, "On a Class of O(n²) Problems in Computational Geometry," *Computational Geometry* 5(3), 1995: the 3SUM conjecture and the problems that reduce to it.
 - Mohamad Akra and Louay Bazzi, "On the Solution of Linear Recurrence Equations," *Computational Optimization and Applications* 10(2), 1998.
 - Robert Sedgewick and Philippe Flajolet, *An Introduction to the Analysis of Algorithms*, 2nd ed. (2013): average-case analysis, generating functions.
 - Donald E. Knuth, *The Art of Computer Programming*, Vol. 1, section 1.2 (mathematical preliminaries).

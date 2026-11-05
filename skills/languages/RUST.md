@@ -12,7 +12,7 @@ Record the toolchain, edition, and minimum supported Rust version (`rust-version
 | Double-ended queue | `VecDeque<T>` | both ends O(1) amortized | Queues, BFS |
 | Hash map / set | `HashMap`, `HashSet` | O(1) expected | SipHash default resists flooding but is slower; iteration order is randomized per map (each `RandomState`), so two maps with equal contents usually iterate differently in one process |
 | Ordered map / set | `BTreeMap`, `BTreeSet` | O(log n); `range`, `first_key_value`, `last_key_value` | Sorted iteration |
-| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) amortized worst order (one push can cost O(n) on reallocation); `pop` O(log n); `peek` O(1) | Max-heap; `std::cmp::Reverse` for min; no decrease-key |
+| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) amortized (a single push costs O(n) when the backing vector grows); `pop` O(log n); `peek` O(1) | Max-heap; `std::cmp::Reverse` for min; no decrease-key |
 | Linked list | `LinkedList<T>` | O(1) at ends | Rarely right |
 | String building | `push_str`, `write!`, `concat`, `join` | amortized O(1) per byte | |
 | Slice algorithms | `sort` (stable), `sort_unstable`, `sort_by_key`, `binary_search`, `select_nth_unstable`, `partition_point`, `chunks`, `windows`, `retain`, `dedup`, `swap_remove` (O(1)) | | `select_nth_unstable` is O(n) worst case in recent releases; older documentation says O(n log n), so check against `rust-version` |

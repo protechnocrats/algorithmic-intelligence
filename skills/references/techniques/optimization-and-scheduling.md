@@ -11,6 +11,8 @@ Sources for the claims in `techniques/optimization-and-scheduling.md`. Read only
 - György Dósa and Jiří Sgall, "First Fit Bin Packing: A Tight Analysis," STACS 2013: online first fit uses at most 1.7 times the optimal number of bins.
 - Marek Chrobak, Gerhard J. Woeginger, Kazuhisa Makino, and Haifeng Xu, "Caching Is Hard, Even in the Fault Model," *Algorithmica* 63(4), 2012: offline caching with variable item sizes is NP-hard.
 - Nicos Christofides, "Worst-Case Analysis of a New Heuristic for the Travelling Salesman Problem," Carnegie Mellon University report 388, 1976; J. Michael Moore, "An n Job, One Machine Sequencing Algorithm for Minimizing the Number of Late Jobs," *Management Science* 15(1), 1968; S. M. Johnson, "Optimal Two- and Three-Stage Production Schedules with Setup Times Included," *Naval Research Logistics Quarterly* 1(1), 1954; Wayne E. Smith, "Various Optimizers for Single-Stage Production," *Naval Research Logistics Quarterly* 3, 1956.
-- Alexander Schrijver, *Theory of Linear and Integer Programming* (1986).
+- Alexander Schrijver, *Theory of Linear and Integer Programming* (1986): total unimodularity and integral vertices.
+- Harold W. Kuhn, "The Hungarian Method for the Assignment Problem," *Naval Research Logistics Quarterly* 2(1–2), 1955; James Munkres, "Algorithms for the Assignment and Transportation Problems," *Journal of the SIAM* 5(1), 1957; François Bourgeois and Jean-Claude Lassalle, "An Extension of the Munkres Algorithm for the Assignment Problem to Rectangular Matrices," *CACM* 14(12), 1971.
+- Uriel Feige, "A Threshold of ln n for Approximating Set Cover," *Journal of the ACM* 45(4), 1998: the greedy ratio is essentially best possible unless P = NP.
 - Giorgio C. Buttazzo, *Hard Real-Time Computing Systems*, 3rd ed. (2011): EDF and its behavior under overload.
 - György Dósa, "The Tight Bound of First Fit Decreasing Bin-Packing Algorithm Is FFD(I) ≤ 11/9 OPT(I) + 6/9," ESCAPE 2007.

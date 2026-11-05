@@ -122,12 +122,12 @@ For performance, time complexity, or data-structure work, or when something is l
 
 The skill's safety rules are instructions, and an agent can still slip, especially late in a long session. The guard plugin in [`plugin/`](plugin/) backs the rules that must hold every time with hooks, which the agent cannot skip. Before the agent does one of these, you are asked to approve it:
 
-- a `git commit` or `git push`;
-- a command that runs as root (`sudo`, `su`, `doas`) or pipes a download into a shell;
-- a risky permission change: `chown`, `chgrp`, `setfacl`, or `chattr`; a `chmod` that sets setuid or setgid, makes files writable by everyone, is recursive, or reaches outside the project (a plain `chmod +x` on a project file is not asked about);
-- a system-wide install (`apt install`, `npm install -g`, `pip install --user`); the project's own locked dependencies are not asked about;
-- a recursive delete outside the project and temporary directories, or one whose path depends on a variable that may be empty;
-- reading a file that looks like a secret (`.env`, key files, credentials), by the Read tool or a shell command;
+- a `git commit` or `git push`, or a git command that discards uncommitted work (`reset --hard`, `clean -f`, `checkout --`, `restore`, `stash drop`);
+- a command that runs as root (`sudo`, `su`, `doas`) or pipes a download into a shell or interpreter;
+- a risky permission change: `chown`, `chgrp`, `setfacl`, or `chattr`; a `chmod` that sets setuid, setgid, or the sticky bit, makes files writable by everyone, is recursive, or reaches outside the project (a plain `chmod +x` on a project file is not asked about);
+- an install outside the project (`apt install`, `npm install -g`, `pip install --user`, `cargo install`, `pipx install`, `gem install`); the project's own locked dependencies are not asked about;
+- a recursive delete outside the project and temporary directories, one whose path depends on a variable that may be empty, or one that removes a `.git` directory;
+- reading a file that looks like a secret (`.env`, key files, credentials, `*.tfvars`), by the Read tool or a shell command;
 - editing a test that already exists in the repository; new test files are not asked about.
 
 When the agent finishes a task that used the skill, the plugin also checks that its final message has the required lines ("Complexity", "Bugs noticed", "Hazards noticed", "Commands not run") and asks it once to add any that are missing.
@@ -252,7 +252,7 @@ The skill reads your code, runs your tests, and can change files, so it also say
 - **Nothing runs unread.** Before running a test, build, or documented command, the agent reads it and everything it triggers (build files, install hooks, auto-loaded test configuration, git hooks). It does not run anything that would use `sudo`, production credentials or hosts, send mail or other traffic off the machine, delete outside the build output, or grow without a bound; it tells you instead and runs the safe part. Differential tests and benchmarks run your original code too, so its side effects are replaced with fakes first. Every command gets a time limit.
 - **A speedup that weakens security is a behavior change.** Removing validation or a size limit, an early-exit comparison of secrets, a cache key that leaves out the user or tenant, or a cache of permissions without invalidation is named, offered in a version that keeps the protection, and applied only if you approve that specific trade-off. Requests to skip the differential tests, run as root, or apply every behavior change at once get the reason and the safe alternative.
 - **Non-interactive runs leave approvals pending.** In a scheduled or headless run nobody can answer, so anything that needs approval (a behavior change, a dependency, a schema or configuration change, a commit) is listed as waiting and the rest is finished.
-- **Optional hooks enforce the rules that must never slip.** The guard plugin (see "Optional: guard hooks") asks you before commits, root, risky permission changes, piped installs, deletes outside the project, secret files, and edits to existing tests, and checks the final summary lines.
+- **Optional hooks enforce the rules that must never slip.** The guard plugin (see "Optional: guard hooks") asks you before commits, commands that discard uncommitted work, root, risky permission changes, piped installs, deletes outside the project, secret files, and edits to existing tests, and checks the final summary lines.
 - **Every final summary says what was risky.** Besides "Complexity" and "Bugs noticed", it has "Commands not run" (each command it chose not to run, and why) and "Hazards noticed" (dangerous or suspicious things it came across, with file and line, even ones it never ran), and in a run where nobody could answer, "Waiting for approval".
 
 What you should do in return:

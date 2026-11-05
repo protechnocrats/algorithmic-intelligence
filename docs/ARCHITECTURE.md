@@ -6,7 +6,7 @@ A map of the repository for contributors: what each part does, what loads when, 
 
 `skills/` is everything an installed user gets: Markdown instructions that a coding agent loads. The skill has no code. Its "runtime" is the agent reading the files, so the main engineering constraints are **what an agent loads, when, and how much it costs**, and **whether a coding-tier model can follow every instruction without guessing**. A new evaluation harness is being built from scratch ([EVAL-PLAN.md](EVAL-PLAN.md)).
 
-`plugin/` is separate and optional: guard hooks for Claude Code (and Grok Build, which reads Claude Code plugins) that back the rules prose cannot guarantee. `scripts/guard.py` is a PreToolUse hook that asks the developer before commits, root, risky permission or ownership changes, piped installs, system-wide installs, deletes outside the project, secret-file reads, and edits to existing tests; `scripts/summary_check.py` is a Stop hook that checks the final-summary lines when the skill was used. Both fail open, and `tests/` covers them (`python3 -m unittest discover -s plugin/tests`). `.claude-plugin/marketplace.json` at the repository root lists the plugin for installation. A rule belongs in a hook only when it must hold every time and can be checked mechanically; everything that needs judgment stays in the skill.
+`plugin/` is separate and optional: guard hooks for Claude Code (and Grok Build, which reads Claude Code plugins) that back the rules prose cannot guarantee. `scripts/guard.py` is a PreToolUse hook that asks the developer before commits, git commands that discard uncommitted work, root, risky permission or ownership changes, piped installs, installs outside the project, deletes outside the project or of a `.git` directory, secret-file reads, and edits to existing tests; `scripts/summary_check.py` is a Stop hook that checks the final-summary lines when the skill was used. Both fail open, and `tests/` covers them (`python3 -m unittest discover -s plugin/tests`, also run by the `skill-checks` workflow). `.claude-plugin/marketplace.json` at the repository root lists the plugin for installation. A rule belongs in a hook only when it must hold every time and can be checked mechanically; everything that needs judgment stays in the skill.
 
 ## What loads when
 
@@ -70,7 +70,7 @@ Each concept has one home; other files point to it.
 | Reading commands before running them, and what never runs | "Before running a command" in `SKILL.md` | the test-suite step in `WORKFLOW.md`, Phase 1; the "Commands not run" line of each final summary |
 | Risky requests, runs where nobody can approve | "When the request itself is risky" in `SKILL.md` | — |
 | Speedups that weaken a security property | "Security-sensitive behavior" in `BEHAVIOR-TRAPS.md` | "When the request itself is risky" in `SKILL.md`; "Security is behavior" under rule 5 in `WORKFLOW.md` |
-| Required summary lines ("Complexity", "Bugs noticed", "Commands not run", "Hazards noticed", and "Waiting for approval" in runs where nobody can answer) | `SKILL.md` (rules 4 and 9, "Before running a command", "When the request itself is risky") | each mode's final summary (`REPORTING.md`, `APPLYING.md`, `WRITING-NEW-CODE.md`) |
+| Required summary lines ("Complexity", "Bugs noticed", "Commands not run", "Hazards noticed", and "Waiting for approval" in runs where nobody can answer) | "Every final summary" in `SKILL.md` | each mode's final summary (`REPORTING.md`, `APPLYING.md`, `WRITING-NEW-CODE.md`); the Stop hook in `plugin/` checks the first four |
 | Language facts | `languages/<LANGUAGE>.md` | — |
 | Sources | `references/` | — |
 
@@ -80,4 +80,4 @@ Every file in `skills/` is an instruction that every user's agent follows, so a 
 
 ## Releases and rules
 
-`main` changes only through pull requests that pass the `skill-checks` workflow; `v*` tags publish a GitHub release with that version's section of `CHANGELOG.md`. See [RELEASING.md](../RELEASING.md).
+`main` changes only through pull requests that pass the `skill-checks` workflow; a version tag (`0.3.0`; `v*` before 0.3.0) publishes a GitHub release with that version's section of `CHANGELOG.md`. See [RELEASING.md](../RELEASING.md).

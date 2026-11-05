@@ -1,6 +1,6 @@
 # C#
 
-Record the target framework and runtime: several structures below need .NET 5, 6, 7, or 8, and Mono and IL2CPP differ in garbage collection and available APIs.
+Record the target framework and runtime: several APIs below name the .NET version they need, and Mono and IL2CPP differ in garbage collection and available APIs.
 
 **Contents:** Built-in structures · Hidden costs · Bit manipulation · C#-specific traps · Testing and benchmarking · References
 
