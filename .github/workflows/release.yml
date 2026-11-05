@@ -1,4 +1,5 @@
-# Publishes a GitHub release for every pushed version tag (v<major>.<minor>.<patch>),
+# Publishes a GitHub release for every pushed version tag (<major>.<minor>.<patch>, for example 0.3.0;
+# releases before 0.3.0 were tagged with a "v" prefix),
 # with that version's section of CHANGELOG.md as the release notes. A tag whose
 # version has no CHANGELOG.md section fails here, so no release goes out without notes.
 # Uses no third-party actions: only the GitHub CLI that GitHub's runners provide.
@@ -6,7 +7,7 @@ name: release
 
 on:
   push:
-    tags: ["v*.*.*"]
+    tags: ["[0-9]*.[0-9]*.[0-9]*", "v[0-9]*.[0-9]*.[0-9]*"]
 
 permissions:
   contents: write

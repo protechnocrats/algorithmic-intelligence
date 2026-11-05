@@ -12,3 +12,4 @@ Sources for the claims in `techniques/strings-and-text.md`. Read only to verify 
 - Hans-J. Boehm, Russ Atkinson, and Michael Plass, "Ropes: An Alternative to Strings," *Software: Practice and Experience* 25(12), 1995.
 - Bryan Ford, "Packrat Parsing: Simple, Powerful, Lazy, Linear Time" (2002).
 - Manning, Raghavan, and Schütze, *Introduction to Information Retrieval* (2008); Ding and Suel, "Faster Top-k Document Retrieval Using Block-Max Indexes," SIGIR 2011.
+- Unicode Standard Annex #15, "Unicode Normalization Forms," and Unicode Technical Report #36, "Unicode Security Considerations": normalization, case folding that changes length, and non-ASCII digits.

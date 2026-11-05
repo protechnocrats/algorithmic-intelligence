@@ -8,3 +8,4 @@ Sources for the claims in `techniques/queues-and-latency.md`. Read only to verif
 - Jeffrey Dean and Luiz André Barroso, "The Tail at Scale," *CACM* 56(2), 2013.
 - Michael Mitzenmacher, "The Power of Two Choices in Randomized Load Balancing," *IEEE TPDS* 12(10), 2001.
 - Kathleen Nichols and Van Jacobson, "Controlling Queue Delay" (CoDel), *ACM Queue* 10(5), 2012; Van Jacobson, "Congestion Avoidance and Control," SIGCOMM 1988.
+- Betsy Beyer et al., eds., *Site Reliability Engineering* (2016), chapters "Handling Overload" and "Addressing Cascading Failures": retry budgets, retries multiplied across layers, and load shedding.

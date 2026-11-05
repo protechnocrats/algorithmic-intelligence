@@ -1,0 +1,14 @@
+{
+  "name": "algorithmic-intelligence",
+  "owner": {
+    "name": "Protechnocrats"
+  },
+  "description": "Optional guard hooks for the algorithmic-intelligence skill.",
+  "plugins": [
+    {
+      "name": "algorithmic-intelligence-guard",
+      "source": "./plugin",
+      "description": "Optional guard hooks for the algorithmic-intelligence skill."
+    }
+  ]
+}

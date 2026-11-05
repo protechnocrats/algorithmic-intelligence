@@ -1,53 +1,59 @@
 # Benchmarking
 
-How to measure speed and memory so the numbers can be trusted. Benchmarks are evidence of speed, not of correctness, and they never replace the differential tests in `DIFFERENTIAL-TESTING.md`.
+How to measure speed and memory so the numbers can be trusted. Benchmarks are evidence of speed, not correctness; they never replace the differential tests.
 
 ## Benchmarks
 
 **Before running**
-- **Predict first.** Write down the expected speedup at realistic `n` and the expected growth exponent of each version (the report's "Prediction" field), and compare the measurement with it afterward. A prediction that misses badly means the analysis is wrong somewhere: find out where before keeping the change.
-- Use the project's existing benchmark tooling when present (see the language files). Otherwise write a simple timing harness in test code: warm up, run many iterations, report the median, and keep the result in a variable the compiler cannot discard.
-- Give both versions the same inputs, machine, build type, and load. Prefer release builds, since debug builds distort results; JIT compilation and garbage collection distort them too, which warm-up and repeated runs handle (below).
-- **Use representative inputs.** Uniform random data can hide or exaggerate gains: real inputs are often partly sorted, skewed, or full of duplicates. Benchmark on production-like data (or a recorded sample) and on generated data.
-- **Include worst-case and adversarial inputs** where relevant: already-sorted or reverse-sorted data for sorting and selection, colliding hash keys for hash-based structures, deep or degenerate shapes for trees and recursion. When untrusted parties control the input, search for the worst inputs as in "Finding worst-case inputs" in `techniques/hostile-inputs.md`.
+- **Predict first.** Write the expected speedup at realistic `n` and the expected growth exponent of each version (the report's "Prediction" field). A measurement that misses the prediction badly means the analysis is wrong somewhere; find where before keeping the change.
+- **The benchmark runs the original thousands of times,** so one email or delete becomes thousands. Fake its effects as for differential tests ("The test runs the original" in `DIFFERENTIAL-TESTING.md`), and estimate memory, disk, and time for each size so they stay well inside the machine.
+- Use the project's benchmark tooling when present (see the language files); otherwise a simple harness in test code: warm up, many iterations, median, and a sink the compiler cannot discard (`black_box`, a blackhole, a printed checksum). A number an earlier session left is a claim, never quoted as measured.
+- Same inputs, machine, build type, and load for both versions; release builds, since debug builds distort results.
+- **Representative inputs.** Real data is often partly sorted, skewed, or full of duplicates, which uniform random data hides. Benchmark on generated data shaped like production (sizes, order, skew, duplicate rate, from configuration, documentation, or the developer) as well as uniform data.
+- **Worst-case and adversarial inputs** where relevant: sorted or reversed data for sorting and selection, colliding keys for hash structures, degenerate shapes for trees and recursion. Under untrusted input, search for worst cases as in "Finding worst-case inputs" in `techniques/hostile-inputs.md`.
 
 **Running**
-- Measure both versions at realistic `n` and at a larger `n` (for example, 10× realistic) to show the growth difference.
-- **Doubling experiments.** To check a complexity claim, time both versions at N, 2N, 4N, and 8N after warm-up, and compute the exponent b ≈ log₂(T(2N) / T(N)): near 1 is linear, slightly above 1 fits n log n, near 2 is quadratic. Predict the next size's time before measuring it. Start N large enough that fixed overhead does not dominate, and expect the constant to shift where the working set crosses a cache or memory boundary. A measured exponent that does not match the claimed complexity means the analysis missed a cost.
-- Warm up where the runtime has a JIT or caches, and run many times: report the median and the spread (or min and max), never a single run.
-- **Alternate the versions.** Run reference and candidate in alternating or randomized order (A, B, B, A, …), not all of one and then all of the other, so drift in temperature, CPU frequency, background load, or caches affects both equally.
-- **Control noise.** Avoid other heavy load on the benchmark machine, note CPU frequency scaling and turbo settings, and pin to cores where the platform allows. In cloud or shared environments, expect more noise and take more samples.
+- Measure at the smallest common size, at realistic `n`, and at a larger `n` (about 10×). When call sizes vary, weight by the call-size distribution and find the crossover: a win at large `n` can be a loss at the sizes most calls use.
+- Code that runs concurrently in production is also benchmarked at production concurrency, for throughput and per-call latency: a single-thread win that holds a lock longer or saturates a pool is a loss. For latency-sensitive or deadline-bound paths, report p95, p99, and the maximum.
+- **Doubling experiments** check a complexity claim: time N, 2N, 4N, 8N after warm-up and compute b ≈ log₂(T(2N) / T(N)). Near 1 is linear, slightly above 1 fits n log n, near 2 is quadratic. Predict the next size before measuring it. Start N large enough that fixed overhead does not dominate, and expect the constant to shift where the working set crosses a cache or memory boundary. An exponent that does not match the claim means the analysis missed a cost.
+- **Alternate the versions** (A, B, B, A, or randomized) so drift in temperature, frequency, background load, and caches hits both equally. Report the median with the spread, never a single run.
+- Note frequency scaling and turbo, pin cores where possible, and take more samples on shared or cloud machines.
+
+**Measuring what you claim**
+- **Same work on both sides.** Check in the harness that both outputs are equal; a faster version that does less work is not faster. If the function mutates, drains, or caches on its input, rebuild the input each iteration (from iteration 2 on, a sort sees sorted data) and exclude or subtract the copy time.
+- **Keep the work alive:** consume every result, force lazy results, and read inputs the compiler cannot treat as constant.
+- **Match production cache state.** A cache the change adds is measured at a realistic hit rate, cold and warm runs reported separately, not by repeating one input until every call hits. The same applies to file and database caches.
 
 **Separating the effect from noise**
-- **Measure the noise first (an A/A run).** Before comparing, benchmark the reference against an identical copy of itself, in the same harness and order. The difference is the noise floor. An A/A run that shows a large difference means the setup itself is biased: small changes to the environment (environment-variable size, link order, memory layout) can shift results by more than the effect being measured (Mytkowicz et al., 2009), so vary or randomize the setup and repeat in fresh processes before trusting any number.
-- **Show the difference exceeds the noise.** Report a confidence interval for the difference (for example, a bootstrap interval over the per-run times), or at least show that the gap between medians exceeds the run-to-run spread. A difference inside the noise is "no measurable difference," not a speedup. Use the benchmark tool's own statistics when it has them (JMH, BenchmarkDotNet, Criterion, Google Benchmark).
+- **Measure the noise first (A/A):** benchmark the reference against an identical copy in the same harness. The difference is the noise floor. A large A/A difference means the setup is biased: environment size, link order, and memory layout can shift results by more than the effect (Mytkowicz et al., 2009), so randomize the setup and repeat in fresh processes.
+- **Show the difference exceeds the noise** with a confidence interval for the difference (a bootstrap over per-run times) or at least a gap between medians larger than the spread. Inside the noise is "no measurable difference". Use the tool's own statistics when it has them (JMH, BenchmarkDotNet, Criterion, Google Benchmark).
 
 **Reporting**
-- Report absolute times with the percentage change; percentages alone can make a tiny gain look large. Record machine and runtime details with the numbers.
-- Label every number measured. Big-O improvements and workload estimates are labeled estimated and never presented as measured.
-- Do not commit benchmark harnesses into production code. Keep them in test or benchmark sources if the developer wants them.
-- **Offer a regression guard.** Propose keeping the benchmark (in the project's benchmark tooling, or as a separate job in continuous integration) with a threshold relative to a recorded baseline, so a later change that brings the cost back is caught. Never put timing assertions in unit tests: they are flaky. A test that checks a size-dependent count instead (comparisons, queries, allocations) is a stable alternative where the code exposes one. The developer decides whether to keep it.
+- Absolute times with the percentage change, plus machine and runtime details.
+- Label every number measured or estimated (rule 8). Report what the runs gave, even when the developer expects a different result.
+- Benchmark harnesses stay out of production code.
+- **Offer a regression guard:** keep the benchmark in the project's tooling or as a CI job with a threshold against a recorded baseline. A test that checks a size-dependent count (comparisons, queries, allocations) is a stable alternative where the code exposes one; timing assertions in unit tests are flaky. Adding a CI job is a configuration change that needs approval.
 
 ## Component and end-to-end
 
-A benchmark of the changed function (a component benchmark) shows how much faster that function became, not how much faster the program became. Report both levels:
+A benchmark of the changed function shows how much faster the function became, not the program. Report both:
 
-1. **Component:** the changed function or code path, measured as above.
-2. **End-to-end:** the whole operation the developer cares about (the request, page load, frame, batch job, or command that runs this code). Measure it before and after where the project can run it (an existing benchmark, an integration test, a local run of the command). If it cannot be run, take the function's share of the operation from a profile, or estimate it from the call counts in the survey, and label the result estimated.
+1. **Component:** the changed function or path, measured as above.
+2. **End-to-end:** the whole operation the developer cares about (request, page load, frame, batch job, command), before and after, where the project can run it safely against local or faked services. If it cannot run, take the function's share from a profile or estimate it from survey call counts, labeled estimated.
 
-The end-to-end saving can never exceed the share of time the changed code took (Amdahl's law): if the code took 2% of the operation, even an infinitely fast version saves at most 2%. State the share and the resulting saving next to the component numbers. For example: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component speedup with a small end-to-end saving is still worth reporting, labeled honestly, because it may matter more after other bottlenecks are fixed.
+The end-to-end saving cannot exceed the changed code's share of the time (Amdahl's law). State the share next to the component numbers: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component win with a small end-to-end saving is still worth reporting, honestly labeled; it may matter more once other bottlenecks are fixed.
 
-**Check that the proxy implies the target.** A benchmark, a cost model, an operation count, or a heuristic's objective is a proxy for what the developer cares about. Improving the proxy is worth something only if it implies improving the target. Before optimizing against a proxy, check on a few cases that it moves with the target: that a candidate which wins the component benchmark also wins end to end, that fewer counted operations also means less measured time, that a better heuristic score also means a better real result. When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix the proxy or measure the target directly. The same question is studied for learning objectives: optimizing a surrogate loss guarantees nothing about the true objective unless the surrogate is consistent with it (Bartlett, Jordan, and McAuliffe, 2006).
+**Check that the proxy implies the target.** A component benchmark, operation count, cost model, or heuristic score is a proxy. Before optimizing against it, check on a few cases that it moves with the target: the component winner also wins end to end, fewer operations also means less time, a better score means a better real result. When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix it or measure the target directly. Learning theory makes the same point: optimizing a surrogate loss guarantees nothing unless the surrogate is consistent with the true objective (Bartlett, Jordan, and McAuliffe, 2006).
 
 ## Memory measurement
 
-Rule 1 requires memory to stay bounded, so measure it, not just time:
+Rule 1 requires bounded memory, so measure it for both versions:
 
-- **Peak memory** during the benchmark for both versions.
-- **Allocation volume** (bytes or objects allocated), using the platform's allocation profiler or benchmark tool where available.
-- **Retained memory** after the call returns, to catch caches or indexes that grow without bound.
+- **Peak memory** during the run.
+- **Allocation volume** (bytes or objects), from the platform's allocation profiler or the benchmark tool.
+- **Retained memory** after the call returns, to catch caches or indexes that grow without bound. In garbage-collected runtimes, force a full collection first, and prefer allocation volume as the comparable number, since peak and retained figures depend on when the collector ran.
 
-If the platform cannot measure memory, state that, and report the expected memory bound as estimated.
+If the platform cannot measure memory, say so and report the expected bound as estimated.
 
 ## References
 

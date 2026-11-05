@@ -1,87 +1,91 @@
 # Rust
 
-Load this file for Rust projects. Record the toolchain, the edition, and the minimum supported Rust version (`rust-version` in `Cargo.toml`): several standard-library APIs below were stabilized in specific versions. Check whether the crate is `no_std`, which removes `std::collections` (`alloc` still provides `Vec`, `VecDeque`, `BTreeMap`, `BinaryHeap`, but not `HashMap`).
+Record the toolchain, edition, and minimum supported Rust version (`rust-version` in `Cargo.toml`); several APIs below were stabilized in specific versions. A `no_std` crate has no `std::collections`: `alloc` still provides `Vec`, `VecDeque`, `BTreeMap`, `BinaryHeap`, but not `HashMap`.
+
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · Rust-specific traps · Testing and benchmarking · References
 
 ## Built-in structures
 
 | Structure | API | Key costs | Notes |
 |---|---|---|---|
-| Growable array | `Vec<T>` | index O(1), `push` amortized O(1), `insert(0, x)`/`remove(0)` O(n), `contains` O(n) | `with_capacity` avoids reallocations |
-| Double-ended queue | `VecDeque<T>` | push/pop at both ends O(1) amortized | Use for queues and BFS |
-| Hash map / set | `HashMap`, `HashSet` | O(1) expected | Default hasher (SipHash) resists hash flooding but is slower; **iteration order is randomized per map** (each `RandomState`), so two maps with the same contents usually iterate differently even in one process |
+| Growable array | `Vec<T>` | index O(1), `push` amortized O(1), `insert(0, x)`/`remove(0)` O(n), `contains` O(n) | `with_capacity` avoids reallocation |
+| Double-ended queue | `VecDeque<T>` | both ends O(1) amortized | Queues, BFS |
+| Hash map / set | `HashMap`, `HashSet` | O(1) expected | SipHash default resists flooding but is slower; iteration order is randomized per map (each `RandomState`), so two maps with equal contents usually iterate differently in one process |
 | Ordered map / set | `BTreeMap`, `BTreeSet` | O(log n); `range`, `first_key_value`, `last_key_value` | Sorted iteration |
-| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) amortized for the worst input order (a single push can cost O(n) when the heap reallocates); `pop` O(log n); `peek` O(1) | **Max-heap**; wrap in `std::cmp::Reverse` for a min-heap; no decrease-key |
-| Linked list | `LinkedList<T>` | O(1) at ends | Rarely the right choice |
-| String building | `String::push_str`, `write!`, `concat`, `join` | amortized O(1) per byte | |
-| Slice algorithms | `sort` (stable), `sort_unstable`, `sort_by_key`, `binary_search`, `select_nth_unstable` (O(n), guaranteed for all inputs), `partition_point`, `chunks`, `windows`, `retain`, `dedup`, `swap_remove` (O(1)) | | See traps |
-| Lazy iterators | `iter()`, `map`, `filter`, `take_while` | No intermediate allocation | Evaluate only when consumed |
-| Lazy statics | `std::sync::LazyLock`, `OnceLock` | One-time initialization | `LazyLock` stable since 1.80; `OnceLock` since 1.70 |
+| Priority queue | `BinaryHeap<T>` | `push` O(1) expected, O(log n) amortized worst order (one push can cost O(n) on reallocation); `pop` O(log n); `peek` O(1) | Max-heap; `std::cmp::Reverse` for min; no decrease-key |
+| Linked list | `LinkedList<T>` | O(1) at ends | Rarely right |
+| String building | `push_str`, `write!`, `concat`, `join` | amortized O(1) per byte | |
+| Slice algorithms | `sort` (stable), `sort_unstable`, `sort_by_key`, `binary_search`, `select_nth_unstable`, `partition_point`, `chunks`, `windows`, `retain`, `dedup`, `swap_remove` (O(1)) | | `select_nth_unstable` is O(n) worst case in recent releases; older documentation says O(n log n), so check against `rust-version` |
+| Lazy iterators | `iter()`, `map`, `filter`, `take_while` | No intermediate allocation | Run only when consumed |
+| Lazy statics | `LazyLock` (1.80+), `OnceLock` (1.70+) | One-time initialization | |
 
-**Not in the standard library:** bitsets, ordered-by-insertion maps, LRU caches, faster non-cryptographic hashers, small-vector optimizations, tries, segment trees, concurrent maps. Common crates (`fixedbitset`, `bitvec`, `indexmap`, `lru`, `rustc-hash`, `ahash`, `smallvec`, `arrayvec`, `dashmap`) are dependencies: ask first (rule 7). A small structure inside the project (a bitset over `Vec<u64>`, a ring buffer) is not a dependency but needs its own tests.
+Not in the standard library: bitsets, insertion-ordered maps, LRU caches, fast non-cryptographic hashers, small vectors, tries, segment trees, concurrent maps (`fixedbitset`, `bitvec`, `indexmap`, `lru`, `rustc-hash`, `ahash`, `smallvec`, `arrayvec`, `dashmap` are dependencies).
 
 ## Hidden costs
 
-This table lists common traps, not every operation. Unlisted calls also count at their real cost ("Count every call at its real cost" under rule 6 in `SKILL.md`).
-
 | Pattern | Cost | Fix |
 |---|---|---|
-| `vec.contains(&x)` inside a loop | O(n·m) | `HashSet` built once (check the ordering trap) |
-| `vec.remove(0)` or `insert(0, x)` as a queue | O(n) per operation | `VecDeque` |
-| `s.chars().nth(i)` inside a loop | O(i) per call, O(n²) total | Iterate once, collect `chars()` once, or use byte indices when the semantics allow |
-| `s.chars().count()` in a loop condition | O(n) each time | Compute once (note `s.len()` is bytes, not characters) |
-| `.clone()` of large values inside loops | Allocation and copying | Borrow, use `&T`, `Rc`/`Arc`, or move |
-| `collect::<Vec<_>>()` only to iterate again | Intermediate allocation | Chain the iterator directly |
-| `format!`/`to_string()` in hot loops | Allocation per call | Write into a reused `String` with `write!` |
-| `map.get(k)` followed by `map.insert(k, ...)` | Two lookups | `entry` API |
-| `Regex::new` inside a loop or hot function | Recompiles each time (regex crate) | `LazyLock<Regex>` or `OnceLock` |
-| `println!` in a hot loop | Locks stdout and flushes lines | Lock `stdout` once and wrap it in `BufWriter` |
-| Reading files without buffering | One system call per small read | `BufReader` |
-| `Vec` growing without a size hint when the size is known | Repeated reallocations | `with_capacity` or `reserve` |
-| Indexing in hot loops with bounds checks | Bounds checks can block vectorization | Iterators, `chunks_exact`, or slicing once so the compiler can elide checks. Never `get_unchecked` without asking (see traps) |
-| `Rc<RefCell<T>>` or `Arc<Mutex<T>>` graphs in hot paths | Reference counting, runtime borrow checks, lock contention | Index-based arenas or ownership restructuring |
+| `vec.contains(&x)` in a loop | O(n·m) | `HashSet` once (ordering trap) |
+| `remove(0)` or `insert(0, x)` as a queue | O(n) per operation | `VecDeque` |
+| `s.chars().nth(i)` in a loop | O(i) per call, O(n²) total | Iterate once, collect `chars()` once, or byte indices when semantics allow (`&s[..n]` and `split_at` panic off a char boundary: use `is_char_boundary` or `get(..n)`) |
+| `s.chars().count()` in a loop condition | O(n) each time | Compute once (`s.len()` is bytes) |
+| `.clone()` of large values in loops | Allocation and copying | Borrow, `Rc`/`Arc`, or move |
+| `collect::<Vec<_>>()` only to iterate again | Intermediate allocation | Chain the iterator |
+| `format!`/`to_string()` in hot loops | Allocation per call | `write!` into a reused `String` |
+| `get(k)` then `insert(k, ...)` | Two lookups | `entry` API |
+| `Regex::new` in a loop or hot function | Recompiles | `LazyLock<Regex>` or `OnceLock` |
+| `println!` in a hot loop | Locks stdout, flushes lines | Lock once and wrap in `BufWriter` (a behavior change for interactive output or on crash: "Buffering" in `BEHAVIOR-TRAPS.md`) |
+| Unbuffered file reads | A system call per small read | `BufReader` |
+| `Vec` growing when the size is known | Repeated reallocation | `with_capacity`/`reserve`; cap a size that comes from input, since it aborts on allocation failure or panics on overflow |
+| Indexing in hot loops | Bounds checks can block vectorization | Iterators, `chunks_exact`, or slicing once so checks are elided |
+| `Rc<RefCell<T>>`, `Arc<Mutex<T>>` graphs in hot paths | Refcounting, runtime borrow checks, contention | Index-based arenas |
 | `Box<dyn Trait>` in hot loops | Dynamic dispatch, no inlining | Generics or enums, if the contract allows |
+
+### Input handling and security
+
+- **Number parsing.** `str::parse` for integers accepts ASCII digits with an optional `+` or `-` only (no whitespace, underscores, or `0x`) and returns `Err` on overflow. Float parsing also accepts `inf`, `infinity`, and `NaN` in any case. `char::is_numeric` is true for non-ASCII digits; `is_ascii_digit` is not.
+- **`as` casts never fail.** Integer narrowing truncates; float-to-integer saturates (NaN becomes 0). Replacing `try_from` with `as` for speed turns an error into a wrong value.
+- **Regular expressions.** The `regex` crate is linear time but limits compiled size, so a pattern built from input can fail to compile; `fancy-regex` and `pcre2` backtrack. Escape input with `regex::escape`.
+- **Stack overflow aborts the process** (8 MB main thread on typical Linux, 2 MiB default for spawned threads); it is not a catchable panic. `serde_json` limits nesting to 128 by default; keep that limit.
+- **Case conversion** (`to_uppercase`, `to_lowercase`) is Unicode-aware, locale-independent, and can change length (`"ß"` to `"SS"`); `to_ascii_uppercase` touches only ASCII.
 
 ## Bit manipulation
 
 | Operation | Rust |
 |---|---|
 | And, or, xor, not, shifts | `&`, `\|`, `^`, `!`, `<<`, `>>` (arithmetic for signed, logical for unsigned) |
-| Popcount | `x.count_ones()` |
-| Trailing / leading zeros | `x.trailing_zeros()`, `x.leading_zeros()` |
-| Power of two | `x.is_power_of_two()`, `x.next_power_of_two()` |
-| Rotation | `x.rotate_left(n)`, `x.rotate_right(n)` |
-| Explicit overflow handling | `wrapping_*`, `checked_*`, `overflowing_*`, `saturating_*`; `checked_shl` for shifts |
+| Popcount, trailing / leading zeros | `count_ones()`, `trailing_zeros()`, `leading_zeros()` |
+| Power of two, rotation | `is_power_of_two()`, `next_power_of_two()`, `rotate_left`, `rotate_right` |
+| Explicit overflow | `wrapping_*`, `checked_*`, `overflowing_*`, `saturating_*`; `checked_shl` |
 
-Shifting by a count greater than or equal to the bit width panics in debug builds and masks the count in release builds. Use the explicit `wrapping_shl` or `checked_shl` when the count may be large.
+Shifting by at least the bit width panics in debug builds and masks the count in release; use `wrapping_shl` or `checked_shl` when the count may be large.
 
 ## Rust-specific traps
 
-- **Debug and release overflow behavior differ.** Integer overflow panics in debug builds and wraps in release builds (unless `overflow-checks` is enabled). A closed-form formula that overflows where the loop did not can panic in tests and silently wrap in production. Match the original's behavior with the explicit `wrapping_*`/`checked_*` operations it implied.
-- **`HashMap`/`HashSet` iteration order is randomized per map,** not just per process: two maps with the same contents usually iterate in different orders. Never iterate them where the original exposed a deterministic order, and never rely on two maps iterating in step.
-- **Changing the hasher** (for example to `FxHashMap` or `ahash`) changes iteration order and removes hash-flooding resistance. For keys controlled by users or attackers, that is a security regression (see `BEHAVIOR-TRAPS.md`). It also needs a dependency.
-- **Sort stability.** `sort` and `sort_by_key` are stable; `sort_unstable` is not. Switching changes the order of equal elements.
-- **`dedup` removes only consecutive duplicates.** It is not equivalent to deduplicating with a set unless the input is sorted.
-- **`binary_search` may return any matching index** among duplicates. Use `partition_point` when the original returned the first or last match.
+- **Debug and release overflow differ.** Overflow panics in debug and wraps in release (unless `overflow-checks` is on), so a closed form that overflows where the loop did not can pass tests and wrap in production. Match the original with explicit `wrapping_*`/`checked_*`.
+- **Hash iteration order is randomized per map:** a `HashMap` cannot replace a structure whose iteration order the original exposed, and two maps do not iterate in step.
+- **Changing the hasher** (`FxHashMap`, `ahash`) changes iteration order and removes flooding resistance: a security regression for user-controlled keys, and a dependency.
+- **Sort stability:** `sort`, `sort_by_key` stable; `sort_unstable` not.
+- **`dedup` removes only consecutive duplicates.**
+- **`binary_search` may return any matching index;** `partition_point` gives the first or last.
 - **`swap_remove` changes element order.**
-- **Floats are not `Ord`.** `sort_by(|a, b| a.partial_cmp(b).unwrap())` panics on NaN, while `total_cmp` orders NaN and `-0.0` differently. Switching between them is a behavior change.
-- **Drop order and RAII.** Restructuring code, caching values, or extending lifetimes changes when destructors run: when locks are released, files are flushed, or guards end. Lock guards held longer can cause deadlocks.
-- **Laziness.** Iterator adapters run closures only when consumed, element by element. Converting between eager loops and lazy chains changes the order and number of side effects.
-- **Panics versus errors.** A rewrite must panic, return `Err`, or return `None` in exactly the same cases as the original.
-- **`unsafe` is never an optimization by default.** Do not introduce `unsafe` (for example `get_unchecked`, `set_len`, raw pointers, `transmute`) to gain speed without the developer's explicit approval, a written safety argument, and tests under Miri where possible.
-- **Parallelism.** Moving to `rayon` (a dependency) or threads changes the order of side effects and floating-point reduction results.
-- **Async.** Replacing sequential `.await`s with `join_all` or `select!` changes ordering, cancellation, and error behavior.
+- **Floats are not `Ord`.** `partial_cmp(...).unwrap()` panics on NaN, while `total_cmp` orders NaN and `-0.0` differently.
+- **Drop order and RAII.** Caching values or extending lifetimes changes when destructors run: when locks release, files flush, guards end. Guards held longer can deadlock.
+- **Laziness.** Iterator adapters run closures only when consumed, element by element; converting between eager loops and lazy chains changes the order and number of side effects.
+- **Panics versus errors:** keep whether the code panics, returns `Err`, or returns `None` in each case.
+- **`unsafe` is not an optimization by default.** `get_unchecked`, `set_len`, raw pointers, or `transmute` for speed need the developer's approval, a written safety argument, and tests under Miri.
+- **Parallelism and async.** `rayon` (a dependency), threads, `join_all`, and `select!` change side-effect order, cancellation, errors, and floating-point reduction results.
 
 ## Testing and benchmarking
 
-- **Tests:** `cargo test`; doc tests count as tests.
-- **Property-based testing and fuzzing, if already present:** `proptest`, `quickcheck`, `cargo fuzz`. Otherwise use a small seeded generator in test code; adding `rand` as a dev-dependency is still a dependency, so ask.
-- **Undefined behavior checks:** run tests under Miri (`cargo +nightly miri test`) whenever `unsafe` code is involved.
-- **Profiling:** `perf` with `cargo flamegraph` or samply (installs), or Instruments on macOS; set `debug = true` (or `debug = "line-tables-only"`) under `[profile.release]` for symbols, without changing optimization.
-- **Benchmarks:** use `criterion` or `divan` if already present (both are dependencies otherwise; ask). Without them, write a timing harness with `std::time::Instant` and `std::hint::black_box` (stable since 1.66) to stop the compiler from removing work. Always benchmark with `--release`.
-- **Memory:** `dhat` (a dependency), heaptrack, or Valgrind Massif for peak heap and allocation counts.
-- **Verification beyond tests** (see "Verification levels" in `DIFFERENTIAL-TESTING.md`; dependencies or installs, so ask unless present): Kani for bounded model checking with `#[kani::proof]` harnesses, including equivalence of the old and new function over bounded inputs; loom to run concurrent code under every thread interleaving up to a bound; Verus, Prusti, or Creusot for proofs of contracts.
-- **Constant-time comparison** (for secrets; see `techniques/hostile-inputs.md`): the `subtle` crate's `ConstantTimeEq` (a dependency, so ask unless present), never `==` on secret slices.
+- **Tests:** `cargo test`, including doc tests. `cargo build`, `check`, and `test` run every `build.rs` and procedural macro in the project and its dependencies, and `.cargo/config.toml` can set runners and wrappers.
+- **Property-based testing and fuzzing, if already present:** `proptest`, `quickcheck`, `cargo fuzz`; otherwise a small seeded generator (`rand` as a dev-dependency is still a dependency).
+- **Miri** (`cargo +nightly miri test`) whenever `unsafe` is involved.
+- **Profiling:** `perf` with `cargo flamegraph` or samply (installs), or Instruments; set `debug = "line-tables-only"` under `[profile.release]` for symbols without changing optimization.
+- **Benchmarks:** `criterion` or `divan` if present; otherwise `std::time::Instant` with `std::hint::black_box` (1.66+), built with `--release`. Memory: `dhat` (a dependency), heaptrack, Massif.
+- **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): Kani (`#[kani::proof]` harnesses, including old-versus-new equivalence over bounded inputs); loom (every thread interleaving up to a bound); Verus, Prusti, Creusot for contracts.
+- **Constant-time comparison:** the `subtle` crate's `ConstantTimeEq` (a dependency), not `==` on secret slices.
 
 ## References
 
-Sources for the claims in this file are in `references/languages/RUST.md`. Read them only to verify a claim.
+Sources: `references/languages/RUST.md`.
