@@ -6,6 +6,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-05
+
+Fixes and sources. The guard hooks ask about more of what the skill reserves for the developer, including git aliases checked as what they run; two facts are corrected; claims that had no source now have one; and the README matches the current skill and hooks.
+
 ### Changed
 
 - **The guard hooks catch more of what the skill forbids.** The plugin now also asks before a git command that discards uncommitted work (`reset --hard`, `clean -f`, `checkout --`, `restore`, `stash drop`), a recursive delete of a `.git` directory, a download piped into an interpreter that reads its program from the pipe (`python3 -`, `bash <(curl …)`), user-wide installs (`cargo install`, `pipx install`, `gem install`, `yarn global add`, `pip install --break-system-packages`, `dotnet tool install -g`), a `chmod` that sets the sticky bit, and reads of `.htpasswd`, `*.tfvars`, and `*-secrets.yaml`-style files. A download piped into a script (`curl … | python3 parse.py`) is no longer asked about, and a repository that itself lives under a directory named `tests/` is no longer treated as a test directory. The pull-request checks run the hook tests.
