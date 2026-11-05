@@ -6,6 +6,16 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+### Changed
+
+- **The guard hooks catch more of what the skill forbids.** The plugin now also asks before a git command that discards uncommitted work (`reset --hard`, `clean -f`, `checkout --`, `restore`, `stash drop`), a recursive delete of a `.git` directory, a download piped into an interpreter that reads its program from the pipe (`python3 -`, `bash <(curl …)`), user-wide installs (`cargo install`, `pipx install`, `gem install`, `yarn global add`, `pip install --break-system-packages`, `dotnet tool install -g`), a `chmod` that sets the sticky bit, and reads of `.htpasswd`, `*.tfvars`, and `*-secrets.yaml`-style files. A download piped into a script (`curl … | python3 parse.py`) is no longer asked about, and a repository that itself lives under a directory named `tests/` is no longer treated as a test directory. The pull-request checks run the hook tests.
+
+### Fixed
+
+- **Git aliases no longer slip past the guard.** A git subcommand that is an alias (from the repository's or the user's git config, or `-c alias.x=...` on the command line) is checked as what it runs, so an alias for `push`, `commit`, or `reset --hard`, or a `!` shell alias, is asked about like the command itself.
+- **Lowest set bit on a signed minimum.** `CORE-TECHNIQUES.md` said `x & (~x + 1)` avoids undefined behavior in C and C++ for the minimum signed value; it does not (the addition overflows too). The row now says to compute in the unsigned type.
+- **Citations.** The adaptive-queries bound on cardinality sketches in `techniques/hostile-inputs.md` is cited as the 2024 preprint, matching its reference file, since the conference venue was not verified. The reference files gained sources for bounds the skill files already stated (the 3SUM conjecture, the RUM conjecture, ARC, 2Q, and TinyLFU, skip lists and treaps, van Emde Boas trees and y-fast tries, the Eytzinger layout, group prefetching, R-trees, HNSW, and the high-dimensional linear-scan result, SA-IS, Reps' tokenizer, WAND, Leo's parsing result, the Hungarian method and its rectangular form, the set-cover threshold, Orca and SGLang, Roaring and Elias-Fano, Merkle trees, polygon clipping) and say what the Alive2 and TLA+ entries support.
+
 ## [0.3.0] - 2026-11-05
 
 The skill is rewritten for capable models: goals, reasons, and heuristics instead of step-by-step procedure and lists of cases, with `SKILL.md` under 5,000 tokens and its safety rules first. The description now matches the kind of work rather than particular phrases. Optional guard hooks for Claude Code and Grok Build back the rules that must always hold. From this release on, tags have no `v` prefix (`0.3.0`).

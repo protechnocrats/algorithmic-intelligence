@@ -12,7 +12,7 @@ Thank you for helping. This project is a skill: Markdown instructions that codin
 ## How changes reach `main`
 
 1. Branch from `main` and open a pull request. Direct pushes to `main` are blocked.
-2. The `skill-checks` workflow must pass: it checks that `skills/SKILL.md` exists with the skill's name, and that `CHANGELOG.md` has an `[Unreleased]` section. It does not check links or quoted section names (see "Keep references whole" below), and it does not check that nothing under `evals/` or no archive is tracked: both are candidates for the workflow, and until then are checked by the reviewer.
+2. The `skill-checks` workflow must pass: it checks that `skills/SKILL.md` exists with the skill's name, that `CHANGELOG.md` has an `[Unreleased]` section, and that the guard hook tests pass (`python3 -m unittest discover -s plugin/tests`). It does not check links or quoted section names (see "Keep references whole" below), and it does not check that nothing under `evals/` or no archive is tracked: both are candidates for the workflow, and until then are checked by the reviewer.
 3. If the change affects what the skill does, add a line to `[Unreleased]` in `CHANGELOG.md`, written for someone who installs the skill: what the agent now does differently.
 4. A reviewer reads every changed line under `skills/` as described in "Reviewing changes to the skill" below. The project currently has one maintainer, and the repository rules require no approvals, so this review is the maintainer's own review of their changes and of each contributor's pull request; it becomes a second person's review once there is a second maintainer (see "Repository rules" in [RELEASING.md](RELEASING.md)).
 5. Resolve review threads, then merge with squash or rebase.

@@ -9,3 +9,4 @@ Sources for the claims in `techniques/queues-and-latency.md`. Read only to verif
 - Michael Mitzenmacher, "The Power of Two Choices in Randomized Load Balancing," *IEEE TPDS* 12(10), 2001.
 - Kathleen Nichols and Van Jacobson, "Controlling Queue Delay" (CoDel), *ACM Queue* 10(5), 2012; Van Jacobson, "Congestion Avoidance and Control," SIGCOMM 1988.
 - Betsy Beyer et al., eds., *Site Reliability Engineering* (2016), chapters "Handling Overload" and "Addressing Cascading Failures": retry budgets, retries multiplied across layers, and load shedding.
+- Gil Tene, "How NOT to Measure Latency" (talks from 2013 on, and the HdrHistogram documentation): coordinated omission. The M/M/1 waiting-time formula and the pooling result are derived in Harchol-Balter (above).

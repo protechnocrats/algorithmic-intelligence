@@ -31,3 +31,5 @@ jobs:
           grep -q '^name: algorithmic-intelligence$' skills/SKILL.md
       - name: CHANGELOG.md has an Unreleased section
         run: grep -q '^## \[Unreleased\]' CHANGELOG.md
+      - name: Guard hook tests
+        run: python3 -m unittest discover -s plugin/tests

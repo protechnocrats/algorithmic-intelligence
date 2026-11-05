@@ -11,5 +11,8 @@ Sources for the claims in `techniques/strings-and-text.md`. Read only to verify 
 - Donald E. Knuth and Michael F. Plass, "Breaking Paragraphs into Lines," *Software: Practice and Experience* 11(11), 1981.
 - Hans-J. Boehm, Russ Atkinson, and Michael Plass, "Ropes: An Alternative to Strings," *Software: Practice and Experience* 25(12), 1995.
 - Bryan Ford, "Packrat Parsing: Simple, Powerful, Lazy, Linear Time" (2002).
-- Manning, Raghavan, and Schütze, *Introduction to Information Retrieval* (2008); Ding and Suel, "Faster Top-k Document Retrieval Using Block-Max Indexes," SIGIR 2011.
+- Manning, Raghavan, and Schütze, *Introduction to Information Retrieval* (2008); Ding and Suel, "Faster Top-k Document Retrieval Using Block-Max Indexes," SIGIR 2011; Andrei Z. Broder, David Carmel, Michael Herscovici, Aya Soffer, and Jason Zien, "Efficient Query Evaluation Using a Two-Level Retrieval Process," CIKM 2003 (WAND).
+- Ge Nong, Sen Zhang, and Wai Hong Chan, "Two Efficient Algorithms for Linear Time Suffix Array Construction," *IEEE Transactions on Computers* 60(10), 2011 (SA-IS).
+- Thomas Reps, "'Maximal-Munch' Tokenization in Linear Time," *ACM TOPLAS* 20(2), 1998; Joop M. I. M. Leo, "A General Context-Free Parsing Algorithm Running in Linear Time on Every LR(k) Grammar Without Using Lookahead," *Theoretical Computer Science* 82(1), 1991.
+- Glenn K. Manacher, "A New Linear-Time On-Line Algorithm for Finding the Smallest Initial Palindrome of a String," *Journal of the ACM* 22(3), 1975; Alfred V. Aho and Margaret J. Corasick, "Efficient String Matching: An Aid to Bibliographic Search," *CACM* 18(6), 1975.
 - Unicode Standard Annex #15, "Unicode Normalization Forms," and Unicode Technical Report #36, "Unicode Security Considerations": normalization, case folding that changes length, and non-ASCII digits.
