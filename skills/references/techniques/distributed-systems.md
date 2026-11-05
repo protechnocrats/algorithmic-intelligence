@@ -7,4 +7,4 @@ Sources for the claims in `techniques/distributed-systems.md`. Read only to veri
 - Marc Shapiro et al., "Conflict-Free Replicated Data Types," SSS 2011.
 - Diego Ongaro and John Ousterhout, "In Search of an Understandable Consensus Algorithm" (Raft), USENIX ATC 2014.
 - Abhinandan Das, Indranil Gupta, and Ashish Motivala, "SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol," DSN 2002.
-- Martin Kleppmann, *Designing Data-Intensive Applications* (2017): partitioning, replication, transactions, and fencing tokens.
+- Martin Kleppmann, *Designing Data-Intensive Applications* (2017): partitioning, replication, transactions, fencing tokens, idempotence and exactly-once processing, and why last-writer-wins by wall-clock time loses writes.

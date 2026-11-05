@@ -1,49 +1,52 @@
 # Optimization, Scheduling, and Allocation
 
-Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
+The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
-For code that searches for the best assignment, schedule, route, packing, or allocation: job and task schedulers (operating systems, build systems, batch and cluster schedulers), compilers (instruction scheduling, register and memory allocation), query optimizers, logistics and routing, timetabling, ad and resource allocation, and capacity planning. The usual slow form is a loop over permutations, subsets, or candidate plans. Sometimes the fastest fix is a better formulation of the problem, not a faster loop.
+**Contents:** Before choosing · Polynomial special cases · Modeling and solvers · Heuristics with guarantees · Several objectives · Decisions without the future (online algorithms) · References
+
+For code that searches for the best assignment, schedule, route, packing, or allocation (schedulers, compilers, query optimizers, logistics, timetabling, capacity planning). The slow form is usually a loop over permutations, subsets, or candidate plans, and the fix is often a better formulation, not a faster loop.
 
 ## Before choosing
 
-1. **Write the model.** Name the decision variables, the constraints, and the objective. Most code searching for a "best" plan never states them, and many recognizable problems appear once they are written.
-2. **Check for a polynomial special case** (first table). Many scheduling and assignment problems that look combinatorial have exact greedy or flow solutions.
-3. **Only then treat it as hard.** If it is NP-hard in general (move 6 in `DISCOVERY.md`), "After NP-hardness" in `techniques/sequences-dp-search.md` gives the options: structure that makes the instances easy, approximation with a guarantee, a solver, or a heuristic.
+1. **Write the model**: decision variables, constraints, objective. Code searching for a "best" plan rarely states them, and a recognizable problem often appears once they are written.
+2. **Check for a polynomial special case** (first table): many scheduling and assignment problems that look combinatorial have exact greedy or flow solutions.
+3. **Pin down time and intervals.** Record from the code whether ends are inclusive (do [9:00, 10:00] and [10:00, 11:00] conflict), how an interval crossing midnight is stored, local time or UTC (a local day has 23 or 25 hours across a daylight-saving change, and a local time can occur twice or not at all), and whose clock wins when machines disagree. The new code makes each choice the same way; test each.
+4. **Only then treat it as hard.** If it is NP-hard in general (move 6 in `DISCOVERY.md`), see "After NP-hardness" in `techniques/sequences-dp-search.md`.
 
-**Exact versus not exact.** If the original returns a provably optimal answer, anything that may return a different answer is a behavior change (rule 5): heuristics, approximation algorithms, solvers stopped by a time limit, and solvers returning a different one of several equally good optimal solutions. Ties between optimal solutions are common in scheduling and assignment, and callers often observe which one they get. State and reproduce the original's tie-breaking rule, or list the change for review.
+**Exact versus not exact.** If the original returns a provably optimal answer, anything that may return a different one is a behavior change: heuristics, approximations, solvers stopped by a time limit, and solvers returning a different one of several equally good optima. Ties between optima are common in scheduling and assignment, and callers often observe which one they get: reproduce the original's tie-breaking or list the change.
 
 ## Polynomial special cases
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| Assigning n workers to n jobs at minimum total cost by trying permutations | Hungarian algorithm, or min-cost bipartite matching | One worker per job; costs additive; rectangular cases padded | O(n!) → O(n³) |
+| Assigning n workers to n jobs at minimum total cost by trying permutations | Hungarian algorithm, or min-cost bipartite matching | One worker per job; costs additive; with n workers and m > n jobs, the rectangular form runs in O(n²·m), while padding to square costs O(m³); forbidden pairs given a large cost that cannot overflow when n of them are summed | O(n!) → O(n³) |
 | Shipping supply to demand at minimum cost, or any assignment with capacities | Min-cost flow (transportation problem) | Costs linear in the amounts; integer capacities give integer optimal solutions | Exponential search → polynomial; network-simplex solvers are fast in practice |
 | An integer program whose constraint matrix is a network or bipartite incidence matrix | Solve it as a linear program or a flow: totally unimodular constraints have integer optimal solutions at the vertices | The matrix is totally unimodular (flows, bipartite matching, interval constraints with consecutive ones), and the right-hand sides and variable bounds are integers; with fractional data the LP optimum can be fractional | NP-hard in general → polynomial |
 | Choosing a subset of projects with prerequisites to maximize profit | Maximum-weight closure via minimum cut | Prerequisites form a directed graph; profits and costs additive | Exponential subsets → one max-flow computation |
 | Greedy selection by weight (choose the most valuable items subject to independence rules) | Prove the feasible sets form a matroid (forests in a graph, linearly independent sets, sets with at most k from each group); then greedy by weight is optimal | The exchange property holds; it fails for knapsack-like capacity limits | Exponential → O(n log n) plus independence checks |
-| One machine, minimize average or weighted completion time | Shortest processing time first; Smith's rule (sort by processing time divided by weight) for weights | Jobs available at time zero, no preemption | O(n!) → O(n log n) |
+| One machine, minimize average or weighted completion time | Shortest processing time first; Smith's rule (sort by processing time divided by weight) for weights | Jobs available at time zero, no preemption; compare ratios by cross-multiplication (p₁·w₂ against p₂·w₁) in a type wide enough for the products, so zero weights do not divide by zero and rounding does not reorder near-equal jobs; an overflowing product makes the comparator inconsistent, which some sorts reject or order wrongly | O(n!) → O(n log n) |
 | One machine, minimize the maximum lateness | Earliest due date first (Jackson's rule) | Jobs available at time zero | O(n!) → O(n log n) |
 | One machine, minimize the number of late jobs | Moore-Hodgson algorithm | Unweighted jobs, available at time zero | O(2^n) → O(n log n) |
-| Preemptive real-time tasks on one processor | Earliest deadline first | Preemption allowed; periodic tasks with deadlines equal to their periods; context-switch cost negligible or modeled | Schedulable whenever total utilization ≤ 1 |
-| Two machines in sequence (flow shop), minimize total completion of the batch (makespan) | Johnson's rule | Exactly two machines, same job order on both | O(n!) → O(n log n) |
-| Choose the most non-overlapping time slots; or weighted slots | Earliest finish time first; weighted interval scheduling by DP with binary search | Intervals known up front | O(2^n) → O(n log n) |
+| Preemptive real-time tasks on one processor | Earliest deadline first | Preemption allowed; periodic tasks with deadlines equal to their periods; context-switch cost negligible or modeled | Schedulable whenever total utilization ≤ 1. Above 1, EDF can miss many deadlines in a cascade, where fixed priorities miss only the lowest-priority tasks: keep the original's overload behavior or list the change |
+| Two machines in sequence (flow shop), minimize the time the last job finishes (makespan) | Johnson's rule | Exactly two machines, same job order on both | O(n!) → O(n log n) |
+| Choose the most non-overlapping time slots; or weighted slots | Earliest finish time first; weighted interval scheduling by DP with binary search | Intervals known up front; touching intervals treated as conflicting or not exactly as the original treats them | O(2^n) → O(n log n) |
 | Distributing a budget of units among activities with diminishing returns | Greedy by marginal gain, one unit at a time or by a heap | Each activity's return is concave in its units and the objective is their sum | Exponential combinations → O(B log n) for B units, or faster by binary search on the marginal value |
 
 ## Modeling and solvers
 
-When no special case fits and the instances are large or the constraints change often, a declarative model handed to a solver usually beats custom search code in both speed and expressiveness. Solvers are dependencies: ask first (rule 7), and check licenses (several commercial solvers need paid licenses; OR-Tools, HiGHS, and CBC are open source).
+When no special case fits and instances are large or constraints change often, a declarative model handed to a solver usually beats custom search code. Solvers are dependencies (rule 7); several commercial ones need paid licenses, while OR-Tools, HiGHS, and CBC are open source. The worst case stays exponential: give every solve a time and memory limit, cap instance sizes from input, and agree with the developer what a limited solve returns. Multithreaded solvers can return a different optimum each run; set their deterministic mode when callers compare results.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
 | Continuous decisions with linear constraints and a linear objective (blending, flows, budgets) | Linear programming (simplex, interior-point methods) | The model is truly linear; floating-point tolerances accepted; when several optima exist, which one is returned may change (behavior change if observable) | Polynomial time (interior point); simplex is exponential in the worst case but fast in practice |
-| Yes-or-no or integer decisions with linear constraints (selection, assignment with side rules, routing) | Integer or mixed-integer programming (branch and cut) | Problem sizes measured; a time limit yields a feasible answer with a reported optimality gap, which is a behavior change unless the original also stopped early | NP-hard in general; modern solvers handle large real instances |
+| Yes-or-no or integer decisions with linear constraints (selection, assignment with side rules, routing) | Integer or mixed-integer programming (branch and cut) | Problem sizes measured; a time limit yields a feasible answer with a reported optimality gap, which is a behavior change unless the original also stopped early. Integer variables come back within a tolerance (0.9999999): round them explicitly | NP-hard in general; modern solvers handle large real instances |
 | Scheduling or configuration with many logical rules (precedence, calendars, no-overlap, "at most k of these") | Constraint programming with global constraints (no-overlap, cumulative, all-different) and search strategies | Every rule encoded; the solution chosen among equals may differ from the original's | Large practical reductions over hand-written backtracking |
 | Pure boolean constraints | A SAT solver; 2-SAT in linear time when every clause has two literals | Encoding verified on known instances | Exponential worst case; conflict-driven solvers handle millions of clauses in practice |
 | The same optimization re-solved from scratch after small changes (new orders, a machine down) | Warm-start the solver from the previous solution; rolling-horizon re-optimization over a window | Re-planning may move already-announced work: decide which decisions are frozen | Solve time proportional to the change, in practice |
 
 ## Heuristics with guarantees
 
-Use these only when exact answers are too slow for the measured sizes, and list them as behavior changes unless the original was already a heuristic. Prefer ones with a proven worst-case ratio, and state it.
+Only when exact answers are too slow at the measured sizes; a behavior change unless the original was already a heuristic. State the proven worst-case ratio.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -55,17 +58,15 @@ Use these only when exact answers are too slow for the measured sizes, and list 
 
 ## Several objectives
 
-When the code trades off several goals (cost and time, latency and throughput), first decide how they combine:
+When the code trades off several goals (cost and time, latency and throughput), decide how they combine. Changing how existing code combines them changes which solution is chosen: a behavior change.
 
 - **Lexicographic:** optimize the first objective, then the second among solutions tying on the first. Reproduces "sort by A, then B" rules exactly.
 - **Weighted sum:** one combined score; finds only solutions on the convex part of the trade-off curve.
-- **Pareto front:** keep every solution that no other solution beats on all objectives, and let the caller choose. Computing the front of n points is O(n log n) in two or three dimensions (sort by one objective, then sweep), instead of comparing all O(n²) pairs.
-
-Changing how objectives combine changes which solution is chosen: a behavior change.
+- **Pareto front:** keep every solution that no other solution beats on all objectives, and let the caller choose. The front of n points is O(n log n) in two dimensions (sort by one objective, then sweep) and in three (a sweep with a balanced tree), instead of comparing all O(n²) pairs. Match the original on whether two solutions with equal scores both stay.
 
 ## Decisions without the future (online algorithms)
 
-Many systems decisions must be made before the future is known: whether to keep spinning or block, whether to build an index or keep scanning, which cache entry to evict, which machine gets the next job. Online algorithms make these decisions with a proven guarantee against the best choice made with hindsight (the competitive ratio). Several rows elsewhere in this skill are instances; this section gives their reasoning.
+Decisions made before the future is known (spin or block, build an index or keep scanning, which entry to evict, which machine gets the next job), with a proven competitive ratio against the best choice in hindsight.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -76,4 +77,4 @@ Many systems decisions must be made before the future is known: whether to keep 
 
 ## References
 
-Sources for the claims in this file are in `references/techniques/optimization-and-scheduling.md`. Read them only to verify a claim.
+Sources: `references/techniques/optimization-and-scheduling.md`, read only to verify a claim.

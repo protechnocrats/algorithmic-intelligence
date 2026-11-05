@@ -1,10 +1,16 @@
 # Spatial Data
 
-Part of the advanced techniques. First read `ADVANCED-TECHNIQUES.md`: its shared rules apply to every table in this file and explain how to read the tables.
+The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
 ## Spatial data
 
-Spatial structures return candidates; the original exact geometric test still runs on each one, so results stay identical. Result order usually changes: if callers observe it, restore the original order or treat it as a behavior change. The workload decides the choice: dimensionality, object sizes, clustering, and how often objects move.
+Spatial structures return candidates and the original exact test runs on each, so results stay identical as long as the candidates include every true answer. Result order usually changes; restore it if callers observe it. Dimensionality, object sizes, clustering, and how often objects move decide the choice.
+
+Check before choosing:
+- **Cell edges.** A point exactly at the query distance or on a cell edge is still a candidate: visit every cell the query reaches, and compute cell indices with floor, not truncation toward zero, which merges cells −1 and 0.
+- **Hostile coordinates.** NaN, infinite, or huge coordinates overflow cell indices or break comparisons: handle them as the original does.
+- **Crowding.** Points an attacker places in one cell restore the O(n²) worst case (`techniques/hostile-inputs.md`).
+- **Latitude and longitude** are not planar: a box or radius crossing the ±180° meridian or near a pole is split or handled as the original does, and a degree is not a fixed distance.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
@@ -12,9 +18,9 @@ Spatial structures return candidates; the original exact geometric test still ru
 | Moving objects checked every frame or tick | Rebuild a grid or spatial hash each tick, or sort and sweep along one axis (sort is nearly sorted from the last tick) | — | O(n²) per tick → O(n + k) or O(n log n), often nearly O(n) with insertion sort on nearly sorted input |
 | Range, intersection, or containment queries over rectangles or polygons of mixed sizes (maps, GIS, CAD, UI hit testing) | R-tree; bulk-load with Sort-Tile-Recursive when the data is static | Queries use bounding boxes, with the exact test on candidates | O(n) per query → about O(log n + k) on typical data; no worst-case guarantee under heavy overlap |
 | Points with uneven density in 2D or 3D | Quadtree (octree in 3D) | Maximum depth or minimum cell size bounded, so duplicate points cannot force unbounded subdivision | Per-query scan → proportional to depth plus output, workload-dependent |
-| Nearest-neighbor or range search over points in low dimensions | k-d tree | Low dimensionality (roughly under 10); data mostly static | Build: O(n log n). Query: O(log n) average for well-distributed data, degrading toward O(n) for skewed data or higher dimensions; workload-dependent |
-| Nearest neighbor in high dimensions (embeddings, feature vectors) | Exact: a well-vectorized linear scan usually beats trees above roughly 10 to 20 dimensions. Approximate: HNSW graphs, locality-sensitive hashing, product quantization | Approximate methods can miss true neighbors: **always a behavior change**, developer review | Exact scan: constant-factor gains only. Approximate: sublinear queries in practice |
+| Nearest-neighbor or range search over points in low dimensions | k-d tree | Low dimensionality (roughly under 10); data mostly static; many points equal to the splitting value kept on a consistent side | Build: O(n log n). Query: O(log n) average for well-distributed data, degrading toward O(n) for skewed data or higher dimensions; workload-dependent |
+| Nearest neighbor in high dimensions (embeddings, feature vectors) | Exact: a well-vectorized linear scan usually beats trees above roughly 10 to 20 dimensions. Approximate: HNSW graphs, locality-sensitive hashing, product quantization | Approximate methods can miss true neighbors: behavior change | Exact scan: constant-factor gains only. Approximate: sublinear queries in practice |
 
 ## References
 
-Sources for the claims in this file are in `references/techniques/spatial-data.md`. Read them only to verify a claim.
+Sources: `references/techniques/spatial-data.md`, read only to verify a claim.

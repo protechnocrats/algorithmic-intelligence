@@ -1,0 +1,11 @@
+# Private evaluation work: cases, fixtures, answer keys, and results stay out of the repository.
+evals/
+
+# Archives and downloaded toolchains.
+*.zip
+*.tar.gz
+*.tgz
+
+# Python bytecode.
+__pycache__/
+*.pyc

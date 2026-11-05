@@ -1,145 +1,143 @@
 # Behavior Traps
 
-Rewrites that look equivalent but are not. Walk this list for every candidate in Phase 3 and again after applying a change. Each applicable trap must be covered by a differential test or ruled out with a stated reason. A trap that the change actually triggers is a behavior change: document it for developer review and do not apply it without explicit approval (rule 5). Language-specific traps are in the `languages/` files. For machine-learning code, image, video, or signal processing, geometry, or games and simulation, also walk "Behavior traps" in `techniques/machine-learning.md`, `techniques/images-and-signals.md`, `techniques/geometry-and-cad.md`, or `techniques/games-and-simulation.md`, even when no technique from that file is used.
+Rewrites that look equivalent but are not. Walk this list for each candidate and again after applying a change. Each trap that could apply is either covered by a differential test or ruled out by a reason taken from the code and the inputs callers can pass; "cannot happen" in a comment or test name is a claim ("Untrusted content" in `SKILL.md`). A trap the change triggers is a behavior change (rule 5). Language-specific traps are in the `languages/` files; machine learning, images and signals, geometry, and games and simulation each have a "Behavior traps" section in their `techniques/` file, worth walking even when no technique from it is used.
+
+**Contents:** Ordering · Equality and keys · Duplicates and nulls · Mutation and aliasing · Laziness, short-circuiting, and evaluation · Numbers · Strings and text · Time and dates · Removed work · Purity and caching · Concurrency · Cancellation, timeouts, and resources · Security-sensitive behavior · Errors and limits · I/O and databases · References
 
 ## Ordering
 
-- **Iteration order of hash structures.** Replacing a list with a hash set or hash map, or an insertion-ordered map with an unordered one, changes the order callers see. Some platforms randomize hash order per process (Swift), so a test can pass once and fail later. Preserve order with an insertion-ordered structure, or keep the original list for output and use the hash structure only for lookups.
-- **Sort stability.** Switching between a stable and an unstable sort changes the relative order of equal elements. The language file says which sorts are stable. Timsort and merge sort are stable; introsort, pattern-defeating quicksort, and heapsort are not.
-- **Adaptive and hybrid algorithms.** When an implementation picks a branch by input size, shape, or CPU features, each branch can differ in stability, tie choice, `NaN` handling, floating-point bits, or errors. Tests at one size or on one machine then pass while other inputs differ. Test every branch, inputs on both sides of every crossover, and each CPU-feature variant.
-- **Ties.** "First match," "max by," and "min by" may pick a different element among equals after a rewrite.
-- **Enumeration order.** A faster enumeration (Gray-code, revolving-door, or swap-based permutation order; a different branching order in a search) visits the same items in a different order, changing which solution is found first and the order of any output.
-- **Shuffles and random selection.** Replacing a shuffle or random choice changes the sequence for a given seed, and may change the distribution (a shuffle by random comparator is biased, Fisher-Yates is not). Both are behavior changes.
-- **Order of side effects.** Batching, parallelizing, or reordering loops changes the order of writes, logs, events, and callbacks.
+- **Hash iteration order.** Replacing a list or an insertion-ordered map with a hash structure changes the order callers see. Some platforms randomize it per process (Swift, Python strings, Java `Map.of`) or per map (Rust), so a test can pass once and fail later. Use an insertion-ordered structure, or keep the list for output and use the hash only for lookups.
+- **Sort stability.** Timsort and merge sort are stable; introsort, pattern-defeating quicksort, and heapsort are not. Switching changes the order of equal elements. The language file says which built-in sorts are which.
+- **Adaptive and hybrid algorithms.** An implementation that picks a branch by input size, shape, or CPU features can differ per branch in stability, tie choice, NaN handling, float bits, or errors, so tests at one size on one machine pass while other inputs differ. Test both sides of every crossover and each CPU-feature variant.
+- **Ties.** "First match", "max by", and "min by" can pick a different element among equals.
+- **Comparator contract.** A comparator that is not a consistent total order (NaN, mixed types, inconsistent ties, state read during the sort) gives algorithm-dependent output, an exception (Java's TimSort), or memory corruption (some `qsort` implementations). Changing the sort exposes it.
+- **Enumeration order.** A faster enumeration (Gray-code or swap-based permutation order, a different branching order in search) visits the same items in another order, changing which solution is found first.
+- **Shuffles and random selection.** A different shuffle or choice changes the sequence for a given seed and may change the distribution (shuffling with a random comparator is biased; Fisher-Yates is not).
+- **Order of side effects.** Batching, parallelizing, or reordering loops reorders writes, logs, events, and callbacks.
 
 ## Equality and keys
 
-- **Equality semantics change.** A linear search with `==` or a custom comparison may not match the hash structure's equality (`equals`/`hashCode`, `Hashable`, `IEquatable`, JavaScript SameValueZero, reference equality for objects).
-- **Inconsistent `equals` and `hashCode`.** Types that override one but not the other behave correctly in a list scan but break in a hash set.
-- **Mutable keys.** An object used as a hash key and mutated afterward can no longer be found.
-- **Case, culture, and normalization.** String comparisons that ignore case or depend on locale must use the same comparer in the new structure.
-- **Floating-point keys.** `NaN`, `-0.0` versus `0.0`, and rounding make float keys unsafe in hash structures.
-- **Numeric identity.** `1` and `1.0`, or `2.50` and `2.5` as decimals, can be equal under one comparison and different under the one a hash structure uses. Ruby: `==` matches them, but hash keys use `eql?`, which does not. Java: primitive `==` and `compareTo` match them, but `equals` (used by `HashMap`, `HashSet`, and `List.contains`) treats `Integer` 1 and `Long` 1 as different and compares `BigDecimal` scale, so a `TreeSet` and a `HashSet` disagree. Python is the reverse: `1`, `1.0`, and `True` are one key. Check which comparison the original used and which one the new structure uses.
+- **Different equality.** A linear search with `==` or a custom comparison may not match the hash structure's equality (`equals`/`hashCode`, `Hashable`, JavaScript SameValueZero, reference equality for objects). A type that overrides `equals` but not `hashCode` works in a list scan and breaks in a hash set.
+- **Mutable keys.** A key mutated after insertion can no longer be found.
+- **Floating-point keys.** NaN never equals itself, `-0.0` and `0.0` may hash apart, and rounding splits values that were meant to match.
+- **Numeric identity.** `1` and `1.0`, or decimals `2.50` and `2.5`, can be equal under one comparison and distinct under the one a hash structure uses. Ruby's `==` matches them but hash keys use `eql?`, which does not. In Java, `equals` (used by `HashMap`, `HashSet`, `List.contains`) treats `Integer` 1 and `Long` 1 as different and compares `BigDecimal` scale, so a `TreeSet` and a `HashSet` disagree. Python is the reverse: `1`, `1.0`, and `True` are one key.
 
 ## Duplicates and nulls
 
-- **Duplicates collapse.** Converting a list to a set removes duplicates; maps overwrite or throw on duplicate keys depending on the method used.
-- **Null handling.** Some structures reject null keys or values; others accept them. A lookup that returned "not found" may now throw, or the reverse.
+- **Duplicates collapse.** A set drops them; a map overwrites or throws depending on the method.
+- **Nulls.** Some structures reject null keys or values; a lookup that returned "not found" may now throw, or the reverse.
 
 ## Mutation and aliasing
 
-- **Input mutation.** In-place algorithms (sorting the caller's list, removing during iteration) change the caller's data where the original did not, or the reverse.
-- **Returned collections.** Returning an internal buffer, a view, or a mutable collection where the original returned a fresh copy lets callers mutate shared state.
-- **Copy-on-write and value semantics.** Changing when copies occur can change both performance and which copy a caller sees.
-- **Aliased arguments.** An in-place algorithm that reads one argument while writing another breaks when both are the same object (for example, merging a list into itself, or copying into an overlapping buffer). An optimization that copies an argument the original modified in place, or that modifies in place what the original copied, changes what other references to that object see.
-- **Object identity.** Returning the argument itself instead of a copy (or the reverse), returning a cached or shared instance, or interning values changes the results of identity checks (`===`, `is`, `ReferenceEquals`) and lets callers mutate state the original kept private.
+- **Input mutation.** In-place algorithms change the caller's data where the original did not, or the reverse.
+- **Returned collections and identity.** Returning an internal buffer, a view, a cached or interned instance, or the argument itself where the original returned a fresh copy (or the reverse) changes identity checks (`===`, `is`, `ReferenceEquals`) and lets callers mutate shared state. Copy-on-write changes which copy a caller sees.
+- **Aliased arguments.** An in-place algorithm that reads one argument while writing another breaks when both are the same object (merging a list into itself, copying into an overlapping buffer). Copying what the original modified in place, or modifying what it copied, changes what other references see.
 
 ## Laziness, short-circuiting, and evaluation
 
-- **Eager versus lazy.** Switching between eager collections and lazy sequences or iterators changes when (and whether) element functions run, which matters when they have side effects, throw, or read changing state.
-- **Short-circuiting lost.** A precomputed index built from all elements evaluates elements the original never touched, possibly throwing or doing extra I/O.
-- **Deferred queries.** Lazy query objects (LINQ, ORM query builders) re-execute on every enumeration; caching or materializing them changes when the data is read.
+- **Eager versus lazy.** Switching between collections and lazy sequences changes when, and whether, element functions run; this matters when they have effects, throw, or read changing state.
+- **Short-circuiting lost.** An index built from all elements evaluates elements the original never touched, possibly throwing or doing I/O. Reordering `&&`, `||`, or a chain of checks to test the cheap one first changes which calls run and which error is raised.
+- **Deferred queries.** LINQ and ORM query objects re-execute on each enumeration; materializing or caching them changes when data is read.
 
 ## Numbers
 
-For numerical code, matching outputs on ordinary inputs is not enough. Test the edge values listed in `DIFFERENTIAL-TESTING.md` (NaN, infinities, signed zero, subnormals, extreme magnitudes).
+For numerical code, test the edge values in `DIFFERENTIAL-TESTING.md`; ordinary inputs rarely expose these.
 
-- **Overflow.** A closed-form formula or different summation order can overflow where the loop did not, or the reverse. Some languages wrap silently, others trap or crash.
-- **Floating-point association.** `(a + b) + c` is not `a + (b + c)`. Prefix sums, reordering, and parallel reduction change results.
-- **Integer division and rounding.** Rewritten arithmetic can round differently.
-- **Bit manipulation width.** Shifts beyond the type width, signed versus unsigned shifts, and 32-bit limits in some runtimes.
-- **Catastrophic cancellation.** Rewriting `a − b` forms (for example, expanding or factoring a formula) can lose most significant digits when operands are close.
-- **Overflow and underflow in intermediate values.** A rearranged formula can overflow to infinity or underflow to zero in an intermediate step even when the final result fits.
-- **NaN, infinity, and signed zero.** NaN propagates differently through min/max, comparisons, and sorting; `-0.0` and `0.0` compare equal but differ in division and formatting. A rewrite must handle them exactly as the original did.
-- **Exact versus tolerance comparisons.** Replacing exact equality with a tolerance (or the reverse) changes results.
-- **Reproducibility.** Vectorized, fused multiply-add, and parallel computations can produce different bits from the sequential version, and different results across runs or machines.
+- **Overflow.** A closed form, a narrower type, or a rearranged formula can overflow (or underflow to zero) where the loop did not, including in an intermediate step whose final result fits. Some languages wrap silently, others trap. In sizes, offsets, and money, a wrapped value is also a security or money bug.
+- **Float association and reproducibility.** `(a + b) + c` is not `a + (b + c)`: prefix sums, reordering, parallel reduction, vectorization, and fused multiply-add change bits, and can differ across runs and machines. A flag like `-ffast-math` reorders and contracts float operations across the whole build; adding it is a configuration change (rule 5).
+- **Catastrophic cancellation.** Expanding or factoring a formula can subtract nearly equal values and lose most significant digits.
+- **Rounding and division.** Rewritten arithmetic can round differently (Python rounds half to even). Integer division by zero traps; float division gives infinity or NaN. Float-to-integer conversion truncates, saturates (Rust), traps (Swift), or is undefined (C). Moving arithmetic between integer and float changes all of these.
+- **NaN and signed zero.** NaN propagates differently through min, max, comparisons, and sorting; `-0.0` equals `0.0` but differs in division and formatting.
+- **Bit width.** Shifts beyond the type width, signed versus unsigned shifts, and 32-bit limits in some runtimes.
+- **Exact versus tolerance.** Switching between exact equality and a tolerance changes results.
 
 ## Strings and text
 
-- **Length and indexing units.** UTF-16 code units, Unicode scalars, and grapheme clusters give different lengths and indices.
-- **Locale-sensitive operations.** Case conversion and comparison that depend on the current locale.
+- **Length, indexing, and order units.** UTF-16 code units, code points, and grapheme clusters give different lengths and indices. Sort order differs too: UTF-16 order (JavaScript, Java, C#), code-point or UTF-8 byte order (Python, Rust), and culture-aware order disagree outside the basic multilingual plane.
+- **Case, culture, and normalization.** Locale-dependent case conversion and comparison (Turkish dotted and dotless `i`) and number and date formatting. Lowercasing is not case folding (`ß` uppercases to `SS`), and composed and decomposed forms compare unequal unless normalized. A new structure or comparison must use the same comparer, and normalizing, folding, or comparing bytes where the original did not changes which strings match.
+- **Parsers and character classes.** A different parser or regex engine accepts a different set: non-ASCII digits (many integer parsers and Unicode-aware `\d` accept Arabic-Indic digits), surrounding whitespace, `+`, underscores, hex prefixes, leading zeros, overlong input. Accepting more is also a validation change.
+- **Serialized output.** A different serializer or number formatter changes key order, float text (`1.0` vs `1`, `1e21`), escaping, whitespace, and line endings, and so anything that diffs, hashes, signs, or caches by content.
+
+## Time and dates
+
+Interval semantics (inclusive ends, touching intervals, ranges across midnight) are in "Pin down time and intervals" in `techniques/optimization-and-scheduling.md`.
+
+- **Calendar arithmetic.** 86,400 seconds is not a day across DST. Precomputed day or month boundaries, bucketing in UTC instead of local time, and fixed month or year lengths go wrong around DST, leap days, and time-zone rule changes. Test across those boundaries in the zones the code uses.
+- **Clocks.** Wall-clock time jumps; timing durations with it instead of a monotonic clock, or caching "now" or "today" longer than the original read it, changes results.
 
 ## Removed work
 
-Work that looks unnecessary often is not. Before avoiding or deleting work, rule out each of these:
+Work that looks unnecessary often is not:
 
-- **Unseen callers.** A result that no caller in the repository uses can still be used by callers outside it (a public library API, a service endpoint, a plugin interface), or through reflection, dependency injection, serialization, configuration, or templates. Public and exported code: treat every result as used.
-- **Validation and errors.** A computation with a discarded result may exist to throw on bad input (parsing to validate, a lookup that fails on a missing key). Removing it removes the error.
-- **Side effects of reads.** In systems code, a read can have effects: device registers, memory-mapped I/O, `volatile` variables, page touches that fault memory in, and lazy initialization triggered by first access.
-- **Timing and ordering on purpose.** Constant-time padding and dummy operations in security code, deliberate delays and backoff, memory fences, lock acquisitions that order other threads, and cache or JIT warm-up all look like wasted work. Removing them is a security or correctness regression.
-- **"Nothing changed."** Skipping a refresh because inputs look unchanged is caching: every input must be known and every change detected (see "Caching traps").
+- **Unseen callers.** Results unused inside the repository may be used through a public API, an endpoint, a plugin interface, reflection, dependency injection, serialization, configuration, or templates. For public or exported code, treat every result as used.
+- **Validation by side effect.** A computation with a discarded result may exist to throw on bad input.
+- **Reads with effects.** Device registers, memory-mapped I/O, `volatile` variables, page touches, and lazy initialization on first access.
+- **Deliberate timing and ordering.** Constant-time padding, delays and backoff, memory fences, lock acquisitions that order other threads, and warm-up look like waste. Removing them is a security or correctness regression.
+- **Logs, metrics, and audit records.** A cache hit, batch, or skip also skips, merges, or reorders the record the original wrote each time; audit records may be legally required. Logging values that were not logged before can leak data.
+- **"Nothing changed."** Skipping a refresh because inputs look unchanged is caching, with all the traps below.
 
 ## Purity and caching
 
 ### Hidden inputs
 
-A function is not pure just because its arguments are unchanged. Before caching or memoizing, verify that the result does not depend on any of these:
-
-- the current time, time zone, daylight-saving transitions, or calendar;
-- locale, language, or culture settings;
-- environment variables, feature flags, runtime configuration, or experiment assignments;
-- the file system, network resources, or other external state;
-- random number generators, random seeds, or nondeterministic iteration order;
-- the current user, tenant, session, or permissions;
-- process-specific state (process ID, memory addresses, hash seeds).
+Unchanged arguments do not make a function pure. Before caching, rule out dependence on: time, time zone, or calendar; locale; environment variables, feature flags, configuration, or experiment assignment; files, network, or other external state; randomness or nondeterministic iteration order; the current user, tenant, session, or permissions; process-specific state (process ID, addresses, hash seeds).
 
 ### Caching traps
 
-- **Memoizing an impure function.** If the function depends on any hidden input above, or on mutable state or the database, a cache returns stale or wrong results.
-- **Cache scope.** State whether a cache lives per call, per object, or process-wide. A scope wider than the data's original lifetime causes staleness and leaks across users.
-- **Cache invalidation.** A cache must be invalidated whenever any input it depends on changes.
-- **Writers outside this process.** Invalidating on writes made in this process misses writes from other processes, machines, jobs, and tools that share the data (several web workers, a separate import job, an administrator's script). When any can exist, as the project's deployment or configuration shows, a cache inside one process must detect their writes on every read before serving a cached value: compare a version number or change counter that the shared data source maintains, and refetch when it changed. Otherwise cache only data those writers never change, or the cache can serve stale results, which is a behavior change (rule 5).
-- **Bounded caches evict.** Eviction changes which calls hit the slow path; that is fine only if the function is pure.
+- **Memoizing the impure.** Any hidden input above, mutable state, or the database makes cached results stale or wrong.
+- **Scope and invalidation.** A cache scoped wider than its data's lifetime (process-wide instead of per call or per object) serves stale data and leaks across users. It must be invalidated whenever any input it depends on changes.
+- **Writers outside this process.** Invalidating on local writes misses other workers, machines, import jobs, and admin scripts that share the data. Where any can exist, as deployment or configuration shows, the cache must check a version number or change counter that the shared source maintains on every read and refetch when it moved, or cache only data those writers never change.
+- **Eviction.** A bounded cache changes which calls take the slow path; fine only for a pure function.
+- **Keys that collide or never match.** Concatenated keys collide (`"a:" + "b"` equals `"a" + ":b"`), stringified arguments drop `undefined` or depend on property order, and object keys compare by reference so equal arguments never hit. Build keys from a tuple of the arguments.
+- **Cached failures.** Caching an exception or empty result turns a transient failure the original retried into a permanent one; decide and state which is cached.
 
 ## Concurrency
 
-- **Thread safety.** Replacing a synchronized or concurrent structure with an unsynchronized one, or adding shared mutable caches, introduces races. When the code can run on several threads, goroutines, or workers at once (request handlers usually do), synchronize any shared state you add and test it with concurrent callers, with the language's race detector or thread sanitizer where one exists. Locks that no test exercises concurrently are unverified.
-- **Iterator invalidation.** Modifying a collection while iterating it throws, skips elements, or (in C and C++) is undefined behavior, depending on the platform.
-- **Changed concurrency.** Running previously sequential work concurrently changes ordering, error behavior (fail-fast versus continue), rate limiting, and resource usage.
-- **Optimistic and speculative execution.** A reader that proceeds without a lock (sequence locks, optimistic concurrency) can see torn or inconsistent data before it validates. It must not act on that data first: no pointer dereference, division, array index, or output. A retry repeats every side effect of the attempt, and speculative work done for a guess that turns out wrong must leave no trace (no writes, logs, or messages).
-- **Missed changes.** Code that switches from rescanning to consuming changes (change feeds, file-system notifications, incremental maintenance) misses updates when the feed overflows, restarts, or is truncated; the original rescan never missed them. Every gap must be detected and fall back to a full rescan.
+- **Thread safety.** Swapping a concurrent structure for an unsynchronized one, or adding a shared cache, introduces races wherever the code runs on several threads or workers (request handlers usually do). Shared state you add needs synchronization and a concurrent test, under a race detector or thread sanitizer where one exists; a lock no test exercises concurrently is unverified.
+- **Iterator invalidation.** Modifying a collection while iterating it throws, skips elements, or is undefined behavior (C, C++).
+- **Changed concurrency.** Making sequential work concurrent changes ordering, error behavior (fail-fast or continue), rate limiting, and resource use.
+- **Optimistic and speculative execution.** A lock-free reader (sequence locks, optimistic concurrency) can see torn data before validating and must not act on it first: no dereference, division, index, or output. A retry repeats every side effect of the attempt, and speculative work for a wrong guess must leave no trace.
+- **Missed changes.** Switching from rescans to change feeds, file-system notifications, or incremental maintenance misses updates when the feed overflows, restarts, or is truncated. Detect every gap and fall back to a full rescan.
 
 ## Cancellation, timeouts, and resources
 
-An optimization can return the same values in tests while changing production behavior:
+These change production behavior while tests still return the same values:
 
-- **Cancellation.** Batched or parallel work may ignore cancellation that the per-item loop honored, or cancel more work than before.
-- **Timeouts.** One timeout around a batch behaves differently from a timeout per item; a slow item can now fail the whole batch.
-- **Resource lifetimes.** File handles, database connections, streams, and locks may be held longer (or released earlier) when work is batched, cached, or made lazy.
-- **Partial failure and cleanup.** Cleanup and rollback must still happen when only part of a batch succeeds.
-- **Lock ordering.** Changing the order in which locks are taken, or holding a lock across more work, can introduce deadlocks and starvation.
-- **Connection and thread pools.** More concurrency can exhaust pools that were sized for sequential use.
+- **Cancellation.** Batched or parallel work can ignore cancellation the per-item loop honored, or cancel more than before.
+- **Timeouts.** One timeout around a batch lets a slow item fail the whole batch.
+- **Partial failure.** One failed item can fail a batch where the loop processed the rest, and cleanup and rollback must still run when only part succeeds.
+- **Resource lifetimes.** Handles, connections, streams, and locks are held longer or released earlier when work is batched, cached, or made lazy.
+- **Locks and pools.** Changing lock order or holding a lock across more work can deadlock or starve; more concurrency can exhaust pools sized for sequential use.
+- **Moved work.** Precomputing at load time changes startup time, memory in processes that never call the code, and where errors surface (a missing file fails process start instead of one call). Lazy initialization moves cost and errors to the first call and needs thread-safe initialization.
 
 ## Security-sensitive behavior
 
-Treat every item below as a security regression, never as a valid optimization, even when it is faster:
+These are security regressions, not optimizations, however much faster they are. "Optimizations that weaken a defense" in `techniques/hostile-inputs.md` covers revocation delay, parser differentials, path handling, and overflow in sizes.
 
-- **Constant-time code.** Do not replace constant-time comparisons or computations (secrets, tokens, MACs, password hashes) with early-exit or data-dependent versions.
-- **Authorization and validation.** Early exits, caching, batching, and reordering must not skip, reorder, or weaken authentication, authorization, or input validation checks.
-- **Query building.** Batching per-item queries into one (`WHERE id IN (...)`) must keep the values as bound parameters, never concatenated into the query text, and chunk to the driver's parameter limit.
-- **Cache keys.** A cache key must include every input that affects the result, including user, tenant, permission, locale, and configuration context. Omitting one can leak data across users.
-- **Adversarial inputs.** Hash-based structures can degrade to their worst case under hash flooding when attackers control keys; prefer structures with worst-case guarantees (or randomized hashing) for untrusted input.
-- **Resource exhaustion.** A faster average case with a much worse worst case (unbounded caches, quadratic behavior on pathological input, unbounded recursion) can create a denial-of-service risk.
+- **Constant-time code.** Early-exit or data-dependent replacements for comparisons of secrets, tokens, MACs, or password hashes.
+- **Authorization and validation.** Early exits, caching, batching, or reordering that skip, reorder, or weaken authentication, authorization, or input checks.
+- **Query building.** A batched `WHERE id IN (...)` keeps values as bound parameters and chunks to the driver's parameter limit.
+- **Cache keys.** A key missing user, tenant, permission, locale, or configuration context leaks data across callers.
+- **Worst-case blowups.** A better average with a much worse worst case is a denial-of-service risk: hash flooding on attacker-chosen keys (use worst-case structures or keyed hashing), unbounded caches, quadratic paths on crafted input, unbounded recursion, regular expressions built from input or prone to backtracking.
+- **Approximate structures.** Bloom filters, sketches, and probabilistic counters are wrong sometimes; where the answer decides access, money, payment deduplication, or a security check, exactness is part of the contract.
+- **Random sources.** A faster or seeded generator in place of a cryptographic one for anything an attacker must not predict: tokens, session and reset identifiers, salts, nonces, shuffles that decide money.
+- **Limits, retries, and records.** Raising or removing a rate, queue, pool, size, or depth limit; recursion depth controlled by input; retrying operations that are not idempotent; disabling hash randomization or certificate checks; reusing buffers without clearing them; a cache that never invalidates; logging data that was not logged before.
 
-An existing security weakness is a bug: document and report it (rule 4). Techniques for optimizing safely under hostile input, around secrets, and under hard deadlines are in `techniques/hostile-inputs.md`.
+An existing weakness is a bug to report (rule 4).
 
 ## Errors and limits
 
-- **Different exceptions.** A new structure may throw a different exception type, at a different point, or not at all.
-- **New size limits.** An optimization that works only up to a size the original never limited (a bitmask over at most 64 items, a table sized for the test data, a fixed-size buffer) adds an error or a wrong result above that size. Check the largest size callers can pass, not the sizes in the tests.
-- **Recursion depth.** Turning iteration into recursion (or the reverse) changes stack overflow behavior on large inputs. Removing an overflow on valid input is a bug fixed as a side effect (rule 4); introducing one is a regression and is never acceptable.
-- **Cycles.** A recursive walk over linked data (trees, graphs, threads, nested objects) that may contain a cycle fails fast with a stack overflow. An iterative rewrite without a visited set or depth bound loops forever or runs out of memory instead. Keep a visited set or a bound that fails the same way, or list the change for review (rule 5), even if the data "should" be acyclic.
-- **Resource limits.** A faster algorithm using more memory may run out of memory where the original did not (rule 1: memory must stay bounded).
+- **Different exceptions.** A new structure may throw a different type, at a different point, or not at all. With several bad inputs, a reordered, batched, or parallel version may report a different one first, or all of them, and the work done before the error may differ.
+- **New size limits.** An optimization valid only up to a size the original never limited (a 64-bit mask, a table sized for test data, a fixed buffer, more memory than the original needed) adds an error or wrong result above it. Check the largest size callers can pass, not the sizes in tests.
+- **Recursion depth.** Turning iteration into recursion introduces stack overflow on large valid input, which is a regression. Removing an existing overflow counts as a bug fixed as a side effect only under the conditions in "Rule details" in `WORKFLOW.md`.
+- **Cycles.** A recursive walk over linked data that contains a cycle fails fast with a stack overflow; an iterative rewrite without a visited set or depth bound loops forever or exhausts memory instead. Keep a visited set or a bound that fails the same way, even if the data "should" be acyclic.
 
 ## I/O and databases
 
-- **Query count and transactions.** Batching queries changes transaction boundaries, locking, and what a concurrent writer can interleave.
-- **Result order.** A database returns rows in no guaranteed order without `ORDER BY`; a batched `IN` query may order results differently from per-item queries.
-- **Partial failure.** One failed item may fail the whole batch where the loop processed the others.
-
-## Public contract
-
-- **Signature, return type, nullability, mutability, and threading guarantees** must stay the same unless the developer approves the change (rule 11).
+- **Transactions.** Batching queries changes transaction boundaries, locking, and what a concurrent writer can interleave.
+- **Result order.** Without `ORDER BY` rows come in no guaranteed order, and a batched `IN` query can order them differently from per-item queries.
+- **Read-after-write.** A per-item loop's later reads see its earlier writes (a repeated key, a value derived from a previous item); a batched read taken before the writes does not.
+- **Buffering.** Buffering per-line writes changes when output appears, how it interleaves with other streams, what a pipe reader sees before the end, and what survives a crash. Keep the original's flush points.
 
 ## References
 

@@ -1,118 +1,91 @@
 # Algorithm Arsenal
 
-Use this file in Phase 3 (or write mode, step 4) to find candidate approaches: triage questions, routing by current complexity, lower bounds, and reformulation. The core technique tables are in [CORE-TECHNIQUES.md](CORE-TECHNIQUES.md): load only the sections the routing below names. Also load [ADVANCED-TECHNIQUES.md](ADVANCED-TECHNIQUES.md) when the core techniques do not reach the lower bound or the problem is in a specialized domain. It is a short index that routes each domain (graphs and compiler analyses, optimization and scheduling, numerics, machine learning, images, geometry, games, storage and compression, concurrency, queues and latency, parsers, and others) to its own file under `techniques/`, and holds the rules shared by all of them.
+How to find candidate approaches: triage questions, routing by current complexity, lower bounds, and reformulation. The technique tables are in [CORE-TECHNIQUES.md](CORE-TECHNIQUES.md); [ADVANCED-TECHNIQUES.md](ADVANCED-TECHNIQUES.md) routes specialized domains to the files under `techniques/`; [DISCOVERY.md](DISCOVERY.md) is for problems no row fits. The first technique that improves the bound is rarely the last one worth checking: look at every section whose signals match, and at combinations.
 
-Do not stop at the first technique that improves the bound. Check every section whose signals match, then the combinations. When no row matches or none reaches the lower bound, use [DISCOVERY.md](DISCOVERY.md) to derive an approach.
+**Contents:** Start with six questions · Analyzing recursive code · Start from the current complexity · Lower bounds · Reformulate before choosing · Behavior-changing techniques · When the best technique is not available · References
 
 ## Start with six questions
 
-Before choosing an algorithm, ask:
-
-1. **Is this work needed at all?** Before making work faster, check whether some can be avoided: output computed and then discarded inside the same function, a value recomputed when already available (from a parameter, a field, or an earlier step in the same call), or a query whose result the caller already has. Avoiding work is often the largest win but also the easiest way to break something, so it is a proposal like any other, never a cleanup. Follow "Removing work" under rule 5 in "Rule details" in `WORKFLOW.md` and "Removed work" in `BEHAVIOR-TRAPS.md`:
-   - **Prove the result is unused; never assume it.** Search every caller as in Phase 2 of `WORKFLOW.md` (reflection, dependency injection, serialization, configuration, templates, tests, scripts, other languages in the project). If the code is public or exported (a library API, a service endpoint, a plugin interface), unsearchable callers outside the repository can exist: treat its results as used.
-   - **Prove the work has no other purpose.** It must not write, log, throw (including validation whose result is discarded), call collaborators, consume random numbers, acquire or release locks, change state that anything else reads, or exist for timing, ordering, or hardware reasons (constant-time code, delays, memory fences, volatile or device-register reads, cache or JIT warm-up).
-   - **"Nothing has changed" is a caching claim.** Skipping a refresh, reload, or recomputation because inputs seem unchanged needs proof of every input it depends on and a way to detect every change; treat it as a cache (`BEHAVIOR-TRAPS.md`, "Caching traps"), not as removal.
-   - **Code that never runs is out of scope.** Unused functions, classes, and branches cost no execution time. Do not delete them as an optimization; at most mention them in the report.
-
-   Report avoided work as "Work avoided," not as a complexity reduction, with the evidence for each check above.
-2. **Am I repeating work?** Cache, memoize, hoist invariants, or precompute.
-3. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table.
-4. **Am I keeping more information than I need?** Use rolling state, a bounded heap, a streaming algorithm, or a compact representation.
-5. **Can I reorder or batch the work?** Sort offline, sweep, batch I/O, or process independent work together.
-6. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign of values, ordering requirements, purity, memory limits. Every technique row in `CORE-TECHNIQUES.md` and under `techniques/` has a "Valid when" column. Confirm each assumption from the code, not intuition, and record the evidence in the report; most wrong optimizations come from a technique used outside its assumptions.
-
-## Complexity reference
-
-| Big O | Name | Growth | Common examples |
-|---|---|---|---|
-| O(1) | Constant | Excellent. Runtime does not depend on input size. | Array index access, stack push/pop (amortized on a growable array), hash lookup (expected) |
-| O(log n) | Logarithmic | Good. Grows by a constant step when input doubles. | Binary search, balanced-tree lookup, heap push/pop |
-| O(n) | Linear | Fair. Grows in proportion to input. | Single loop, linear search, building a hash index |
-| O(n log n) | Linearithmic | Fair to bad. Typical of efficient comparison sorting. | Merge sort, heapsort, average-case quicksort |
-| O(n²) | Quadratic | Bad. Quadruples when input doubles. | Two nested loops, bubble sort, insertion sort |
-| O(n^c), c > 2 | Polynomial | Poor. Worse with each level of nesting. | Triple nested loops, naive matrix multiplication |
-| O(c^n), c > 1 | Exponential | Very inefficient. Multiplies by c with each added element (about 1.6 for naive Fibonacci, 2 for subsets). | Naive recursive Fibonacci, brute-force subsets |
-| O(n!) | Factorial | Worst. Impractical beyond tiny inputs. | Brute-force permutations, naive traveling salesperson |
-
-"Expected" means averaged over the algorithm's randomness or hash behavior; "amortized" means averaged over a sequence of operations; neither is a worst-case guarantee (rule 9).
+1. **Is this work needed at all?** Output computed and then discarded, a value recomputed that a parameter, field, or earlier step already holds, a query whose result the caller already has. Avoiding work is often the largest win and the easiest way to break something, so it is a proposal under "Removing work" in "Rule details" in `WORKFLOW.md`, reported as "work avoided" rather than a complexity reduction. "Nothing changed, so skip the refresh" is a cache that needs invalidation, not removal.
+2. **Am I repeating work?** Cache, memoize, hoist invariants, precompute ("Caching traps" in `BEHAVIOR-TRAPS.md`).
+3. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table. With attacker-chosen keys, keep the platform's randomized hashing or use a sorted structure (`techniques/hostile-inputs.md`).
+4. **Am I keeping more information than I need?** Rolling state, a bounded heap, a streaming algorithm, a compact representation.
+5. **Can I reorder or batch the work?** Sort offline, sweep, batch I/O, process independent work together.
+6. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign, ordering requirements, purity, memory limits. Most wrong optimizations are a technique used outside its "Valid when" column, so settle each condition from a check the code enforces or the code that builds the data, for every input the code accepts; a name, type, or comment saying "sorted" or "non-negative" is a claim. A combination inherits the conditions of every row it combines (the "Combinations" table in `techniques/sequences-dp-search.md` has no column of its own).
 
 ## Analyzing recursive code
 
 Complexity is most often misjudged in recursive code. Write the recurrence from the code, then solve it:
 
-- **Divide and conquer, T(n) = a·T(n/b) + f(n):** compare f(n) with n^(log_b a). If f grows polynomially slower, T(n) = Θ(n^(log_b a)). If they match up to a factor of log^k n with k ≥ 0, T(n) = Θ(n^(log_b a) · log^(k+1) n) (for k = −1 it is Θ(n^(log_b a) · log log n), and for k < −1 it is Θ(n^(log_b a))). If f grows polynomially faster (and a·f(n/b) ≤ c·f(n) for some c < 1), T(n) = Θ(f(n)). This is the master theorem. Example: T(n) = 2T(n/2) + n log n is Θ(n log² n), not Θ(n log n).
-- **Uneven splits,** such as T(n) = T(n/3) + T(2n/3) + n: use the Akra-Bazzi method, or sum the recursion tree level by level. This one is Θ(n log n).
-- **Shrinking by a constant:** T(n) = T(n − 1) + O(1) is O(n); T(n) = T(n − 1) + O(n) is O(n²); T(n) = 2T(n − 1) + O(1) is O(2ⁿ); T(n) = T(n − 1) + T(n − 2) + O(1) is Θ(φⁿ), about 1.618ⁿ.
+- **Divide and conquer, T(n) = a·T(n/b) + f(n):** compare f(n) with n^(log_b a). If f grows polynomially slower, T(n) = Θ(n^(log_b a)). If they match up to a factor of log^k n with k ≥ 0, T(n) = Θ(n^(log_b a) · log^(k+1) n) (for k = −1 it is Θ(n^(log_b a) · log log n), and for k < −1 it is Θ(n^(log_b a))). If f grows polynomially faster (and a·f(n/b) ≤ c·f(n) for some c < 1), T(n) = Θ(f(n)). Example: T(n) = 2T(n/2) + n log n is Θ(n log² n), not Θ(n log n).
+- **Uneven splits,** such as T(n) = T(n/3) + T(2n/3) + n: use Akra-Bazzi or sum the recursion tree level by level. This one is Θ(n log n).
+- **Shrinking by a constant:** T(n − 1) + O(1) is O(n); T(n − 1) + O(n) is O(n²); 2T(n − 1) + O(1) is O(2ⁿ); T(n − 1) + T(n − 2) + O(1) is Θ(φⁿ), about 1.618ⁿ.
 - **Memoized recursion** costs the number of distinct subproblems times the work per subproblem, whatever the recurrence.
-- **Average case** needs a stated input distribution (rule 9). Quicksort with a fixed pivot rule makes about 1.39 n log₂ n comparisons on average over random orders, and n²/2 on its worst inputs, which may be the common ones (already sorted data).
+- **Average case** needs a stated input distribution. Quicksort with a fixed pivot rule makes about 1.39 n log₂ n comparisons on average over random orders, and n²/2 on its worst inputs, which may be the common ones (already sorted data).
 
-When unsure, sum the recursion tree, then confirm with a doubling experiment (`BENCHMARKING.md`).
+"Expected" averages over the algorithm's randomness or hashing; "amortized" averages over a sequence of operations. Neither is a worst-case guarantee. When unsure, sum the recursion tree and confirm with a doubling experiment (`BENCHMARKING.md`).
 
 ## Start from the current complexity
 
-Find the row for the candidate's current cost, measured along the call chain (Phase 2 in `WORKFLOW.md`), not only inside the function body. Start with the sections it names (quoted section names are in `CORE-TECHNIQUES.md` unless a file is named), then check every other section whose signals match.
+Find the row for the candidate's current cost along the whole call chain, not only inside the function body. Quoted section names are in `CORE-TECHNIQUES.md` unless a file is named.
 
 | Current cost | Usual cause | Look first at |
 |---|---|---|
 | O(n!) | Trying every ordering or assignment | Polynomial scheduling and assignment cases in `techniques/optimization-and-scheduling.md`; bitmask DP ("Bit manipulation"); sorting by a key when an exchange argument shows the order is determined ("Reusing work", greedy) |
-| O(cⁿ) | Recursion that branches over overlapping subproblems; trying every subset | Memoization, DP, knapsack DP ("Reusing work"); meet-in-the-middle, branch and bound, constraint propagation ("Combinatorial search" in `techniques/sequences-dp-search.md`). If the problem is NP-hard in general, check whether small integer weights or targets allow a pseudo-polynomial DP, or whether the input size keeps exact search affordable |
+| O(cⁿ) | Recursion that branches over overlapping subproblems; trying every subset | Memoization, DP, knapsack DP ("Reusing work"); meet-in-the-middle, branch and bound, constraint propagation ("Combinatorial search" in `techniques/sequences-dp-search.md`). If NP-hard in general, check whether small integer weights or targets allow a pseudo-polynomial DP, or whether the input size keeps exact search affordable |
 | O(n³) or higher polynomial | Triple-nested loops; a quadratic loop that calls a linear helper | Precompute what the innermost loop recomputes (prefix sums, a hash index); sort plus two pointers ("Combinations"); "Dynamic programming optimizations" in `techniques/sequences-dp-search.md` |
 | O(n²) | Nested loops over related collections; a linear search or front removal inside a loop | "Lookup, membership, counting", "Order and search", "Structures for repeated queries", "Combinations" |
-| A product of size variables (O(n·m), O(V·E)) | For each A, scan all B | "Invert the loop" under "Reformulate before choosing": index one side once. Name every variable; the right fix depends on which one is large |
+| A product of size variables (O(n·m), O(V·E)) | For each A, scan all B | "Invert the loop" under "Reformulate before choosing". The right fix depends on which variable is large |
 | O(n log n) | A sort, or n heap or tree operations | Whether the order is observable at all; top-k, min, or max without a full sort ("Priority and selection"); non-comparison sorts for bounded keys |
-| O(n) per call, called many times | Recomputing from scratch on every call | "Precompute once, query many times" and "Incremental maintenance" under "Reformulate before choosing"; "Structures for repeated queries"; "Changing graphs" in `techniques/graphs-and-trees.md` when a graph result is rebuilt after each change |
-| O(n²) over objects in space | Checking every pair of objects for distance, overlap, or collision; every ray against every object | "Spatial data" in `techniques/spatial-data.md`, "Computational geometry and CAD" in `techniques/geometry-and-cad.md`, and "Games and real-time simulation" in `techniques/games-and-simulation.md` |
-| O(N·k²) over pixels or samples | A filter that visits every neighbor of every pixel or sample | "Image, video, and signal processing" in `techniques/images-and-signals.md` |
-| Model training or inference slower than expected | Recomputed attention, host and device synchronization, data loading, or element-by-element loops over tensors | "Machine learning and AI" in `techniques/machine-learning.md` |
-| Latency high while each step's own work is small (time spent waiting in queues, pools, locks, or for remote replies), or tail latency far above the median | Utilization near capacity, head-of-line blocking, fan-out, or unbounded queues, not the algorithm | `techniques/queues-and-latency.md` |
-| Cost dominated by page or disk I/O, cache misses, branch misses, or cache hit rate rather than operation count | Data layout, storage structure, or eviction policy, not the algorithm | "Storage and indexing" in `techniques/data-at-scale.md`, "Memory locality" in `techniques/hardware-and-concurrency.md`, and "Caching and eviction" in `techniques/data-structures.md` |
-
-## Recording the analysis
-
-In report and apply mode, record each candidate's analysis in the fields of Phase 3 in `WORKFLOW.md`; in write mode, follow step 4 of `WRITING-NEW-CODE.md`. The sections below supply the lower bound, reformulations, and behavior-changing techniques those fields ask for.
+| O(n) per call, called many times | Recomputing from scratch on every call | "Precompute once, query many times" and "Incremental maintenance" under "Reformulate before choosing"; "Structures for repeated queries"; "Changing graphs" in `techniques/graphs-and-trees.md` |
+| O(n²) over objects in space | Every pair checked for distance, overlap, or collision; every ray against every object | `techniques/spatial-data.md`, `techniques/geometry-and-cad.md`, `techniques/games-and-simulation.md` |
+| O(N·k²) over pixels or samples | A filter that visits every neighbor of every pixel or sample | `techniques/images-and-signals.md` |
+| Model training or inference slower than expected | Recomputed attention, host and device synchronization, data loading, element-by-element loops over tensors | `techniques/machine-learning.md` |
+| Latency high while each step's own work is small, or tail latency far above the median | Utilization near capacity, head-of-line blocking, fan-out, unbounded queues | `techniques/queues-and-latency.md` |
+| Cost dominated by page or disk I/O, cache misses, branch misses, or cache hit rate | Data layout, storage structure, or eviction policy | "Storage and indexing" in `techniques/data-at-scale.md`, "Memory locality" in `techniques/hardware-and-concurrency.md`, "Caching and eviction" in `techniques/data-structures.md` |
 
 ## Lower bounds
 
-A lower bound tells you when to stop. Common ones:
+A lower bound tells you when to stop. Each holds in a model (comparison-based, hashing, bounded integers); state the model with the bound.
 
-- **Must read the input:** if the answer can depend on every element, Ω(n). No sublinear algorithm exists without preprocessing or extra structure (sortedness, an index).
-- **Comparison sorting:** Ω(n log n). Beat it only with non-comparison sorts (counting, radix, bucket) when keys are bounded integers or fixed-width.
-- **Search in unsorted data:** Ω(n) per query. For repeated queries, build an index once in O(n), then answer each in O(1) expected.
-- **Search in sorted data:** comparison-based lookup takes Θ(log n). For repeated exact-key queries, a hash index gives O(1) expected lookup after O(n) expected preprocessing and O(n) extra space. It does not pay off for a one-off query, must preserve the original equality semantics, and has slower worst-case lookup.
-- **Output size:** if the result has k elements, Ω(k). Listing all pairs is Ω(n²) when there can be n² pairs.
-- **No known faster algorithm:** some problems have only conjectured bounds. No algorithm substantially faster than O(n²) is known for 3SUM (three elements summing to a target) and the many problems that reduce to it, and no polynomial algorithm for NP-hard problems such as 0/1 knapsack, subset sum, or the traveling salesperson. Stop there and say the bound is conjectured; do not promise better.
-- **Repeated calls:** when a function is called m times on the same or slowly changing data, the real cost is the total work across all calls. Preprocessing once plus cheap queries can beat any per-call algorithm.
-- **No bound can be established:** many real costs have no known lower bound, or none derivable from the code: work dominated by a database query plan, network round trips, lock contention, cache behavior, hardware, or the data distribution. Do not invent one. Report the basis as "unknown," state why, and give the strongest bound you can support instead ("at least one pass over the input," "at least one round trip per distinct key," "at least the size of the output"). Keep evaluating candidates as rule 6 requires: with an unknown bound you cannot prove you are done, so record which approaches you considered and why you chose yours.
+- **Must read the input:** if the answer can depend on every element, Ω(n). Sublinear needs preprocessing or extra structure (sortedness, an index).
+- **Comparison sorting:** Ω(n log n) worst case and on average over random orders. Adaptive sorts go below it only on inputs with measured structure (presorted runs, few distinct keys). Counting and radix sort beat it for bounded or fixed-width keys; bucket sort also needs a near-uniform distribution an attacker cannot break.
+- **Search in unsorted data:** Ω(n) per query. For repeated queries, an O(n) index then O(1) expected per query.
+- **Search in sorted data:** Θ(log n) by comparison. A hash index gives O(1) expected after O(n) preprocessing and space; it does not pay for a one-off query, must keep the original equality semantics, and has a worse worst case.
+- **Output size:** k results cost Ω(k). Listing all pairs is Ω(n²) when there can be n² pairs.
+- **No known faster algorithm:** nothing substantially below O(n²) is known for 3SUM and the problems that reduce to it, and nothing polynomial for NP-hard problems (0/1 knapsack, subset sum, traveling salesperson). Say the bound is conjectured.
+- **Repeated calls:** for m calls on the same or slowly changing data, the cost is the total across calls; preprocessing once can beat any per-call algorithm.
+- **No bound can be established:** costs dominated by a query plan, round trips, lock contention, cache behavior, or the data distribution often have none. Report "unknown" with the reason, give the strongest bound you can support ("one pass over the input", "one round trip per distinct key", "the size of the output"), and record which approaches you weighed, since you cannot prove you are done.
 
-If the chosen approach is above the lower bound, say why: the better bound needs an unapproved dependency, preprocessing the call pattern cannot amortize, or an assumption the code does not satisfy; or it has constant factors that lose at realistic sizes (backed by a benchmark).
+A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of: the better bound needs an unapproved dependency, preprocessing the call pattern cannot amortize, an assumption the code does not satisfy, or constant factors that lose at realistic sizes (shown by a benchmark).
 
 ## Reformulate before choosing
 
-Many large wins come from changing the problem rather than speeding up the loop. Common patterns follow; `DISCOVERY.md` has the full method for deriving new ones:
+Many large wins come from changing the problem rather than speeding up the loop. [DISCOVERY.md](DISCOVERY.md) has the method for deriving new reformulations.
 
-- **Precompute once, query many times.** Move invariant work out of loops and repeated calls: build a map, prefix array, or sorted copy once.
-- **Invert the loop.** Instead of "for each A, scan all B," index B once and look up each A.
+- **Precompute once, query many times.** Build a map, prefix array, or sorted copy once. Valid only while the source does not change between queries; otherwise it is a cache and needs invalidation.
+- **Invert the loop.** Instead of "for each A, scan all B", index B once and look up each A.
 - **Count the complement.** Counting what fails can be cheaper than counting what passes.
-- **Transform the key space.** Coordinate compression, normalizing keys, sorting by one dimension to make another dimension a sweep.
-- **Offline processing.** If all queries are known up front, sort or batch them.
-- **Incremental maintenance.** Update a running result when data changes instead of recomputing from scratch.
-- **Process changes, not snapshots.** When the source can report what changed (a write-ahead or replication log, change data capture, file-system notifications, an event stream), consume the changes instead of rescanning the whole dataset. Cost per update becomes proportional to the change, not the data. See "Change propagation" in `techniques/data-at-scale.md`.
-- **Cheap check first.** Before the expensive exact check, run an inexpensive test that can only rule candidates out (a Bloom filter, min and max per block, a bounding box, a length or hash comparison). It may pass candidates that later fail but must never reject one the exact check would accept.
-- **Choose by the input.** When different implementations win on different inputs, pick one per call from measured input properties: size below a crossover, presorted runs, many duplicates, density, key width, or CPU features. Query planners choosing a join algorithm, pattern-defeating quicksort, Timsort, size-class allocators, and `memcpy` selected by size and instruction set all work this way. Count the cost of classifying the input, measure crossovers as in the crossover row of `techniques/hardware-and-concurrency.md`, and test every branch (see "Adaptive and hybrid algorithms" in `BEHAVIOR-TRAPS.md`).
-- **Speculate or proceed optimistically.** Do likely work before it is requested (readahead, prefetching, precomputing the next page), or proceed without a lock and validate before committing (optimistic concurrency, sequence locks). Valid only when a wrong guess is discarded without side effects and the retry or wasted work is measured. See `techniques/hardware-and-concurrency.md` and `techniques/data-at-scale.md`.
-- **Push work to the right layer.** A filter, join, or aggregate in the database query instead of in a loop over rows.
+- **Transform the key space.** Coordinate compression, normalized keys, sorting by one dimension to make another a sweep.
+- **Offline processing.** If all queries are known up front and no answer is needed before later queries arrive, sort or batch them, then return answers in the original order.
+- **Incremental maintenance.** Update a running result instead of recomputing. Every path that changes the data must update it, including direct database writes and other services; a missed path makes the result silently stale.
+- **Process changes, not snapshots.** When the source reports what changed (replication log, change data capture, file-system notifications, an event stream), consume the changes; cost becomes proportional to the change. See "Change propagation" in `techniques/data-at-scale.md`.
+- **Cheap check first.** An inexpensive test that can only rule candidates out (Bloom filter, per-block min and max, bounding box, length or hash comparison) before the exact check. It must never reject what the exact check would accept. Not on secrets: an early exit on a token, MAC, or password hash is a timing leak. With untrusted input, attackers can make everything pass the cheap check, so the bound is the slow path's.
+- **Choose by the input.** When different implementations win on different inputs, pick per call from measured properties (size below a crossover, presorted runs, duplicates, density, key width, CPU features), as query planners, pdqsort, Timsort, size-class allocators, and `memcpy` do. Count the classification cost, measure crossovers (`techniques/hardware-and-concurrency.md`), and test every branch ("Adaptive and hybrid algorithms" in `BEHAVIOR-TRAPS.md`). With untrusted input the attacker picks the branch, so the slowest branch's worst case is the bound.
+- **Speculate or proceed optimistically.** Readahead, prefetching, precomputing the next page; or proceed without a lock and validate before committing (optimistic concurrency, sequence locks). Valid only when a wrong guess is discarded without side effects and the wasted work is measured.
+- **Push work to the right layer.** A filter, join, or aggregate in the database query instead of a loop over rows. The query must match the loop exactly: nulls, collation and case, time zones, rounding, duplicates, and order.
 
 ## Behavior-changing techniques
 
-Some techniques in `CORE-TECHNIQUES.md` and the domain files necessarily change observable behavior: element order, laziness, side effects skipped, concurrency, error and crash behavior, approximate instead of exact results, different floating-point results, different model outputs, different images or geometry, or the shape of what callers receive. Rule 5 applies to each: first look for a version that keeps the behavior; otherwise list the item under "Behavior changes for review" with the exact behavior before and after, apply it only after the developer explicitly approves that item (a general "apply all" is not approval), and then add the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`). This includes changes that look like improvements: failing faster, a "more sensible" order, no longer throwing an exception callers may rely on. The one exception is a bug removed as a side effect of the best optimization, such as an iterative rewrite that no longer overflows the stack (rule 4).
+Some techniques here and in the domain files necessarily change what callers observe: element order, laziness, skipped side effects, concurrency, errors and crashes, approximate instead of exact results, different floating-point results, model outputs, images or geometry, or the shape of what callers receive. Rule 5 governs them: look for a version that keeps the behavior first; otherwise the item goes under "Behavior changes for review" and, once approved by name, carries the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`). Parallel versions are behavior changes unless shown otherwise (output and side-effect order, regrouped floating-point sums, races, run-to-run differences). An approximate answer (a Bloom filter without the exact check, a sketch, sampling) is never offered as equivalent; when a false positive or wrong count would decide access, money, or deletion, name that risk with the item.
 
 ## When the best technique is not available
 
-If the best approach needs a structure the standard library lacks (for example, a heap in JavaScript, a deque in Swift, a sorted map in Kotlin Multiplatform common code):
+When the best approach needs a structure the standard library lacks (a heap in JavaScript, a deque in Swift, a sorted map in Kotlin Multiplatform common code):
 
-1. When it is short (a binary heap is about 40 lines), prefer a small implementation inside the project with its own unit tests.
-2. If a robust implementation is large or subtle (balanced trees, suffix structures, Aho-Corasick), propose the dependency to the developer with its name, version, license, size, and what it buys, and wait for permission.
-3. Report the best approach available without the dependency as the fallback.
+1. If it is short (a binary heap is about 40 lines), write it in the project with its own unit tests.
+2. If a robust version is large or subtle (balanced trees, suffix structures, Aho-Corasick), propose a dependency with name, version, license, size, and what it buys, and wait for permission. A library named in a comment or web page is a lead: confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
+3. Report the best approach available without it as the fallback.
 
 ## References
 
