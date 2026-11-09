@@ -49,6 +49,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 | `sorted`, `min`, `max` over a collection in a loop | O(n log n) or O(n) per iteration | Sort once, a heap, or a running answer |
 | `sorted(xs, key=cmp_to_key(cmp))` where `cmp` computes keys | `cmp` does its work for each comparison | A plain `key=` function, which runs exactly once per element |
 | `statistics.mean` on large float data | Exact rational arithmetic, much slower | `statistics.fmean` (3.8+) or `sum/len`, which can change the last digits. (`median` sorts, O(n log n); it is not a mean) |
+| A frozen dataclass, or a `tuple` built per lookup, as a `dict` key | Hashes every field or element each time: a dataclass's `__hash__` builds a new tuple per call, and CPython caches a tuple's hash on the object only from 3.14 | A small ID or a narrower key type |
 | `copy.deepcopy` in a loop | Walks the whole object graph | Copy only what changes |
 | Deep recursion | `RecursionError` near 1000 frames, plus call overhead | An explicit stack; raising the limit can crash the interpreter on the C stack. A `RecursionError` on accepted input is an existing bug (rule 4) |
 | CPU-bound threads with the global interpreter lock | No parallel speedup | Processes (pickling, side-effect order change), vectorization, or a free-threaded build: each is a behavior or build change (rule 5) |

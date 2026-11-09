@@ -19,7 +19,7 @@ Record the runtime (Node version, browsers, Deno, Bun, Hermes) and the ECMAScrip
 
 ### Not in the language
 
-No heap, deque, sorted map or set, balanced tree, trie, binary search, or multi-word bitset. A binary heap or ring-buffer deque written in the project with tests is short; for BFS, an array with a head index replaces `shift()`. A package is a new dependency (rule 7) unless the project already has one.
+No heap, deque, sorted map or set, balanced tree, trie, binary search, or multi-word bitset. For BFS, an array with a head index replaces `shift()`. Otherwise see "Packages" below, which offers a package beside a short in-project version (a binary heap or ring-buffer deque, with tests).
 
 ### Packages
 

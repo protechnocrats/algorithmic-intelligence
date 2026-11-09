@@ -27,7 +27,7 @@ When the computation sits inside a method that also does I/O or reads shared sta
 
 ### Pin what the change assumes
 
-When a change relies on something established elsewhere (data already sorted, keys unique, values non-null, a size limit), add a test that fails if that stops being true, driving the real code that establishes it. Analysis shows the assumption holds today; only a test protects it when someone changes that code later. If what establishes it cannot run in a test (a database ordering, another service), the assumption is unverified (rule 5).
+When a change relies on something established elsewhere (data already sorted, keys unique, values non-null, a size limit), add a test that fails if that stops being true, driving the real code that establishes it. Analysis shows the assumption holds today; only a test protects it when someone changes that code later. If what establishes it cannot run in a test (a database ordering no throwaway local database of the same engine can reproduce, another service), the assumption is unverified (rule 5).
 
 ## Setup
 
@@ -35,7 +35,7 @@ When a change relies on something established elsewhere (data already sorted, ke
 
 Give each version a fresh copy of the same fakes and inputs on every call, so one side's mutations cannot reach the other, and record every collaborator call for comparison.
 
-**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do, and fake every effect that leaves the process (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory). Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant. A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
+**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do, and fake every effect that leaves the machine, reaches a shared system, or cannot be bounded (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory). Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant. A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
 
 ### Changes to calls into other systems
 

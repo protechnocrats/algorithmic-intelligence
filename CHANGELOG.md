@@ -6,6 +6,23 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-08
+
+Makes 0.4.0 work the way it was meant to. Reading every file in the project turned up instructions that still contradicted each other, most importantly at the step where a report's items are approved: "go ahead" now starts apply mode everywhere. The order for finding a missing data structure is the same in every file, the facts below are corrected, and the README and contributor documents match the skill.
+
+### Fixed
+
+- **"Go ahead" after a report now works as intended.** A general approval starts apply mode for items that keep behavior, where one file still required naming each item. Behavior changes and anything no test can verify still need approval by name.
+- **The order for a structure missing from the standard library is now the same everywhere.** The advanced techniques, sorted-map and LRU rows, and the C, Kotlin, Swift, and JavaScript files follow it: a direct dependency, then a maintained package offered beside writing one.
+- **Tests fake only what leaves the machine, reaches a shared system, or cannot be bounded,** and a baseline test against a throwaway local database is kept.
+- **Over a hard memory budget the agent presents both costs and asks,** where one file dropped the approach without asking.
+- **Mode files now require the full data structure audit,** compact report items carry a prediction, and the list of reasons for not switching covers a pending dependency and a benchmark that showed no gain.
+- **Corrected facts:** a sorted array is O(log n), lexer minimization must keep tokens apart, compilers can change complexity, Kotlin's list set operations are O(n·m) in current versions, and Python's frozen dataclass and tuple keys hash every field.
+
+### Changed
+
+- **The README and contributor documents match the skill.** The README describes the data structure audit, the combined search for an algorithm and a structure, pin tests, and how a missing structure is found. `CONTRIBUTING.md` and `RELEASING.md` state the rules the project now follows.
+
 ## [0.4.0] - 2026-11-08
 
 Agents now audit every data structure on a hot path, name the tests each item will get, and write those tests before the first speed edit, however approval is worded. Testing starts from the project's own tests and pins the real entry point, and the technique and language files gain common hidden costs and recipes.

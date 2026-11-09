@@ -97,7 +97,7 @@ A named mode wins. Otherwise: specific existing code to make faster while keepin
 Whatever the mode, end with these lines so the developer can see at a glance what happened and what is pending (the mode files give the full format):
 - **Complexity:** before → after in every size variable, with the case, and the lower bound with its reason or "unknown, because …".
 - **Data structures:** each collection on a hot path, with its dominant operations, current cost, best structure, and the reason for not switching.
-- **Bugs noticed**, **Hazards noticed** (dangerous or suspicious things you came across, with file and line, whether or not they blocked you), **Commands not run** (and why), and **Waiting for approval**, each "none" when empty.
+- **Bugs noticed**, **Hazards noticed** (dangerous or suspicious things you came across, with file and line, whether or not they blocked you), **Commands not run** (and why), each "none" when empty, and, in a run where nobody could answer, **Waiting for approval**.
 
 ## Working efficiently
 

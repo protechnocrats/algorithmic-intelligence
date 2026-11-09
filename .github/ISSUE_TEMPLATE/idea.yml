@@ -1,5 +1,5 @@
 name: Idea or new technique
-description: A new technique, discovery method, language file, or evaluation case.
+description: A new technique, discovery method, or language file.
 labels: [enhancement]
 body:
   - type: textarea

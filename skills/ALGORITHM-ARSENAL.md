@@ -57,7 +57,7 @@ A lower bound tells you when to stop. Each holds in a model (comparison-based, h
 - **Repeated calls:** for m calls on the same or slowly changing data, the cost is the total across calls; preprocessing once can beat any per-call algorithm.
 - **No bound can be established:** costs dominated by a query plan, round trips, lock contention, cache behavior, or the data distribution often have none. Report "unknown" with the reason, give the strongest bound you can support ("one pass over the input", "one round trip per distinct key", "the size of the output"), and record which approaches you weighed, since you cannot prove you are done.
 
-A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of: the better bound needs an unapproved dependency, preprocessing the call pattern cannot amortize, an assumption the code does not satisfy, or constant factors that lose at realistic sizes (shown by a benchmark).
+A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of: the better bound needs an unapproved dependency, exceeds a hard memory budget (give the numbers), would change something callers rely on, preprocessing the call pattern cannot amortize, an assumption the code does not satisfy, or constant factors that lose at realistic sizes (shown by a benchmark).
 
 ## Reformulate before choosing
 
@@ -85,7 +85,7 @@ When the best approach needs a structure the standard library lacks (a heap in J
 
 1. **Check what the project already declares.** Read the manifest of the module in scope. If a direct dependency provides the structure, use it: it is not a new dependency. A transitive dependency does not count, since the project does not declare it and it can disappear in any update.
 2. **Offer a maintained package beside writing it.** When a first-party or well-maintained package provides the structure, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a comment or web page is a lead: confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
-3. **Write it in the project** when no such package exists, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request and waits for permission.
+3. **Write it in the project** when no such package exists, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request, or a proposal to write it when no package exists, and waits for the developer's decision.
 4. Report the best approach available without it as the fallback.
 
 ## References

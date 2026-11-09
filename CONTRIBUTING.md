@@ -21,10 +21,10 @@ Thank you for helping. This project is a skill: Markdown instructions that codin
 
 - **Put each instruction where it belongs.** A mandatory rule goes in `skills/SKILL.md`, stated briefly, with its full text in "Rule details" in `skills/WORKFLOW.md` and its steps in the file that carries it out. Anything else lives in exactly one file, and others point to it.
 - **Write for coding-tier models** such as Claude Sonnet and Opus. Every instruction must be followable without guessing: explicit, no shorthand, and an example where a rule is easy to misread.
-- **Keep sources out of loaded files.** Each skill file's references go in `skills/references/` at the same path (for example `skills/references/techniques/hostile-inputs.md`), and the file ends with a pointer to them. The one exception is `skills/languages/GENERIC.md`, whose references stay inline because the profile it builds copies them into the project.
-- **Keep generic files language-neutral.** Name concepts ("an operation that copies a collection"), not one language's functions. Language-specific names belong in `skills/languages/`.
+- **Keep sources out of loaded files.** A skill file that cites sources keeps them in `skills/references/` at the same path (for example `skills/references/techniques/hostile-inputs.md`) and ends with a pointer to them. A file with no sources of its own, such as a mode file, needs no reference file, and one that only routes to tables held elsewhere (`skills/DATA-STRUCTURES.md`) names their reference files instead. `skills/languages/GENERIC.md` has no references: each profile it builds records its own sources.
+- **Keep generic files language-neutral.** Name concepts ("an operation that copies a collection"), not one language's functions. Language-specific facts belong in `skills/languages/`; a generic file may use a function name only as a recognizable example of a pattern, and name a language only where platforms differ on the point being made.
 - **Keep references whole.** When you rename a file or a section, or renumber a rule, update every link, file name, quoted section name, and rule number that points at it. An agent that follows a reference to nothing skips that step.
-- **Do not trim instructions to save tokens.** Every file is loaded only when a step names it. Remove repetition, never content.
+- **Do not trim instructions to save tokens.** Every file except `skills/SKILL.md` is loaded only when a step names it. Remove repetition, never content.
 - **Measure behavior changes.** A change meant to alter what agents do should be tested before and after on the same cases, with and without the change.
 
 ## Reviewing changes to the skill
@@ -42,7 +42,7 @@ Every line of `skills/SKILL.md` is loaded on every run, so a rule there must ear
 
 ## Language companion files
 
-Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist, follow the structure of the existing files, and add a row to `skills/languages/INDEX.md`. A profile the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language and its standard library only, not frameworks. Cite official documentation for every complexity and ordering claim, and where a claim is implementation behavior rather than documented behavior, say so. Sources go in `skills/references/languages/<LANGUAGE>.md`, not in the language file, which ends with a pointer to them.
+Use [`skills/languages/GENERIC.md`](skills/languages/GENERIC.md) as the checklist, follow the structure of the existing files, add a row to `skills/languages/INDEX.md`, and link the file from the language row of the table in `skills/SKILL.md`. A profile the skill saved in your project (`.algorithmic-intelligence/languages/<LANGUAGE>.md`) is a good starting point. Cover the language, its standard library, and any first-party or well-maintained package that fills a gap the standard library leaves (what it provides and its behavior traps, confirmed in the official registry), not frameworks. Cite official documentation for every complexity and ordering claim, and where a claim is implementation behavior rather than documented behavior, say so. Sources go in `skills/references/languages/<LANGUAGE>.md`, not in the language file, which ends with a pointer to them.
 
 ## Evaluation
 
