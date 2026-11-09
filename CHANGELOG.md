@@ -6,6 +6,30 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-08
+
+Agents now audit every data structure on a hot path, name the tests each item will get, and write those tests before the first speed edit, however approval is worded. Testing starts from the project's own tests and pins the real entry point, and the technique and language files gain common hidden costs and recipes.
+
+### Added
+
+- **A required data structure audit.** A new `DATA-STRUCTURES.md` has the agent state, for every collection on a hot path, its dominant operations, the current structure's cost, the best structure, and the reason for not switching, with a short list of acceptable reasons. It chooses the structure that makes the dominant operation as cheap as possible, and extra memory that lowers time complexity is worth spending, whatever its size, as long as it fits the memory available. Report items, plans, write-mode decisions, and every final summary show the audit.
+- **Algorithm and data structure are searched together.** The agent also asks what structure would make a different algorithm possible, and recommends the lowest complexity reachable even when that needs a structure the code does not use yet and a rewrite on top of it. An easier partial improvement is listed as an alternative, never chosen because it is the easier edit.
+- **Tests follow the project and start at the real entry point.** Before writing any test the agent reads how nearby tests are built and follows them. Each hot path gets pin tests that drive the real entry point with real local collaborators, plus a seeded old-versus-new comparison of its pure functions. Anything that would leave the machine or reach a shared system is still faked.
+- **Buried hot paths are extracted first.** When a computation is buried in code that does I/O, the agent pins the entry point, extracts an internal pure function with no behavior change, and only then compares and optimizes it. Each language file says how a function stays internal yet visible to tests.
+- **Assumptions get their own test.** A change that relies on something established elsewhere (data already sorted, keys unique, a size limit) gets a test that fails if it stops being true.
+- **New techniques:** decorate-sort-undecorate for expensive sort keys, rank maps for `indexOf` sort keys, stable top-k for small k, dropping a sort over already-sorted data, single-pass minimum or maximum, bucket passes for boolean or enum sorts, deferred sorting, linear merges, running aggregates, bottom-up tree values, and avoiding sets rebuilt in a predicate, getters that copy in loops, copying slices in recursion, log arguments built when logging is off, and exceptions as control flow.
+- **Existing dependencies and maintained packages come before hand-written structures.** When the standard library lacks a structure, the agent reads the manifest of the module in scope and uses a direct dependency that provides it. Otherwise it offers a first-party or well-maintained package next to writing the structure in the project and lets the developer choose. Language files now name verified maintained packages, what each provides, and its behavior traps, including `swift-algorithms` alongside `swift-collections`, and profiles built for other languages record them too.
+- **Graph representations.** The agent chooses among adjacency lists, per-node sets, matrices, compressed sparse rows, and edge lists by density and by which operation dominates, and keeps neighbor order where it is observable.
+- **Sort keys flagged per language.** Every language file now says which sort APIs run the key on each comparison, including ones named like keyed sorts (Kotlin `sortedBy`, Java `Comparator.comparing`, Rust `sort_by_key`) and how to avoid it. Language files also gained missing entries for copying slices in recursion, hash key costs, and single-use iterators.
+- **New behavior traps:** key functions called a different number of times, reads moved by an extraction or a local snapshot, upstream order, which duplicate wins in an index, ties when a sort becomes a minimum or maximum, lazy logging arguments, and non-throwing variants.
+
+### Changed
+
+- **Regression guards prefer a deterministic count,** such as a sort key running exactly n times, over a timing threshold where the code exposes one.
+
+- **Differential tests come before the first speed edit, however approval is worded.** "Go ahead" or "implement the plan" after a report now starts apply mode, which opens `APPLYING.md` and `DIFFERENTIAL-TESTING.md` before any change. Every report item and plan names the tests it will get: the reference, what is compared, the inputs, and the planted difference they must catch.
+- **`techniques/data-structures.md` is now `techniques/specialized-structures.md`,** matching what it covers: hash table design, caches, filters, and other specialized structures.
+
 ## [0.3.1] - 2026-11-05
 
 Fixes and sources. The guard hooks ask about more of what the skill reserves for the developer, including git aliases checked as what they run; two facts are corrected; claims that had no source now have one; and the README matches the current skill and hooks.

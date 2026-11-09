@@ -12,7 +12,7 @@ A map of the repository for contributors: what each part does, what loads when, 
 
 The agent always loads `skills/SKILL.md` first. The description in its frontmatter is what makes agents load the skill at all: it says what the skill does and when to use it, in terms of the intent and the kind of work (something slow, costly, or scaling badly, however the symptom is put; code that processes, looks up, or moves data being written or changed), with one exclusion, and does not summarize the workflow or list trigger phrases, so any wording of that intent matches. `SKILL.md` is kept under about 5,000 tokens, with the safety sections first, because some agents keep only the start of a skill after compacting a long conversation. It holds each cross-cutting rule once, with its reason, and a table naming every other file with the moment to open it, so every file is one step from `SKILL.md`. The mode files hold the full form of the rules and the output formats; the technique and language files are reference material read when a step needs them.
 
-The skill is written for a capable model: goals, the reasons behind them, the heuristics that decide hard cases, and the facts a model may not know (hidden costs, preconditions, traps). It avoids step-by-step procedure the agent would follow anyway and lists of cases a stated principle already covers. When an evaluation finds a failure, the fix is the missing principle, routing, or fact, not the words of the case that failed.
+The skill is written for a capable model: goals, the reasons behind them, the heuristics that decide hard cases, and the facts a model may not know (hidden costs, preconditions, traps). It avoids step-by-step procedure the agent would follow anyway and lists of cases a stated principle already covers. A step agents are seen to skip gets a gate at the point of decision and a line in the output that shows it was done. When an evaluation finds a failure, the fix is the missing principle, routing, or fact, not the words of the case that failed.
 
 ```
                       SKILL.md  (always: mode, rules in brief, files to read first)
@@ -29,9 +29,12 @@ The skill is written for a capable model: goals, the reasons behind them, the he
         languages/<LANGUAGE>.md for each language in the code
         (or GENERIC.md, which loads or builds a profile saved in the project)
 
-   every mode, before writing any differential test (apply mode's tests, and
-   write mode's tests against a reference version):
+   every mode, before planning or writing any differential test (the plan in
+   a report, apply mode's tests, write mode's tests against a reference version):
         DIFFERENTIAL-TESTING.md
+
+   every mode, before choosing an approach:
+        DATA-STRUCTURES.md  (the audit of each hot-path collection)
 
    when a step routes to them:
         ALGORITHM-ARSENAL.md  (triage, lower bounds, routing by current complexity)
@@ -58,6 +61,9 @@ Each concept has one home; other files point to it.
 | Phases of report and apply mode | `WORKFLOW.md` (1–4), `APPLYING.md` (5–6) | — |
 | Reachability and entry points | `WORKFLOW.md`, Phase 2, step 2 | rule 8 |
 | Counting costs, lower bounds, routing | `ALGORITHM-ARSENAL.md` | rule 6 |
+| Pin tests, following existing tests, extracting buried hot paths, pinning assumptions | "Which tests to write" in `DIFFERENTIAL-TESTING.md` | Phase 3 in `WORKFLOW.md`; Phase 5 in `APPLYING.md` |
+| The data structure audit; the operation-mix table | `DATA-STRUCTURES.md` | rule 7; Phase 3 in `WORKFLOW.md`; the item formats in `REPORTING.md` |
+| Differential tests before the first speed edit, however approval was worded | "Differential tests come before the edit" in `SKILL.md` | Phase 4 in `WORKFLOW.md`; Phase 5 in `APPLYING.md` |
 | Known techniques | `CORE-TECHNIQUES.md`, `techniques/*.md` | — |
 | Finding new algorithms | `DISCOVERY.md` | — |
 | Verification levels, check the check, calls to other systems | `DIFFERENTIAL-TESTING.md` | rule 3, rule 5 |
@@ -70,7 +76,7 @@ Each concept has one home; other files point to it.
 | Reading commands before running them, and what never runs | "Before running a command" in `SKILL.md` | the test-suite step in `WORKFLOW.md`, Phase 1; the "Commands not run" line of each final summary |
 | Risky requests, runs where nobody can approve | "When the request itself is risky" in `SKILL.md` | — |
 | Speedups that weaken a security property | "Security-sensitive behavior" in `BEHAVIOR-TRAPS.md` | "When the request itself is risky" in `SKILL.md`; "Security is behavior" under rule 5 in `WORKFLOW.md` |
-| Required summary lines ("Complexity", "Bugs noticed", "Commands not run", "Hazards noticed", and "Waiting for approval" in runs where nobody can answer) | "Every final summary" in `SKILL.md` | each mode's final summary (`REPORTING.md`, `APPLYING.md`, `WRITING-NEW-CODE.md`); the Stop hook in `plugin/` checks the first four |
+| Required summary lines ("Complexity", "Bugs noticed", "Commands not run", "Hazards noticed", "Data structures", and "Waiting for approval" in runs where nobody can answer) | "Every final summary" in `SKILL.md` | each mode's final summary (`REPORTING.md`, `APPLYING.md`, `WRITING-NEW-CODE.md`); the Stop hook in `plugin/` checks the first four |
 | Language facts | `languages/<LANGUAGE>.md` | — |
 | Sources | `references/` | — |
 

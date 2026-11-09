@@ -15,7 +15,7 @@ Record the C standard (`-std=c99`, `c11`, `c17`, `c23`), the compiler and versio
 | Strings | `<string.h>` | `strlen` is O(n); `strcat` is O(destination + source) | Null-terminated; length is not stored |
 | Memory moves | `memmove`, `memcpy`, `memset` | O(n), highly optimized | `memcpy` requires non-overlapping regions |
 
-**Not in the standard library: hash maps, hash sets, balanced trees, heaps, queues, deques, bitsets, tries.** In order of preference: what the project already has (its own containers, or GLib, APR, klib, uthash, stb_ds if already a dependency); a small in-project implementation with its own tests (growable array, open-addressing hash table, see "Hash table design" in `techniques/data-structures.md`, binary heap, ring buffer, bitset over `uint64_t`); a new library, including a copied single-header one, is a dependency (rule 7).
+**Not in the standard library: hash maps, hash sets, balanced trees, heaps, queues, deques, bitsets, tries.** In order of preference: what the project already has (its own containers, or GLib, APR, klib, uthash, stb_ds if already a dependency); a small in-project implementation with its own tests (growable array, open-addressing hash table, see "Hash table design" in `techniques/specialized-structures.md`, binary heap, ring buffer, bitset over `uint64_t`); a new library, including a copied single-header one, is a dependency (rule 7).
 
 ## Hidden costs
 
@@ -29,6 +29,7 @@ Record the C standard (`-std=c99`, `c11`, `c17`, `c23`), the compiler and versio
 | `malloc`/`free` per element in hot loops | Allocator overhead, fragmentation | Preallocate, arena or pool, or elements in an array |
 | Linked lists in hot paths | A cache miss per node | Arrays or index-based links |
 | `sprintf`/`snprintf`/`printf` in hot loops | Format parsing and locking | Direct conversion, buffered output. A bounded call (`snprintf`, a length-checked copy) stays bounded: trading it for `sprintf` or `strcpy` is a buffer overflow |
+| A `qsort` comparator that parses, or calls `strlen` or `strtol` | Runs inside every comparison | Sort an array of structs holding the computed key and a pointer to the element; `qsort`'s tie order stays unspecified |
 | `qsort` on small or hot inputs | Indirect comparator calls | Specialized sort only if a benchmark shows it matters |
 
 ### Input handling and security
@@ -66,6 +67,7 @@ Use unsigned types. Shifting by at least the type width is undefined; so are lef
 ## Testing and benchmarking
 
 - **Tests:** the project's framework (Unity, CMocka, Check, Criterion, greatest), or a plain `assert` program. Makefiles, `configure`, and CMake (`execute_process`, custom commands) run shell commands; compiling the test program directly avoids them.
+- **Testing an extracted function:** keep it out of the public header: declare it in an internal header, or have the test include the `.c` file so a `static` function stays `static`.
 - **Sanitizers:** run differential tests with `-fsanitize=address,undefined`, and under Valgrind if the project uses it.
 - **Benchmarks:** the project's release flags (`-O0` or a sanitizer build measures something else). `clock_gettime(CLOCK_MONOTONIC)` or `QueryPerformanceCounter`, medians, results stored to a `volatile` sink. `perf` for hotspots and cache misses; Massif or heaptrack for peak heap.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): CBMC, including equivalence harnesses asserting `old(x) == new(x)` within bounds; KLEE; Frama-C with WP or E-ACSL.

@@ -9,3 +9,4 @@ Sources for the claims in `CORE-TECHNIQUES.md`. Read only to verify a claim.
 - Scott A. Crosby and Dan S. Wallach, "Denial of Service via Algorithmic Complexity Attacks," USENIX Security 2003: worst-case hashing and other expected bounds under attacker-chosen input.
 - Jakub Pachocki and Jakub Radoszewski, "Where to Use and How not to Use Polynomial String Hashing," *Olympiads in Informatics* 7 (2013): Thue-Morse strings collide under a modulus of 2^64 for every base; use a large prime modulus or two moduli.
 - PostgreSQL documentation, "EXPLAIN" (`ANALYZE` option executes the statement) and "ANALYZE" (planner statistics).
+- Folklore, no standard published source: decorate-sort-undecorate (the Schwartzian transform), stable bounded insertion for top-k, rank maps for custom sort orders, and bucket passes for sorts over few distinct keys. The Python Sorting HOWTO (docs.python.org/3/howto/sorting.html) describes decorate-sort-undecorate.

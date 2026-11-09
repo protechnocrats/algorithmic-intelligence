@@ -32,7 +32,7 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 - Absolute times with the percentage change, plus machine and runtime details.
 - Label every number measured or estimated (rule 8). Report what the runs gave, even when the developer expects a different result.
 - Benchmark harnesses stay out of production code.
-- **Offer a regression guard:** keep the benchmark in the project's tooling or as a CI job with a threshold against a recorded baseline. A test that checks a size-dependent count (comparisons, queries, allocations) is a stable alternative where the code exposes one; timing assertions in unit tests are flaky. Adding a CI job is a configuration change that needs approval.
+- **Offer a regression guard:** where the code exposes one, prefer a test that checks a size-dependent count (key-function calls, comparisons, queries, allocations), for example that a sort key ran exactly n times: it is deterministic, and it fails when the complexity regresses. Otherwise keep the benchmark in the project's tooling or as a CI job with a threshold against a recorded baseline; timing assertions in unit tests are flaky. Adding a CI job is a configuration change that needs approval.
 
 ## Component and end-to-end
 

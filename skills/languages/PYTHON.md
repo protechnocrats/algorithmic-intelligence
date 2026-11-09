@@ -9,7 +9,7 @@ Record the interpreter and version (`requires-python`, `.python-version`, CI mat
 | Structure | API | Key costs | Notes |
 |---|---|---|---|
 | Dynamic array | `list` | index O(1), `append`/`pop()` amortized O(1), `insert(0, x)`/`pop(0)` O(n), `in`/`index`/`remove`/`count` O(n), slice copy O(k) | |
-| Hash map | `dict` | O(1) expected | Insertion order guaranteed (3.7+) |
+| Hash map | `dict` | O(1) expected | Insertion order guaranteed (3.7+). Bounded LRU without `OrderedDict`: `pop` then reassign on a hit, evict `next(iter(d))` |
 | Hash set | `set`, `frozenset` | O(1) expected | No order guarantee; string order changes per process |
 | Counting, grouping | `Counter`, `defaultdict` | O(1) expected per update | `most_common(k)` is O(n log k) |
 | Double-ended queue | `collections.deque` | ends O(1); indexing toward the middle O(n) | `maxlen` gives a bounded ring buffer |
@@ -24,6 +24,17 @@ Record the interpreter and version (`requires-python`, `.python-version`, CI mat
 
 Not in the standard library: O(log n)-insert sorted containers (`sortedcontainers`), tries, interval trees, fast single-bit bitsets (`bitarray`), vectorized arrays (NumPy). Compiling hot code (Cython, mypyc, Numba, a Rust or C extension) is a build change (rule 5).
 
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`.
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `sortedcontainers` | `SortedList`, `SortedDict`, `SortedSet` | Its last release was in 2021, so check that this is acceptable to the project |
+| `more-itertools` | `unique_everseen`, `unique_justseen`, `minmax`, `argmin`, `argmax`, `sort_together` | No top-k helper: use `heapq.nsmallest` |
+| `cachetools` | `LRUCache`, `TTLCache`, `LFUCache`, and the `cached` decorator | The cache classes are not thread-safe: pass `lock` to `cached`. Exceptions are never cached. `foo(1)` and `foo(a=1)` are cached separately. `TTLCache` removes expired items lazily |
+| `bitarray` | `bitarray`, `frozenbitarray` (hashable) | Shifts keep the length, and a negative shift raises `ValueError` |
+
 ## Hidden costs
 
 | Pattern | Cost | Fix |
@@ -36,6 +47,7 @@ Not in the standard library: O(log n)-insert sorted containers (`sortedcontainer
 | `s[i:]` or `lst[1:]` in a loop or recursion | Each slice copies: O(n²) | Pass indices; `memoryview` for bytes |
 | `bisect.insort` to keep a growing list sorted | O(n²) total | `heapq` if only the minimum matters; sort once; `sortedcontainers` (ask) |
 | `sorted`, `min`, `max` over a collection in a loop | O(n log n) or O(n) per iteration | Sort once, a heap, or a running answer |
+| `sorted(xs, key=cmp_to_key(cmp))` where `cmp` computes keys | `cmp` does its work for each comparison | A plain `key=` function, which runs exactly once per element |
 | `statistics.mean` on large float data | Exact rational arithmetic, much slower | `statistics.fmean` (3.8+) or `sum/len`, which can change the last digits. (`median` sorts, O(n log n); it is not a mean) |
 | `copy.deepcopy` in a loop | Walks the whole object graph | Copy only what changes |
 | Deep recursion | `RecursionError` near 1000 frames, plus call overhead | An explicit stack; raising the limit can crash the interpreter on the C stack. A `RecursionError` on accepted input is an existing bug (rule 4) |
@@ -72,7 +84,7 @@ An `int` bitmask holds any number of flags, but every operation costs time propo
 - **Integer hashing is not randomized.** On 64-bit CPython, `hash(n)` is `n` mod 2⁶¹ − 1 (and `hash(-1) == hash(-2)`), so chosen integer keys collide, making `dict`, `set`, and `Counter` quadratic. String and bytes hashes are keyed per process unless `PYTHONHASHSEED` is set.
 - **Sorts are stable, heaps are not.** `heapq` ties compare the next tuple element, so `(priority, task)` raises `TypeError` for incomparable tasks; use `(priority, counter, task)`. `max`/`min` return the first extreme, `sorted(...)[-1]` the last. `sorted(x, reverse=True)` keeps equal elements in order; `sorted(x)[::-1]` reverses them.
 - **`defaultdict` inserts on read,** changing `in`, `len`, and iteration.
-- **Laziness.** `map`, `filter`, `zip`, and generators are single-use: a second pass, `len`, and indexing break, and side effects and exceptions move to consumption. `zip` truncates silently (`strict=True` since 3.10).
+- **Laziness.** `map`, `filter`, `zip`, and generators are single-use: a second pass silently sees nothing, `len` and indexing fail, and side effects and exceptions move to consumption. `zip` truncates silently (`strict=True` since 3.10).
 - **Floating point.** Since 3.12, `sum()` of floats is compensated, so it can differ from a `+=` loop; `math.fsum` rounds exactly. `round` rounds half to even.
 - **Floor division and modulo:** `-7 // 2 == -4`, `-7 % 2 == 1`.
 - **Negative indices wrap:** `table[i - offset]` with `i` below the offset reads from the end instead of failing.
@@ -84,6 +96,7 @@ An `int` bitmask holds any number of flags, but every operation costs time propo
 ## Testing, profiling, and benchmarking
 
 - **Tests:** pytest, `unittest`, doctest. pytest imports every `conftest.py` and auto-loads installed plugins; `pip install` (including `-e .`) runs `setup.py` and build backends; `tox.ini` and `noxfile.py` run arbitrary commands.
+- **Testing an extracted function:** a module-level function with a leading underscore, imported by the test.
 - **Property-based testing, if already present:** Hypothesis, including stateful testing (`RuleBasedStateMachine`); otherwise a seeded `random.Random(seed)`.
 - **Profiling:** `cProfile` (deterministic, inflates call-heavy code); py-spy (sampling, attaches to a process) or Scalene if installed; `tracemalloc` for allocations and peak memory.
 - **Benchmarks:** `timeit` for snippets; pyperf or pytest-benchmark if present. Account for garbage-collection pauses when the original runs with collection enabled.

@@ -33,7 +33,7 @@ The mandatory rules in `SKILL.md` apply as written, with these differences for n
 
 **Spend effort where it matters.** Code whose inputs are provably small and that does not run hot (both defined under rule 8 in "Rule details" in `WORKFLOW.md`) gets the simplest clear implementation and no summary entry. The rest gets the design below.
 
-**Choose the approach.** Count every call at its real cost, built-ins, library calls, and existing code included (rule 6). State the work as an abstract problem and use `ALGORITHM-ARSENAL.md` and the `CORE-TECHNIQUES.md` sections it routes to, checking each technique's "Valid when" column against the data. When nothing fits, derive an approach with `DISCOVERY.md` rather than falling back to the nested loop.
+**Choose the approach.** Count every call at its real cost, built-ins, library calls, and existing code included (rule 6). Choose each structure from the operations the code will perform on it (`DATA-STRUCTURES.md`). State the work as an abstract problem and use `ALGORITHM-ARSENAL.md` and the `CORE-TECHNIQUES.md` sections it routes to, checking each technique's "Valid when" column against the data. When nothing fits, derive an approach with `DISCOVERY.md` rather than falling back to the nested loop.
 
 When input comes from users or other systems, the design holds under hostile input from the start, because retrofitting a limit later changes the contract: validate before expensive work, bound sizes, counts, and nesting depth, choose worst-case structures or keyed hashing for attacker-chosen keys, and key caches by user, tenant, and permissions. `techniques/hostile-inputs.md` and "Security-sensitive behavior" in `BEHAVIOR-TRAPS.md` have the specifics. None of these is traded for speed without the developer approving that specific trade ("When the request itself is risky" in `SKILL.md`).
 
@@ -67,6 +67,7 @@ End with the normal summary of the work, then a short **Performance decisions** 
 ```
 - <location>: <what it does>
   Size: <assumption> (<source>; <conflicting source and number, if any>)
+  Data structures: <each structure, the operations it serves, and why it suits them>
   Approach: <choice>, over <rejected alternative> because <reason> [derived]
   Memory: <bound and bytes across all copies, vs. the limit compared with>   (caches, memo tables, indexes only)
   Verified: <level> against <reference version | contract checks>
@@ -74,4 +75,4 @@ End with the normal summary of the work, then a short **Performance decisions** 
 
 After the entries, list as applicable: bottlenecks in existing code, as proposed items awaiting a decision; dependencies you would have used but did not; which claims are measured and which estimated.
 
-Close with the lines from "Every final summary" in `SKILL.md`: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Bugs noticed, Hazards noticed, Commands not run, and Waiting for approval.
+Close with the lines from "Every final summary" in `SKILL.md`: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Data structures, Bugs noticed, Hazards noticed, Commands not run, and Waiting for approval.

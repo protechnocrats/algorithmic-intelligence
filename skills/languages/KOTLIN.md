@@ -34,7 +34,7 @@ Do not swap existing Java structures for this preference alone: behavior differs
 |---|---|---|---|
 | Dynamic array | `mutableListOf`, `ArrayList` | get/set O(1), append amortized O(1), front insert/remove O(n), `contains` O(n) | `listOf` is read-only, not immutable |
 | Hash set / map | `hashSetOf`, `hashMapOf` | O(1) expected; worst case under "Unkeyed hashing" | No order guarantee |
-| Insertion-ordered set / map | `mutableSetOf`, `setOf`, `mutableMapOf`, `mapOf`, `toSet()`, `associate*`, `groupBy` | O(1) expected | All preserve insertion order |
+| Insertion-ordered set / map | `mutableSetOf`, `setOf`, `mutableMapOf`, `mapOf`, `toSet()`, `associate*`, `groupBy` | O(1) expected | All preserve insertion order. Bounded LRU in common code: `remove` then `put` on a hit (a plain `put` keeps the old position), evict `keys.first()` |
 | Double-ended queue | `kotlin.collections.ArrayDeque` | both ends O(1) amortized, indexed get O(1) | Common code |
 | Sorted set / map | `sortedSetOf`, `sortedMapOf` | O(log n) | JVM only |
 | Priority queue | `java.util.PriorityQueue` | offer/poll O(log n), `remove(x)` O(n) | JVM only |
@@ -42,6 +42,17 @@ Do not swap existing Java structures for this preference alone: behavior differs
 | Bitset, enum set / map | `java.util.BitSet`, `EnumSet`, `EnumMap` | O(1) per bit, O(n/64) bulk | JVM only |
 | Lazy pipeline | `asSequence()` | No intermediate lists | Changes evaluation order; can be slower on small inputs |
 | Persistent collections | `kotlinx.collections.immutable` | Updates share storage instead of copying | Experimental pre-1.0 dependency; replaces copy-per-update state (`state = state + item`) |
+
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`. On the JVM, Java's packages apply too (`JAVA.md`).
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `org.jetbrains.kotlinx:kotlinx-collections-immutable` | `PersistentList`, `PersistentSet`, `PersistentMap` and builders, on all targets | Its API is experimental. `persistentSetOf` and `persistentMapOf` keep insertion order; the `persistentHash*` forms do not |
+| `androidx.collection:collection` (Google Maven, Kotlin Multiplatform) | `LruCache`, `ScatterMap` (a flat hash table), `MutableIntList`, `MutableLongList`, `LongSparseArray` | `SieveCache` is also there and is not an LRU: its eviction order differs |
+
+No maintained multiplatform sorted map or priority queue from JetBrains or Google was found: use `expect`/`actual`, or write one in the project with tests.
 
 ## Hidden costs
 
@@ -54,6 +65,11 @@ Do not swap existing Java structures for this preference alone: behavior differs
 | `removeAt(0)` as a queue; `remove` inside an index loop | O(n) per removal | `ArrayDeque.removeFirst()`; `removeAll { }`/`retainAll { }` filter in place in O(n) *(measured)* |
 | `windowed(k)` then aggregating each window | O(n·k) allocation | A sliding aggregate: O(n) |
 | `sorted()`, `sortedBy`, `maxBy` inside a loop | O(n log n) or O(n) per iteration | Sort once, or a `TreeMap` or heap |
+| `sortedBy { parse(it) }`, `sortedByDescending`, `sortedWith(compareBy { parse(it) })` | Named like a keyed sort, but the selector runs for both elements on every comparison, with no caching: about 2·n log n calls | `map { parse(it) to it }.sortedBy { it.first }.map { it.second }` (the sort is stable, so ties keep their order). Not needed for a property read |
+| `sortedBy { order.indexOf(it) }` | O(n·m log n) | A map from value to first index, built once; missing values rank −1 as `indexOf` does |
+| `filter { it in other.toSet() }` | Rebuilds the set per element | Build it once outside the lambda |
+| `drop(1)` in recursion | `drop` builds a new list: O(n²) | Pass indices, or `subList` (a view, so changes to the base show through) |
+| `toInt()` in `try`/`catch` in a hot loop | A stack trace per failed parse | `toIntOrNull()` |
 | `groupBy { }.mapValues { it.value.size }` | Builds every group's list | `groupingBy { }.eachCount()` |
 | `containsKey(k)` then `get(k)` | Two lookups | `get` with a null check, or `getOrPut` (null-value trap) |
 | A sequence consumed by two terminal operations | Re-runs the chain | `toList()` once |
@@ -102,6 +118,7 @@ Shift counts use the low 5 (`Int`) or 6 (`Long`) bits: `1 shl 32 == 1`, `1L shl 
 ## Testing, profiling, and benchmarking
 
 - **Tests:** JUnit, `kotlin.test`, Kotest. Gradle scripts, `buildSrc`, convention plugins, and compiler plugins run code during the build; `gradlew` downloads the distribution its properties file names.
+- **Testing an extracted function:** `internal`; the test source set can see the main source set's `internal` declarations. `internal` is `public` to Java callers and only its member names are mangled in bytecode, so it hides nothing from Java code in the same project.
 - **Property-based testing, if already present:** Kotest property testing, whose `Exhaustive` generators enumerate small domains (level 3); jqwik.
 - **Profiling:** async-profiler or Java Flight Recorder on the JVM; `perf` or Instruments for Kotlin/Native.
 - **Benchmarks:** kotlinx-benchmark or JMH if present (`-prof gc` for allocation); otherwise `System.nanoTime()` with warmup and medians.

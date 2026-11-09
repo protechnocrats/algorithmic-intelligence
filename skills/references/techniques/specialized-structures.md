@@ -1,6 +1,6 @@
-# References for `techniques/data-structures.md`
+# References for `techniques/specialized-structures.md`
 
-Sources for the claims in `techniques/data-structures.md`. Read only to verify a claim.
+Sources for the claims in `techniques/specialized-structures.md`. Read only to verify a claim.
 
 - Burton H. Bloom, "Space/Time Trade-offs in Hash Coding with Allowable Errors," *CACM* 13(7), 1970; Bin Fan et al., "Cuckoo Filter: Practically Better Than Bloom," CoNEXT 2014.
 - George Varghese and Tony Lauck, "Hashed and Hierarchical Timing Wheels" (1987).

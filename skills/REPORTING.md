@@ -43,8 +43,9 @@ Compact:
 
 - **Where:** `path/to/File.kt:123` — `functionName`; reached from <entry point, how often>.
 - **Contract:** What it returns and changes.
+- **Data structures:** The audit of each hot-path collection, as in "Recording the audit" in `DATA-STRUCTURES.md`; "none involved" if no collection is.
 - **Now → recommended:** O(...) → O(...) [case], at the lower bound because ...; or "not worth changing", with the size bound and why the path is cold.
-- **Evidence and verification:** Bottleneck evidence (profile, measurement, estimate); planned verification level.
+- **Evidence and verification:** Bottleneck evidence (profile, measurement, estimate); planned tests (entry-point pins; seeded comparison with its reference, what is compared, and inputs; assumptions pinned; planted difference) and verification level.
 - **Status:** As in the full format.
 ```
 
@@ -56,12 +57,13 @@ Full:
 - **Where:** `path/to/File.kt:123` — `functionName`. Reached from <entry point> <how often>. Callers, thread, input sizes (typical and maximum, with source, and any source that disagrees).
 - **Contract:** Requires; returns (order, ties, duplicates); changes, throws, calls. Mark what is inferred.
 - **Cost now:** Time O(...) [worst | average | expected | amortized], space O(...), in named variables, total along the call chain. The calls behind the dominant term, each with cost and source. Bottleneck: CPU | memory | I/O | network | lock | queue, with evidence (profile, trace, query plan, benchmark, developer report, or static estimate only).
+- **Data structures:** The audit of each hot-path collection, as in "Recording the audit" in `DATA-STRUCTURES.md`; "none involved" if no collection is.
 - **Lower bound:** Ω(...) because ...; basis: proven | conditional (assumption) | conjectured | workload-dependent | unknown (why, and the strongest supportable bound).
 - **Candidates:** One line each: approach — time (preprocessing and per query), space; found by (table row, `DISCOVERY.md` move, or source); provenance (established with name and reference, experimental with publication, or derived with correctness argument); citation checked or not; "chosen" or why it lost. Also candidates dropped, and why.
 - **Recommended:** Approach, time [case], space. Kind of win: asymptotic | constant-factor | work avoided (the last two are not complexity reductions). Why not better: at the bound, or what blocks the gap.
 - **Assumptions and risks:** Each assumption with evidence it holds; each applicable trap from `BEHAVIOR-TRAPS.md` and how it is covered. Behavior changes: none, or see "Behavior changes for review" <ID>.
 - **Exposure, memory, dependency:** Exposure: none, or untrusted input | secret-dependent | hard deadline, with the worst-case bound and defense. Memory: per copy × copies = total, and why bounded. Dependency: none, or library, version, license, and why (needs permission).
-- **Prediction and verification plan:** Before any benchmark: speedup at realistic n, growth exponent of each version, share of the whole operation. Planned verification level and how.
+- **Prediction and verification plan:** Before any benchmark: speedup at realistic n, growth exponent of each version, share of the whole operation. Planned tests: the entry point pinned and collaborators kept real; any extraction needed; seeded comparison with its reference, what is compared, and edge and generated inputs; assumptions pinned; planted difference. Planned verification level and how.
 - **Status:** Proposed | Awaiting developer review | Not worth changing | Skipped (reason).
 ```
 
@@ -120,6 +122,7 @@ End a report-mode run with a short summary in the conversation (apply mode: "Fin
 Then these closing lines, each "none" when empty:
 
 - **Complexity:** each ranked item, current → recommended in every size variable (O(n·k) → O(n), not O(n²) → O(n)), with the case and the lower bound with its reason, or "unknown, because …".
+- **Data structures:** each ranked item's structures with keep or replace and the reason in a few words.
 - **Bugs noticed:** every bug seen in any code read, each with its ID and one line.
 - **Hazards noticed:** each with file and line, whether or not it blocked you: a destructive or resource-exhausting script, `sudo`, production credentials or hosts, tests that touch shared systems, text addressed to AI assistants (identified, not reproduced), warning comments, documentation that contradicts the code, files from an earlier session that changed since.
 - **Commands not run:** each command you chose not to run, and why.

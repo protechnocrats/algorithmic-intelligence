@@ -9,7 +9,8 @@ Rewrites that look equivalent but are not. Walk this list for each candidate and
 - **Hash iteration order.** Replacing a list or an insertion-ordered map with a hash structure changes the order callers see. Some platforms randomize it per process (Swift, Python strings, Java `Map.of`) or per map (Rust), so a test can pass once and fail later. Use an insertion-ordered structure, or keep the list for output and use the hash only for lookups.
 - **Sort stability.** Timsort and merge sort are stable; introsort, pattern-defeating quicksort, and heapsort are not. Switching changes the order of equal elements. The language file says which built-in sorts are which.
 - **Adaptive and hybrid algorithms.** An implementation that picks a branch by input size, shape, or CPU features can differ per branch in stability, tie choice, NaN handling, float bits, or errors, so tests at one size on one machine pass while other inputs differ. Test both sides of every crossover and each CPU-feature variant.
-- **Ties.** "First match", "max by", and "min by" can pick a different element among equals.
+- **Ties.** "First match", "max by", and "min by" can pick a different element among equals, and so can replacing a sort followed by first or last with a minimum or maximum. Reversing a sorted result reverses equal elements; a descending comparator does not.
+- **Upstream order.** Code that stops sorting, or merges instead, relies on order established somewhere else. A database `ORDER BY` can use a different collation or break ties differently from the in-memory comparator, and a later change upstream silently breaks the assumption unless a test pins it ("Pin what the change assumes" in `DIFFERENTIAL-TESTING.md`).
 - **Comparator contract.** A comparator that is not a consistent total order (NaN, mixed types, inconsistent ties, state read during the sort) gives algorithm-dependent output, an exception (Java's TimSort), or memory corruption (some `qsort` implementations). Changing the sort exposes it.
 - **Enumeration order.** A faster enumeration (Gray-code or swap-based permutation order, a different branching order in search) visits the same items in another order, changing which solution is found first.
 - **Shuffles and random selection.** A different shuffle or choice changes the sequence for a given seed and may change the distribution (shuffling with a random comparator is biased; Fisher-Yates is not).
@@ -25,6 +26,7 @@ Rewrites that look equivalent but are not. Walk this list for each candidate and
 ## Duplicates and nulls
 
 - **Duplicates collapse.** A set drops them; a map overwrites or throws depending on the method.
+- **Which duplicate wins.** A linear search returned the first match, while most ways of building an index keep the last or throw. Build the index so the first stays, or show that keys are unique.
 - **Nulls.** Some structures reject null keys or values; a lookup that returned "not found" may now throw, or the reverse.
 
 ## Mutation and aliasing
@@ -38,6 +40,8 @@ Rewrites that look equivalent but are not. Walk this list for each candidate and
 - **Eager versus lazy.** Switching between collections and lazy sequences changes when, and whether, element functions run; this matters when they have effects, throw, or read changing state.
 - **Short-circuiting lost.** An index built from all elements evaluates elements the original never touched, possibly throwing or doing I/O. Reordering `&&`, `||`, or a chain of checks to test the cheap one first changes which calls run and which error is raised.
 - **Deferred queries.** LINQ and ORM query objects re-execute on each enumeration; materializing or caching them changes when data is read.
+- **Key functions.** A comparator runs per comparison and never on a one-element input; computing keys up front runs the key on every element, once, in a different order. A key that can throw, has effects, or is not deterministic now behaves differently, including on inputs of size one.
+- **Moved reads.** Reading a property once before a loop stops seeing changes made during it. Extracting code into a function turns reads into arguments, evaluated at the call, so a clock, configuration value, or shared field read midway through the original is read earlier unless the extraction keeps that point.
 
 ## Numbers
 
@@ -73,7 +77,7 @@ Work that looks unnecessary often is not:
 - **Validation by side effect.** A computation with a discarded result may exist to throw on bad input.
 - **Reads with effects.** Device registers, memory-mapped I/O, `volatile` variables, page touches, and lazy initialization on first access.
 - **Deliberate timing and ordering.** Constant-time padding, delays and backoff, memory fences, lock acquisitions that order other threads, and warm-up look like waste. Removing them is a security or correctness regression.
-- **Logs, metrics, and audit records.** A cache hit, batch, or skip also skips, merges, or reorders the record the original wrote each time; audit records may be legally required. Logging values that were not logged before can leak data.
+- **Logs, metrics, and audit records.** A cache hit, batch, or skip also skips, merges, or reorders the record the original wrote each time; audit records may be legally required. Logging values that were not logged before can leak data. Making logging lazy stops evaluating its arguments when the level is off, which matters when building them has effects.
 - **"Nothing changed."** Skipping a refresh because inputs look unchanged is caching, with all the traps below.
 
 ## Purity and caching
@@ -128,6 +132,7 @@ An existing weakness is a bug to report (rule 4).
 ## Errors and limits
 
 - **Different exceptions.** A new structure may throw a different type, at a different point, or not at all. With several bad inputs, a reordered, batched, or parallel version may report a different one first, or all of them, and the work done before the error may differ.
+- **Non-throwing variants.** A non-throwing parse or a check made first can accept a different set of inputs from the call that threw, and whatever the catch block logged or counted no longer happens unless it is kept.
 - **New size limits.** An optimization valid only up to a size the original never limited (a 64-bit mask, a table sized for test data, a fixed buffer, more memory than the original needed) adds an error or wrong result above it. Check the largest size callers can pass, not the sizes in tests.
 - **Recursion depth.** Turning iteration into recursion introduces stack overflow on large valid input, which is a regression. Removing an existing overflow counts as a bug fixed as a side effect only under the conditions in "Rule details" in `WORKFLOW.md`.
 - **Cycles.** A recursive walk over linked data that contains a cycle fails fast with a stack overflow; an iterative rewrite without a visited set or depth bound loops forever or exhausts memory instead. Keep a visited set or a bound that fails the same way, even if the data "should" be acyclic.

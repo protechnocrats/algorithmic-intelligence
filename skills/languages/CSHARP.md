@@ -8,21 +8,33 @@ Record the target framework and runtime: several APIs below name the .NET versio
 
 | Structure | API | Key costs | Notes |
 |---|---|---|---|
-| Dynamic array | `List<T>` | index O(1), `Add` amortized O(1), `Insert(0, x)`/`RemoveAt(0)` O(n), `Contains`/`IndexOf`/`Remove(item)` O(n) | |
+| Dynamic array | `List<T>` | index O(1), `Add` amortized O(1), `Insert(0, x)`/`RemoveAt(0)` O(n), `Contains`/`IndexOf`/`Remove(item)` O(n) | `BinarySearch` on sorted data, as on arrays |
 | Hash map / set | `Dictionary<K,V>`, `HashSet<T>` | O(1) average | Enumeration order unspecified |
-| Sorted map | `SortedDictionary<K,V>` | O(log n) | Red-black tree |
+| Sorted map | `SortedDictionary<K,V>` | O(log n) | Red-black tree. No floor, ceiling, range, `Min`, or `Max` of its own: use `SortedSet<T>` for those |
 | Sorted list | `SortedList<K,V>` | O(log n) lookup, O(n) insert and remove | Array-backed; for mostly-read data |
 | Sorted set | `SortedSet<T>` | O(log n); `GetViewBetween`, `Min`, `Max` | |
 | Queue / stack | `Queue<T>`, `Stack<T>` | O(1) amortized | |
 | Linked list | `LinkedList<T>` | O(1) insert/remove at a node; O(n) search | |
-| Priority queue | `PriorityQueue<TElement, TPriority>` (.NET 6+) | O(log n) | No priority update; equal priorities not FIFO |
+| Priority queue | `PriorityQueue<TElement, TPriority>` (.NET 6+) | O(log n) | No in-place priority update; re-prioritize by lazy deletion. `Remove` (.NET 9+) is a linear scan, and which of several equal elements it removes is not deterministic. Equal priorities not FIFO |
 | Bitset | `BitArray` | O(1) per bit, O(n/32) bulk | |
 | Read-optimized | `FrozenDictionary`, `FrozenSet` (.NET 8+) | Faster lookups, slower creation | Built once, read many times |
 | Immutable | `ImmutableArray<T>`, `ImmutableList<T>`, `ImmutableDictionary` | `ImmutableList` index is O(log n) (a tree); `ImmutableArray` is O(1) | |
 | Concurrent | `ConcurrentDictionary`, `ConcurrentQueue`, `Channel<T>` | O(1) average | Keep thread-safety when replacing |
 | Low-allocation | `Span<T>`, `Memory<T>`, `ArrayPool<T>`, `stackalloc`, `StringBuilder` | Avoid copies and allocations | See traps |
 
-Not in the base library: deque, interval tree, trie, multimap.
+Not in the base library: deque, interval tree, trie, multimap, bounded LRU cache, sorted multiset.
+
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`.
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `morelinq` | `PartialSort`, `PartialSortBy` (top-k), `DistinctBy` | Stability is not stated: test ties against the original |
+| `BitFaster.Caching` | `ConcurrentLru`, `ConcurrentLfu` | Both are approximate: `ConcurrentLru` is a pseudo-LRU on the 2Q policy, so eviction differs from a strict LRU |
+| `Microsoft.Extensions.Caching.Memory` | `MemoryCache` | Not an LRU: it compacts by expiry and priority before recency. With `SizeLimit` every entry must set a size, and an entry that would exceed the limit is not cached. `GetOrCreate` is not atomic. Expiration is not done in the background |
+
+`Microsoft.Experimental.Collections` (`MultiValueDictionary`) is deprecated; for a multimap use `Dictionary<K, List<V>>`. No maintained deque package was verified: write a ring buffer in the project with tests.
 
 ## Hidden costs
 
@@ -33,6 +45,9 @@ Not in the base library: deque, interval tree, trie, multimap.
 | `ElementAt(i)` in a loop over an `IEnumerable` | O(n²) | Materialize |
 | `list.Contains(x)` inside `Where`; `First(x => x.Id == id)` in a loop | O(n·m) | `HashSet<T>` or `ToDictionary` once (throws on duplicate keys) |
 | `OrderBy` inside a loop | O(n log n) per iteration | Sort once |
+| `list.Sort((a, b) => Parse(a).CompareTo(Parse(b)))` | `Parse` runs inside every comparison | Compute keys first, then `Array.Sort(keys, items)`. LINQ `OrderBy` computes each key once before sorting (dotnet/runtime behavior, not documented), but it is stable where `List.Sort` is not, so moving between them changes ties |
+| `list.GetRange(1, n)` in recursion | Copies each call: O(n²) | Pass indices, or `Span<T>.Slice` |
+| A `record` with many members as a `Dictionary` key | Its `GetHashCode` combines every member | A small ID or a narrower key type |
 | `Remove(item)` or `RemoveAt(0)` in a loop | O(n²) | `RemoveAll(predicate)`, `Queue<T>`, or a new list |
 | `string +=` in a loop | O(n²) | `StringBuilder`, `string.Join` |
 | `new Regex(...)` in hot code | Recompiles | `static readonly Regex` or `[GeneratedRegex]` (.NET 7+) |
@@ -76,6 +91,7 @@ Shift counts are masked to 5 bits for `int` and 6 bits for `long`.
 ## Testing and benchmarking
 
 - **Tests:** xUnit, NUnit, MSTest. `dotnet build` and `dotnet test` run MSBuild targets from project files, `Directory.Build.props`/`.targets` in any parent directory, and NuGet packages, plus source generators and analyzers.
+- **Testing an extracted function:** `internal`, with `InternalsVisibleTo` naming the test assembly.
 - **Property-based testing, if already present:** FsCheck, CsCheck.
 - **Profiling:** `dotnet-trace`, `dotnet-counters` (global tool installs), PerfView, or the Visual Studio / Rider profilers.
 - **Benchmarks:** BenchmarkDotNet if already present, with `[MemoryDiagnoser]`; Release builds, no debugger. Otherwise `Stopwatch` with warmup long enough for tiered compilation to settle, medians, and results kept observable.
