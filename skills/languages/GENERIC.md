@@ -14,7 +14,7 @@ After these checks, use it as the language file and build only what it lacks. Wh
 
 Before Phase 3 (or before designing in write mode), write down for the project's language and version, from official documentation where possible:
 
-1. **Built-in structures and their costs:** dynamic array, hash map and set, insertion-ordered map, sorted map and set, deque, priority queue, bitset, string builder; which are in the standard library, and the access, insert, delete, and search costs of each. Those that are not need a dependency (rule 7): for each, record any first-party or well-maintained package that provides it, with its publisher, license, and behavior traps, confirmed in the official registry.
+1. **Built-in structures and their costs:** dynamic array, hash map and set, insertion-ordered map, sorted map and set, deque, priority queue, bitset, string builder; which are in the standard library, and the access, insert, delete, and search costs of each. Those that are not follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md` (a new package needs permission, rule 7): for each, record any first-party or well-maintained package that provides it, with its publisher, license, and behavior traps, confirmed in the official registry.
 2. **Hidden costs:** operations that look O(1) but are not (front removal, string concatenation, indexing linked structures, length of strings or lists, copying on assignment or on update of immutable data, lazy re-evaluation, message passing that copies its payload, scans inside built-ins, slices that copy, hashing of composite keys). Record whether each sort API computes a key once per element or on every comparison, since several named like keyed sorts do the latter. Record the cost of every built-in the analyzed code uses; one missing from the profile is unknown until documented or measured, not O(1).
 3. **Security traps:** whether string hashing is randomized, whether the regex engine backtracks, the recursion limit, what number and date parsers accept (non-ASCII digits, whitespace, signs, separators, NaN), the default locale and time zone, which deserializers run code from data, and which build and test tools run project code.
 4. **Ordering and numbers:** hash iteration order (defined, randomized), which sorts are stable, integer widths, overflow (wrap, trap, arbitrary precision), bitwise semantics.
@@ -63,7 +63,11 @@ must confirm any claim before it drives a decision, whatever its basis mark. -->
 
 ## Built-in structures
 
+### Packages
+
 ## Hidden costs
+
+### Input handling and security
 
 ## Ordering and numbers
 
@@ -74,7 +78,7 @@ must confirm any claim before it drives a decision, whatever its basis mark. -->
 ## References (for verifying claims; not required reading)
 ```
 
-Keep it to the language and its standard library: no frameworks, and no findings about the project's code (those go in the report).
+Keep it to the language, its standard library, and the packages recorded under "Built-in structures": no frameworks, and no findings about the project's code (those go in the report).
 
 ## Then follow the normal workflow
 

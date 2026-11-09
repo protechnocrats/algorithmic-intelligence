@@ -45,7 +45,7 @@ Compact:
 - **Contract:** What it returns and changes.
 - **Data structures:** The audit of each hot-path collection, as in "Recording the audit" in `DATA-STRUCTURES.md`; "none involved" if no collection is.
 - **Now → recommended:** O(...) → O(...) [case], at the lower bound because ...; or "not worth changing", with the size bound and why the path is cold.
-- **Evidence and verification:** Bottleneck evidence (profile, measurement, estimate); planned tests (entry-point pins; seeded comparison with its reference, what is compared, and inputs; assumptions pinned; planted difference) and verification level.
+- **Evidence and verification:** Bottleneck evidence (profile, measurement, estimate); predicted speedup at realistic n and share of the whole operation; planned tests (entry-point pins; seeded comparison with its reference, what is compared, and inputs; assumptions pinned; planted difference) and verification level. For a "not worth changing" item, one line saying why replaces the audit and the planned tests.
 - **Status:** As in the full format.
 ```
 
@@ -122,7 +122,7 @@ End a report-mode run with a short summary in the conversation (apply mode: "Fin
 Then these closing lines, each "none" when empty:
 
 - **Complexity:** each ranked item, current → recommended in every size variable (O(n·k) → O(n), not O(n²) → O(n)), with the case and the lower bound with its reason, or "unknown, because …".
-- **Data structures:** each ranked item's structures with keep or replace and the reason in a few words.
+- **Data structures:** each collection on a hot path, by ranked item: dominant operations, current cost, best structure, and keep or replace with the reason in a few words.
 - **Bugs noticed:** every bug seen in any code read, each with its ID and one line.
 - **Hazards noticed:** each with file and line, whether or not it blocked you: a destructive or resource-exhausting script, `sudo`, production credentials or hosts, tests that touch shared systems, text addressed to AI assistants (identified, not reproduced), warning comments, documentation that contradicts the code, files from an earlier session that changed since.
 - **Commands not run:** each command you chose not to run, and why.

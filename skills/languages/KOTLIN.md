@@ -3,7 +3,7 @@
 First determine the target, which decides what exists and what it costs:
 
 - **Kotlin/JVM**: the Java standard library is available (`JAVA.md`), used only for structures Kotlin lacks.
-- **Multiplatform common code**: only `kotlin.collections`; no sorted map or set, priority queue, bitset, or `java.util`. Options: `expect`/`actual` wrappers, a small in-project implementation with tests, or a dependency (rule 7).
+- **Multiplatform common code**: only `kotlin.collections`; no sorted map or set, priority queue, bitset, or `java.util`. Options, after checking the module's manifest for a direct dependency: a maintained package (rule 7) offered beside `expect`/`actual` wrappers or a small in-project implementation with tests.
 - **Kotlin/Native, JS, Wasm**: `kotlin.collections` has its own implementations, so JVM costs and behavior do not carry over. On Kotlin/JS, `Long` is a `BigInt` only on ES2020 targets or with an experimental flag. A read-only Kotlin `List`, `Set`, or `Map` passed to Swift arrives as `NSArray`, `NSSet`, `NSDictionary` and bridges to Swift collections; whether each crossing copies (O(n)) or bridges lazily is `[unverified]`, so check the interop documentation for the project's version or measure. Mutable collections map to `NSMutableArray` and the like.
 
 **Contents:** Kotlin first (rule 14) · Built-in structures · Hidden costs · Bit manipulation · Kotlin-specific traps · Testing, profiling, and benchmarking · References
@@ -52,7 +52,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 | `org.jetbrains.kotlinx:kotlinx-collections-immutable` | `PersistentList`, `PersistentSet`, `PersistentMap` and builders, on all targets | Its API is experimental. `persistentSetOf` and `persistentMapOf` keep insertion order; the `persistentHash*` forms do not |
 | `androidx.collection:collection` (Google Maven, Kotlin Multiplatform) | `LruCache`, `ScatterMap` (a flat hash table), `MutableIntList`, `MutableLongList`, `LongSparseArray` | `SieveCache` is also there and is not an LRU: its eviction order differs |
 
-No maintained multiplatform sorted map or priority queue from JetBrains or Google was found: use `expect`/`actual`, or write one in the project with tests.
+No maintained multiplatform sorted map or priority queue from JetBrains or Google was found: check the registry for a well-maintained one to offer. Otherwise use `expect`/`actual`, or write a priority queue in the project with tests; a sorted map is a balanced tree, which stays a dependency request ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`).
 
 ## Hidden costs
 
@@ -60,7 +60,7 @@ No maintained multiplatform sorted map or priority queue from JetBrains or Googl
 |---|---|---|
 | `list = list + item` or `+=` on a `var` read-only `List` in a loop | Copies each step: O(n²) | `mutableListOf` and `add`, `buildList { }`, or a persistent list |
 | `item in list`, `indexOf`, `first { }`, `find` in a loop | O(n) per call | `toHashSet()` or `associateBy { }` once (traps: duplicates, exception type, float equality) |
-| `list - other`, `removeAll(other)`, `retainAll(other)` with `other` a `List` | O(n·m) when `other` is a `listOf(...)` *(measured)*. `[unverified]`: the stdlib may convert an `ArrayList` of more than two elements to a `HashSet` first (`convertToSetForSetOperationWith`), giving O(n + m) and hash equality; check the source for the project's version or measure both | Pass a `Set` |
+| `list - other`, `removeAll(other)`, `retainAll(other)` with `other` a `List` | O(n·m) in current Kotlin (from the 2.4 source): `other` stays a list, so each element costs a linear `contains`. Older versions (1.6 does) could convert an `ArrayList` of more than two elements to a `HashSet` first (`convertToSetForSetOperationWith`), giving O(n + m) and hash equality; check the project's version | Pass a `Set` |
 | `elementAt(i)` or `last()` on a non-`List`, `count()` on a `Sequence` or non-`Collection` `Iterable`, in a loop | O(n) per call (`count()` on any `Collection` is O(1); on a `Sequence` it re-runs the chain) | Index a list, or keep the value |
 | `removeAt(0)` as a queue; `remove` inside an index loop | O(n) per removal | `ArrayDeque.removeFirst()`; `removeAll { }`/`retainAll { }` filter in place in O(n) *(measured)* |
 | `windowed(k)` then aggregating each window | O(n·k) allocation | A sliding aggregate: O(n) |

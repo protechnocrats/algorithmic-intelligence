@@ -21,9 +21,8 @@ The skill is written for a capable model: goals, the reasons behind them, the he
    report / apply mode                                write mode
         │                                                  │
    WORKFLOW.md  (phases 1–4, "Rule details")       WRITING-NEW-CODE.md
-        ├── report mode: REPORTING.md  (report, bug log, summary formats)
-        └── apply mode:  APPLYING.md   (phases 5–6, apply results format, final summary, code markers)
-                           └── BENCHMARKING.md
+        ├── report and apply mode: REPORTING.md  (report, bug log, summary formats)
+        └── apply mode also: APPLYING.md   (phases 5–6, apply results format, final summary, code markers)
 
    every mode, before reading code:
         languages/<LANGUAGE>.md for each language in the code
@@ -44,12 +43,13 @@ The skill is written for a capable model: goals, the reasons behind them, the he
         BEHAVIOR-TRAPS.md  (walked for every candidate)
           └── domain code: "Behavior traps" in the matching techniques/<domain>.md
         techniques/hostile-inputs.md  (untrusted input, secrets, hard deadlines)
+        BENCHMARKING.md  (whenever something is measured: every apply item, write mode when needed)
 
    never loaded unless verifying a claim:
         references/<same path as the file>  (each file's sources)
 ```
 
-Every link, file name, quoted section name, and rule number in the skill must point at something: an agent that follows a reference to nothing skips that step. Every file loads only when a step names it, so a file's size is paid only in the modes that load it, and on every step after it loads.
+Every link, file name, quoted section name, and rule number in the skill must point at something: an agent that follows a reference to nothing skips that step. Every file except `SKILL.md` loads only when a step names it, so a file's size is paid only in the modes that load it, and on every step after it loads.
 
 ## Where each idea lives
 

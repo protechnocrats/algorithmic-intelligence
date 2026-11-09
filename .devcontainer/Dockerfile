@@ -7,8 +7,6 @@
 # Base: the dev container project's Ubuntu image (non-root user "vscode").
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-ARG SWIFT_VERSION=6.2
-
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
        openjdk-21-jdk-headless \

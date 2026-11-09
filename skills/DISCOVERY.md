@@ -210,7 +210,7 @@ Most real derivations chain moves. Bentley's maximum subarray is 1 → 2 → 3. 
 
 ## Recording the result
 
-In "Candidates considered", say how each candidate was found (a table row, or a move by number). Mark derived algorithms *derived* with their invariant or correctness argument in a sentence or two. Summarize the research log, including the moves that produced nothing and what blocked them, so the developer can see where the search stopped. For a conjecture from small cases, say whether it was proved or only checked, and up to which sizes. A log, derived algorithm, or bound from an earlier session is a claim to recheck.
+In the item's "Candidates" field (`REPORTING.md`), say how each candidate was found (a table row, or a move by number). Mark derived algorithms *derived* with their invariant or correctness argument in a sentence or two. Summarize the research log, including the moves that produced nothing and what blocked them, so the developer can see where the search stopped. For a conjecture from small cases, say whether it was proved or only checked, and up to which sizes. A log, derived algorithm, or bound from an earlier session is a claim to recheck.
 
 ## References
 

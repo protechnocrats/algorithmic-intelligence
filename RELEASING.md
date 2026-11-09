@@ -17,7 +17,7 @@ Every pull request that changes the skill adds a line to the `[Unreleased]` sect
 ## Making a release
 
 1. **Review what users will get.** Read the whole diff of `skills/` since the previous tag (`git diff <previous tag>..main -- skills/`), not only the changelog: every line is an instruction users' agents will follow. Check it as in "Reviewing changes to the skill" in [CONTRIBUTING.md](CONTRIBUTING.md), and that the changelog describes every change in behavior, above all any that touches approvals, commands, or untrusted content.
-2. **Prepare it in a pull request.** In `CHANGELOG.md`, rename `[Unreleased]` to the new version with today's date (`## [0.3.0] - YYYY-MM-DD`), add a short summary at the top of the section, and start a new empty `## [Unreleased]` section above it. Merge the pull request once its checks pass.
+2. **Prepare it in a pull request.** In `CHANGELOG.md`, rename `[Unreleased]` to the new version with today's date (`## [0.3.0] - YYYY-MM-DD`), add a short summary at the top of the section, and start a new empty `## [Unreleased]` section above it. Set `version` in `plugin/.claude-plugin/plugin.json` to the new version and update the release tag in the README's install commands. Merge the pull request once its checks pass.
 3. **Tag the merge commit on `main`:**
 
    ```bash

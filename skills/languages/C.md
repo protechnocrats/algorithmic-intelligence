@@ -15,7 +15,7 @@ Record the C standard (`-std=c99`, `c11`, `c17`, `c23`), the compiler and versio
 | Strings | `<string.h>` | `strlen` is O(n); `strcat` is O(destination + source) | Null-terminated; length is not stored |
 | Memory moves | `memmove`, `memcpy`, `memset` | O(n), highly optimized | `memcpy` requires non-overlapping regions |
 
-**Not in the standard library: hash maps, hash sets, balanced trees, heaps, queues, deques, bitsets, tries.** In order of preference: what the project already has (its own containers, or GLib, APR, klib, uthash, stb_ds if already a dependency); a small in-project implementation with its own tests (growable array, open-addressing hash table, see "Hash table design" in `techniques/specialized-structures.md`, binary heap, ring buffer, bitset over `uint64_t`); a new library, including a copied single-header one, is a dependency (rule 7).
+**Not in the standard library: hash maps, hash sets, balanced trees, heaps, queues, deques, bitsets, tries.** First use what the project already has (its own containers, or GLib, APR, klib, uthash, stb_ds if a direct dependency). Otherwise follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`: offer a maintained library (a new one, including a copied single-header one, is a dependency, rule 7) beside a small in-project implementation with its own tests (growable array, open-addressing hash table, see "Hash table design" in `techniques/specialized-structures.md`, binary heap, ring buffer, bitset over `uint64_t`), and let the developer choose.
 
 ## Hidden costs
 

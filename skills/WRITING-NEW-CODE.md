@@ -47,7 +47,7 @@ When input comes from users or other systems, the design holds under hostile inp
 
 ## When existing code is the bottleneck
 
-Sometimes the best new code is still slow because of existing code it must call (a linear lookup behind a private field, a query with no index). Minimize calls into it, leave it unchanged, report it in the summary in the report-mode item format from `REPORTING.md` (location, cost along the call chain from the new code, recommended fix), and ask whether the developer wants it optimized. If so, that item follows apply mode, with differential tests against the existing code.
+Sometimes the best new code is still slow because of existing code it must call (a linear lookup behind a private field, a query with no index). Minimize calls into it, leave it unchanged, report it in the summary in the report-mode item format from `REPORTING.md` (location, cost along the call chain from the new code, data structure audit, recommended fix, planned tests), and ask whether the developer wants it optimized. If so, that item follows apply mode, with differential tests against the existing code.
 
 ## Tests
 
@@ -67,7 +67,7 @@ End with the normal summary of the work, then a short **Performance decisions** 
 ```
 - <location>: <what it does>
   Size: <assumption> (<source>; <conflicting source and number, if any>)
-  Data structures: <each structure, the operations it serves, and why it suits them>
+  Data structures: <the audit of each collection, as in "Recording the audit" in `DATA-STRUCTURES.md`>
   Approach: <choice>, over <rejected alternative> because <reason> [derived]
   Memory: <bound and bytes across all copies, vs. the limit compared with>   (caches, memo tables, indexes only)
   Verified: <level> against <reference version | contract checks>

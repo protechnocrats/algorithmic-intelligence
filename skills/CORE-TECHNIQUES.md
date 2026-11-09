@@ -82,7 +82,7 @@ How to read the tables here and in the domain files:
 | Range updates and range queries together | Segment tree with lazy propagation | Updates compose with each other and with the aggregate | O(n) per operation → O(log n) |
 | Floor, ceiling, predecessor, successor, ordered iteration with inserts | Balanced BST / sorted map | The comparator is a consistent total order, consistent with equality | O(n) → O(log n) |
 | Fixed set of keys known in advance | Precomputed lookup table, or perfect hashing | Key set never changes at runtime | O(1) worst case |
-| LRU or bounded cache | Hash map + doubly linked list (often built in, see language files) | The cached function is pure; the key holds every input the result depends on, including user, tenant, and permission context; invalidation stated (cached permissions or sessions drop on revocation) | O(1) expected per operation, bounded memory |
+| LRU or bounded cache | The language's bounded LRU where it has one; otherwise an insertion-ordered hash map, re-inserting on each hit; a hash map + doubly linked list only when neither exists (see language files) | The cached function is pure; the key holds every input the result depends on, including user, tenant, and permission context; invalidation stated (cached permissions or sessions drop on revocation) | O(1) expected per operation, bounded memory |
 
 ### Graphs
 
