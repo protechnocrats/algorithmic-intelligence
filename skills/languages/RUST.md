@@ -21,6 +21,15 @@ Record the toolchain, edition, and minimum supported Rust version (`rust-version
 
 Not in the standard library: bitsets, insertion-ordered maps, LRU caches, fast non-cryptographic hashers, small vectors, tries, segment trees, concurrent maps (`fixedbitset`, `bitvec`, `indexmap`, `lru`, `rustc-hash`, `ahash`, `smallvec`, `arrayvec`, `dashmap` are dependencies).
 
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`. The crates named above are also dependencies.
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `itertools` | `k_smallest` (ascending; memory proportional to k), `sorted_by_cached_key`, `unique` | `dedup` removes only consecutive duplicates. `sorted_unstable` may reorder equal elements |
+| `slotmap` | `SlotMap`, `DenseSlotMap`: O(1) insert, access, and delete with stable keys | A key used on another map gives an unspecified result. `SlotMap` iteration scans empty slots; `DenseSlotMap` is contiguous. `HopSlotMap` is deprecated |
+
 ## Hidden costs
 
 | Pattern | Cost | Fix |
@@ -32,6 +41,9 @@ Not in the standard library: bitsets, insertion-ordered maps, LRU caches, fast n
 | `.clone()` of large values in loops | Allocation and copying | Borrow, `Rc`/`Arc`, or move |
 | `collect::<Vec<_>>()` only to iterate again | Intermediate allocation | Chain the iterator |
 | `format!`/`to_string()` in hot loops | Allocation per call | `write!` into a reused `String` |
+| `sort_by_key(\|x\| parse(x))` | Named like a keyed sort, but the key runs per comparison: O(m·n log n) | `sort_by_cached_key`, which calls it at most once per element, O(m·n + n log n), and is also stable. Not needed for a cheap field read |
+| `.to_vec()` of a slice in recursion | Copies each call: O(n²) | Pass `&a[1..]`, a view |
+| `#[derive(Hash)]` on a key holding a `Vec` or many fields | Hashes every field on each hash | A small ID or a narrower key type |
 | `get(k)` then `insert(k, ...)` | Two lookups | `entry` API |
 | `Regex::new` in a loop or hot function | Recompiles | `LazyLock<Regex>` or `OnceLock` |
 | `println!` in a hot loop | Locks stdout, flushes lines | Lock once and wrap in `BufWriter` (a behavior change for interactive output or on crash: "Buffering" in `BEHAVIOR-TRAPS.md`) |
@@ -79,6 +91,7 @@ Shifting by at least the bit width panics in debug builds and masks the count in
 ## Testing and benchmarking
 
 - **Tests:** `cargo test`, including doc tests. `cargo build`, `check`, and `test` run every `build.rs` and procedural macro in the project and its dependencies, and `.cargo/config.toml` can set runners and wrappers.
+- **Testing an extracted function:** a private function tested from a child `#[cfg(test)]` module, which can see its parent's private items; `pub(crate)` if tests live elsewhere in the crate.
 - **Property-based testing and fuzzing, if already present:** `proptest`, `quickcheck`, `cargo fuzz`; otherwise a small seeded generator (`rand` as a dev-dependency is still a dependency).
 - **Miri** (`cargo +nightly miri test`) whenever `unsafe` is involved.
 - **Profiling:** `perf` with `cargo flamegraph` or samply (installs), or Instruments; set `debug = "line-tables-only"` under `[profile.release]` for symbols without changing optimization.

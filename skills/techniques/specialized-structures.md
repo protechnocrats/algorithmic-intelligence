@@ -60,4 +60,4 @@ Hit rate decides whether a cache pays off, and the eviction policy decides the h
 
 ## References
 
-Sources for the claims in this file are in `references/techniques/data-structures.md`. Read them only to verify a claim.
+Sources for the claims in this file are in `references/techniques/specialized-structures.md`. Read them only to verify a claim.

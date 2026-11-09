@@ -2,7 +2,32 @@
 
 A differential test runs the original and the optimized implementation on the same inputs and asserts that everything observable is identical. It is the evidence rule 3 asks for. Write it before changing the code and run it against the unchanged code first. Passing tests show equivalence only on the inputs that ran, so report the level reached ("Verification levels"), what was covered, and what was not.
 
-**Contents:** Setup · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure · References
+**Contents:** Which tests to write · Setup · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure · References
+
+## Which tests to write
+
+**Read the existing tests first.** Before writing any test, read how the tests nearest this code are built: framework, fixtures and builders, fakes, naming, location, and how they start the code. Write yours the same way and reuse what they already have, so the new tests run in the project's normal suite and the team can maintain them. An existing test that drives the entry point is a starting pin once you have shown that it reaches the hot path and fails on a planted difference. Leave existing tests as they are and add new ones beside them.
+
+Each hot path gets two kinds of evidence, because each sees what the other cannot:
+
+- **Pin tests at the real entry point.** Drive the route, command, job, or public function callers actually use, with real collaborators: mappers, repositories, parsers, serializers, and anything else local and safe run for real, including a throwaway local database when one can be used. Fake only what leaves the machine, reaches a shared system, or cannot be bounded. Run them on the original in this session and record everything observable, then compare after the change. They catch wiring, caller interaction, and real ordering, and they stay useful as regression guards. "Real" never widens "Before running a command" in `SKILL.md`.
+- **Seeded old-versus-new comparison of pure functions.** The computation itself, against a verbatim copy of the original, on edge cases and generated inputs from a fixed seed ("Setup", "Inputs"). It covers far more inputs than a pin test can.
+
+Both have to show they can fail ("Check the check"), and both are tests: neither alone reaches "proven" ("Verification levels").
+
+### Buried hot paths
+
+When the computation sits inside a method that also does I/O or reads shared state, the seeded comparison cannot reach it. Make it reachable before optimizing, in this order:
+
+1. Pin the entry point on the original.
+2. Extract the computation into an internal pure function, visible to tests and no wider (the language file's testing section says how), changing nothing else. Clocks, configuration, and other reads become parameters, read at the same point and in the same order as before ("Moved reads" in `BEHAVIOR-TRAPS.md`). Public signatures stay as they were (rule 11).
+3. Run the pin tests. They have to pass unchanged; this step is its own commit if commits are authorized.
+4. Copy the extracted function verbatim as the reference and write the seeded comparison against it.
+5. Optimize the extracted function.
+
+### Pin what the change assumes
+
+When a change relies on something established elsewhere (data already sorted, keys unique, values non-null, a size limit), add a test that fails if that stops being true, driving the real code that establishes it. Analysis shows the assumption holds today; only a test protects it when someone changes that code later. If what establishes it cannot run in a test (a database ordering, another service), the assumption is unverified (rule 5).
 
 ## Setup
 
@@ -10,7 +35,7 @@ A differential test runs the original and the optimized implementation on the sa
 
 Give each version a fresh copy of the same fakes and inputs on every call, so one side's mutations cannot reach the other, and record every collaborator call for comparison.
 
-**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do, and fake every effect that leaves the process (mail, network and service calls, database writes, process launches, file writes outside a temporary directory). Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant. A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
+**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do, and fake every effect that leaves the process (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory). Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant. A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
 
 ### Changes to calls into other systems
 
@@ -113,7 +138,7 @@ Anything that cannot be checked at any level (real database ordering, platform r
 For every applied item:
 
 - **Level reached,** with the domain and bounds for level 3 and the tool for levels 3 and 4.
-- **Coverage:** edge-case categories, number of generated cases, seeds, size range, observables compared.
+- **Coverage:** entry points pinned and collaborators kept real, assumptions pinned, edge-case categories, number of generated cases, seeds, size range, observables compared.
 - **What ran:** commands or test names and results, from this session only. A harness or result an earlier session left is reread, checked against its history, and rerun before it counts ("Untrusted content" in `SKILL.md`).
 - **Check of the check:** mutants tried and caught; A/A result.
 - **Unverified behavior** and why.

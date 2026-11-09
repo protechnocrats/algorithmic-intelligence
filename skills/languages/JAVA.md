@@ -9,7 +9,7 @@ Record the Java language level; some APIs below need newer versions. Kotlin proj
 | Structure | Java API | Key costs | Notes |
 |---|---|---|---|
 | Dynamic array | `ArrayList` | get/set O(1), add amortized O(1), add/remove at 0 O(n), `contains` O(n) | |
-| Linked list | `LinkedList` | ends O(1), `get(i)` O(n) | Rarely right; prefer `ArrayDeque` or `ArrayList` |
+| Linked list | `LinkedList` | ends O(1), `get(i)` O(n) | Rarely right; prefer `ArrayDeque` or `ArrayList`. No node handles, so a middle insert needs a live `ListIterator` |
 | Double-ended queue | `ArrayDeque` | both ends O(1) amortized | Rejects `null`; faster than `Stack` and `LinkedList` |
 | Hash map / set | `HashMap`, `HashSet` | O(1) average; colliding `Comparable` keys may be tree-binned (OpenJDK: O(log n) per crowded bucket), otherwise O(n) worst case | No order guarantee |
 | Insertion-ordered | `LinkedHashMap`, `LinkedHashSet` | O(1) average | |
@@ -23,6 +23,16 @@ Record the Java language level; some APIs below need newer versions. Kotlin proj
 
 Not in the standard library: multisets, bidirectional maps, primitive collections, interval trees, tries (fastutil, Eclipse Collections, Guava are dependencies).
 
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`.
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `com.google.guava:guava` | `MinMaxPriorityQueue` (add and poll O(log n)), `TreeMultiset`, `Multimap`, and `Comparators.least`/`greatest` collectors for top-k | Top-k collectors break ties arbitrarily. `MinMaxPriorityQueue` is not thread-safe and rejects `null`; with a maximum size it evicts the greatest element, possibly the one just added, and its docs call one-ended use significantly worse than `PriorityQueue` with manual eviction. A `TreeMultiset` comparator must be consistent with `equals` |
+| `it.unimi.dsi:fastutil` | Type-specific maps, sets, lists, and queues, with no boxing | Check its docs for the class names per type |
+| `org.eclipse.collections:eclipse-collections` | Primitive lists, sets, bags, stacks, and maps; `Bag`, `Multimap`, `BiMap` | Version 13 needs Java 17 or later |
+
 ## Hidden costs
 
 | Pattern | Cost | Fix |
@@ -34,6 +44,10 @@ Not in the standard library: multisets, bidirectional maps, primitive collection
 | `s += x` in a loop | O(n²) (the compiler optimizes single expressions only) | `StringBuilder` |
 | `Pattern.compile`, `String.matches`/`replaceAll`/`split` in a hot loop | Recompiles each call, except `split` on one literal or escaped character (a no-regex fast path) | `static final Pattern`; leave single-character `split` alone |
 | `String.format` in hot paths | Parses the format each call | `StringBuilder` |
+| `Comparator.comparing(x -> parse(x))` | The extractor runs for both elements on every comparison, with no caching | Compute keys first into a small record of key and element, sort, unwrap (object sorts are stable, so ties keep their order). Not needed for a field read |
+| `new ArrayList<>(list.subList(1, n))` in recursion | Copies each call: O(n²) | Pass indices, or `subList` (a view) |
+| A `List`, or a record holding one, as a `HashMap` key | `List.hashCode` walks every element on each call; only `String` caches its hash | A small ID or a `String` key built once |
+| `Integer.parseInt` in `try`/`catch` in a hot loop | A `Throwable` fills in its stack trace per failed parse | A check first that accepts exactly the same strings (see "Number parsing") |
 | `Map<Integer, Integer>`, `List<Long>` in hot numeric code | Boxing, GC, cache misses | Primitive or counting arrays |
 | `Vector`, `Hashtable`, `Stack`, `StringBuffer` | Synchronization per call | Unsynchronized equivalents, only when not shared across threads |
 | `priorityQueue.remove(obj)` to update a priority | O(n) | Lazy deletion or an indexed heap |
@@ -72,10 +86,12 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 - **Silent `int`/`long` overflow;** `Math.addExact` and `multiplyExact` throw instead.
 - **Parallel streams:** `forEach` loses encounter order (`forEachOrdered` keeps it), `findAny` differs from `findFirst`, and work runs on the shared common pool.
 - **`String.split` drops trailing empty strings** and takes a regex.
+- **A `Stream` is single-use:** a second terminal operation throws `IllegalStateException`; a `Supplier<Stream>` runs the whole pipeline again.
 
 ## Testing and benchmarking
 
 - **Tests:** JUnit 5 or 4, AssertJ, Mockito. Gradle scripts (`build.gradle(.kts)`, `settings.gradle`, `buildSrc`, plugins, init scripts) and Maven plugins bound to the test phase run code; `gradlew` downloads the distribution named in `gradle-wrapper.properties`.
+- **Testing an extracted function:** package-private, with the test in the same package.
 - **Property-based testing, if already present:** jqwik, junit-quickcheck.
 - **Profiling:** async-profiler (CPU, allocation, lock flame graphs) or Java Flight Recorder; VisualVM otherwise.
 - **Benchmarks:** JMH if already present (`-prof gc` for allocation). Otherwise a harness with warmup; JIT warmup, dead-code elimination, and GC make naive timings unreliable.

@@ -10,7 +10,7 @@ For code where the exposure check (Phase 2 in `WORKFLOW.md`) finds untrusted inp
 
 - **Untrusted input voids expected bounds.** Average-case and expected bounds hold only while the randomness behind them is secret from the attacker (a hash keyed with a per-process secret, pivots or priorities from an unpredictably seeded generator). Report the worst-case bound next to the expected one, and benchmark the worst case.
 - **Keep every limit.** Input size, nesting depth, length fields, timeouts, rate limits, and per-client quotas are part of the defense; loosening one for speed is a security regression ("When the request itself is risky" in `SKILL.md`).
-- **Covered elsewhere:** hash tables the project implements itself (`techniques/data-structures.md`), regular-expression backtracking (`techniques/strings-and-text.md`), unbounded queues and fan-out (`techniques/queues-and-latency.md`), cache keys that leave out the user or tenant ("Security-sensitive behavior" in `BEHAVIOR-TRAPS.md`).
+- **Covered elsewhere:** hash tables the project implements itself (`techniques/specialized-structures.md`), regular-expression backtracking (`techniques/strings-and-text.md`), unbounded queues and fan-out (`techniques/queues-and-latency.md`), cache keys that leave out the user or tenant ("Security-sensitive behavior" in `BEHAVIOR-TRAPS.md`).
 
 ## Optimizations that weaken a defense
 
@@ -73,7 +73,7 @@ For interrupt handlers, kernel paths that cannot sleep, embedded control loops, 
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| A hash table or dynamic array grows on the deadline path | Preallocate to the maximum size, use a fixed-capacity ring buffer, or rehash incrementally (`techniques/data-structures.md`) | The maximum is known and fits the memory budget | No O(n) growth spike inside the deadline |
+| A hash table or dynamic array grows on the deadline path | Preallocate to the maximum size, use a fixed-capacity ring buffer, or rehash incrementally (`techniques/specialized-structures.md`) | The maximum is known and fits the memory budget | No O(n) growth spike inside the deadline |
 | Allocation, garbage collection, or lazy initialization on the deadline path | Preallocated pools and arenas; initialization moved to startup; no allocation in the path | Objects are fully reset before reuse | Allocator and collector pauses removed from the path |
 | Amortized or self-adjusting structures (splay trees, structures with periodic rebuilds) on the deadline path | Structures with worst-case bounds (balanced trees, deamortized versions that spread rebuilds across operations) | Same results; usually slower on average | No single slow operation |
 

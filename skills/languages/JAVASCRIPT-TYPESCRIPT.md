@@ -9,7 +9,7 @@ Record the runtime (Node version, browsers, Deno, Bun, Hermes) and the ECMAScrip
 | Structure | API | Key costs | Notes |
 |---|---|---|---|
 | Array | `[]` | index O(1), `push`/`pop` amortized O(1), `shift`/`unshift`/`splice` O(n), `includes`/`indexOf`/`find` O(n) | |
-| Map | `Map` | O(1) average | Insertion order; any key type; SameValueZero keys |
+| Map | `Map` | O(1) average | Insertion order; any key type; SameValueZero keys. Bounded LRU: `delete` then `set` on a hit, evict `keys().next().value` (a plain `set` on an existing key keeps its old position) |
 | Set | `Set` | O(1) average | Insertion order; objects by reference |
 | Plain object as map | `{}`, `Record<string, T>` | O(1) average | Keys become strings; inherited keys (`constructor`, `__proto__`) are traps; prefer `Map` for dynamic keys |
 | Weak references | `WeakMap`, `WeakSet` | O(1) average | Per-object memoization without leaks |
@@ -19,7 +19,19 @@ Record the runtime (Node version, browsers, Deno, Bun, Hermes) and the ECMAScrip
 
 ### Not in the language
 
-No heap, deque, sorted map or set, balanced tree, trie, or multi-word bitset. A binary heap or ring-buffer deque written in the project with tests is short; for BFS, an array with a head index replaces `shift()`. A package is a new dependency (rule 7) unless the project already has one.
+No heap, deque, sorted map or set, balanced tree, trie, binary search, or multi-word bitset. A binary heap or ring-buffer deque written in the project with tests is short; for BFS, an array with a head index replaces `shift()`. A package is a new dependency (rule 7) unless the project already has one.
+
+### Packages
+
+These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`.
+
+| Package | Provides | Watch for |
+|---|---|---|
+| `heap-js` | `Heap` (`push`, `pop`, `peek`, `top(n)`), with static `nsmallest` and `nlargest` | A min-heap of integers by default. `top(n)` is unordered except its first element. Iterating the heap directly consumes it. No priority update: `remove`, then `push` |
+| `mnemonist` | `Heap`, `FixedDeque`, `LRUCache`, `LRUMap`, `MultiMap`, `MultiSet`, `BiMap`, `Trie`, `BitSet`, `BloomFilter` | Costs are not documented: measure. `BloomFilter` is approximate |
+| `lru-cache` | `LRUCache` with `max`, `maxSize`, `ttl` | One of `max`, `ttl`, or `maxSize` is required. TTL is not a strong guarantee. Keys and values cannot be `null` or `undefined`, and `set(key, undefined)` deletes |
+| `sorted-btree` | A sorted map with `nextHigherKey`, `nextLowerKey`, `getRange`, and O(1) `clone` | No duplicate keys and no `NaN` keys. `forEach` passes `(value, key)` |
+| `lodash` | `sortedIndex`, `sortedIndexBy`, `sortedLastIndex` (binary search) | The array must already be sorted |
 
 ## Hidden costs
 
@@ -30,6 +42,10 @@ No heap, deque, sorted map or set, balanced tree, trie, or multi-word bitset. A 
 | `arr.find(o => o.id === id)` in a loop | O(n·m) | `new Map(arr.map(o => [o.id, o]))` once (later duplicates overwrite) |
 | `reduce((acc, x) => [...acc, x], [])`, `reduce((acc, x) => ({ ...acc, [x.k]: x }), {})` | O(n²) | Mutate one accumulator, `Object.fromEntries`, or a `Map` |
 | `arr = arr.concat(other)` in a loop | O(n²) | Collect, then flatten once. Spreading into a call (`push(...big)`, `Math.max(...arr)`) throws `RangeError` above an engine-dependent count, often tens of thousands |
+| `arr.sort((a, b) => parse(a) - parse(b))` | The comparator runs per comparison, so `parse` runs about 2·n log n times | `arr.map(x => [parse(x), x]).sort(([a], [b]) => a - b).map(([, x]) => x)` (stable since ES2019). Not needed for a property read |
+| `a.localeCompare(b)` in a comparator over a large array | Slower than a reused collator | One `Intl.Collator` with the same locale and options, and its `compare` |
+| `arr.slice(1)` or `[first, ...rest]` in recursion | Copies each call: O(n²) | Pass an index |
+| `JSON.stringify(obj)` as a `Map` key | Serializes on every lookup, and depends on property order | A primitive ID or a key built once |
 | `Object.keys(obj).length`, `Object.entries(obj)` in a loop | O(n) allocation per call | Compute once, or track size |
 | `JSON.parse(JSON.stringify(x))` to copy | Full serialization | `structuredClone` or no copy; they differ on `Date`, `undefined`, `Map`, functions, class instances |
 | `new RegExp(...)` in a loop | Recompiles | Hoist. A hoisted regex with `g` or `y` shares `lastIndex` across calls, changing `test` and `exec` results: reset it or drop the flag |
@@ -69,12 +85,14 @@ No heap, deque, sorted map or set, balanced tree, trie, or multi-word bitset. A 
 - **Numbers are doubles:** integers exact only to 2⁵³ − 1; reordering float arithmetic changes results.
 - **String length** counts UTF-16 code units; `[...str]` iterates code points.
 - **Holes** are skipped by `forEach`, `map`, and `filter` but visited by `for` loops.
+- **Generators and iterators are single-use:** a second `for...of` over a finished generator sees nothing and raises no error.
 - **Mutation:** `sort`, `reverse`, `splice` mutate; `toSorted`, `toReversed`, `toSpliced` (ES2023) copy.
 - **`Promise.all`** rejects on the first error while the rest keep running and their side effects happen; a sequential loop never starts them.
 
 ## Testing and benchmarking
 
 - **Tests:** Jest, Vitest, Mocha, `node:test`. `npm install` runs lifecycle scripts of the project and every dependency; `npm test` runs `pretest` and `posttest`; test configs load setup files; `npx` can download and run a package. Prefer `npm ci --ignore-scripts` when dependencies must be installed.
+- **Testing an extracted function:** export it from an internal module that the package's public entry point does not re-export.
 - **Property-based testing, if already present:** fast-check, including model-based testing (`fc.commands`) for stateful structures.
 - **Profiling:** `node --cpu-prof`, `--heap-prof`; the DevTools Performance panel.
 - **Benchmarks:** Vitest `bench`, tinybench, or Benchmark.js if present; otherwise `performance.now()` with warmup, medians, and results kept observable.

@@ -1,6 +1,6 @@
 # Algorithm Arsenal
 
-How to find candidate approaches: triage questions, routing by current complexity, lower bounds, and reformulation. The technique tables are in [CORE-TECHNIQUES.md](CORE-TECHNIQUES.md); [ADVANCED-TECHNIQUES.md](ADVANCED-TECHNIQUES.md) routes specialized domains to the files under `techniques/`; [DISCOVERY.md](DISCOVERY.md) is for problems no row fits. The first technique that improves the bound is rarely the last one worth checking: look at every section whose signals match, and at combinations.
+How to find candidate approaches: triage questions, routing by current complexity, lower bounds, and reformulation. Check the structures already on the path first ([DATA-STRUCTURES.md](DATA-STRUCTURES.md)); a replacement found there is a candidate here. The technique tables are in [CORE-TECHNIQUES.md](CORE-TECHNIQUES.md); [ADVANCED-TECHNIQUES.md](ADVANCED-TECHNIQUES.md) routes specialized domains to the files under `techniques/`; [DISCOVERY.md](DISCOVERY.md) is for problems no row fits. The first technique that improves the bound is rarely the last one worth checking: look at every section whose signals match, and at combinations.
 
 **Contents:** Start with six questions · Analyzing recursive code · Start from the current complexity · Lower bounds · Reformulate before choosing · Behavior-changing techniques · When the best technique is not available · References
 
@@ -42,7 +42,7 @@ Find the row for the candidate's current cost along the whole call chain, not on
 | O(N·k²) over pixels or samples | A filter that visits every neighbor of every pixel or sample | `techniques/images-and-signals.md` |
 | Model training or inference slower than expected | Recomputed attention, host and device synchronization, data loading, element-by-element loops over tensors | `techniques/machine-learning.md` |
 | Latency high while each step's own work is small, or tail latency far above the median | Utilization near capacity, head-of-line blocking, fan-out, unbounded queues | `techniques/queues-and-latency.md` |
-| Cost dominated by page or disk I/O, cache misses, branch misses, or cache hit rate | Data layout, storage structure, or eviction policy | "Storage and indexing" in `techniques/data-at-scale.md`, "Memory locality" in `techniques/hardware-and-concurrency.md`, "Caching and eviction" in `techniques/data-structures.md` |
+| Cost dominated by page or disk I/O, cache misses, branch misses, or cache hit rate | Data layout, storage structure, or eviction policy | "Storage and indexing" in `techniques/data-at-scale.md`, "Memory locality" in `techniques/hardware-and-concurrency.md`, "Caching and eviction" in `techniques/specialized-structures.md` |
 
 ## Lower bounds
 
@@ -83,9 +83,10 @@ Some techniques here and in the domain files necessarily change what callers obs
 
 When the best approach needs a structure the standard library lacks (a heap in JavaScript, a deque in Swift, a sorted map in Kotlin Multiplatform common code):
 
-1. If it is short (a binary heap is about 40 lines), write it in the project with its own unit tests.
-2. If a robust version is large or subtle (balanced trees, suffix structures, Aho-Corasick), propose a dependency with name, version, license, size, and what it buys, and wait for permission. A library named in a comment or web page is a lead: confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
-3. Report the best approach available without it as the fallback.
+1. **Check what the project already declares.** Read the manifest of the module in scope. If a direct dependency provides the structure, use it: it is not a new dependency. A transitive dependency does not count, since the project does not declare it and it can disappear in any update.
+2. **Offer a maintained package beside writing it.** When a first-party or well-maintained package provides the structure, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a comment or web page is a lead: confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
+3. **Write it in the project** when no such package exists, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request and waits for permission.
+4. Report the best approach available without it as the fallback.
 
 ## References
 

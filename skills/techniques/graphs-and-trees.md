@@ -24,6 +24,19 @@ Record from the code whether the graph can be disconnected or empty, have cycles
 | Many distance or ancestor queries on a tree | Lowest common ancestor via binary lifting, or Euler tour + range-minimum query | Tree does not change between queries | O(n) per query → O(log n), or O(1) with Euler tour + sparse table, after preprocessing |
 | Connectivity that changes offline with threshold queries | Sort edges and queries + union-find | All queries known up front | Repeated traversal → O((E + Q) log(E + Q)) |
 
+### Choosing a representation
+
+Pick the representation from what the algorithm asks of the graph most often, and from its density. Changing it can reorder neighbors, which changes which path, spanning tree, or topological order a traversal finds, so keep neighbor order wherever that is observable. Matrices and per-node sets collapse parallel edges, and an undirected graph stored in both directions counts each edge twice.
+
+| Signal | Technique | Valid when | Typical result |
+|---|---|---|---|
+| Neighbors found by scanning every edge during a traversal | Adjacency list built once: an array of neighbor lists indexed by node | Neighbor order matches the original's edge order where observable | O(V·E) → O(V + E) per traversal; O(V + E) space |
+| Frequent "is there an edge from u to v" on a sparse graph | A hash set per node, or sorted neighbor lists with binary search | A set needs a count, or a list of edges, if parallel edges matter; sorting neighbors changes their order | Edge test O(degree) → O(1) expected, or O(log degree) |
+| Dense graph (E close to V²), or small V with many edge tests | Adjacency matrix; a bit matrix when unweighted | V² entries fit the memory available ("Size" above) | Edge test O(1); neighbors O(V); O(V²) space, or V²/8 bytes as bits; neighbor-set intersections O(V / word size) |
+| Large graph that does not change, dominated by traversal | Compressed sparse row: one array of edges, and one of offsets into it per node | Built once or rebuilt in batches, since one edge update costs up to O(V + E) | Same bounds as an adjacency list; less memory and far fewer cache misses |
+| The algorithm walks all edges rather than a node's neighbors (Kruskal, Bellman-Ford) | Edge list | Nothing asks for one node's neighbors | O(E) space, no index to maintain |
+| Nodes keyed by strings or objects, with maps of maps | Map keys to dense integers once, then use array-based structures | Output maps back to the original keys; the numbering does not change an observable order | One hash per edge visited removed; a constant factor |
+
 ### Changing graphs
 
 A static-graph algorithm rerun after every change costs its full price per change. When the graph changes often between queries (build systems, package managers, schedulers, incremental compilers), count the total cost over the sequence of changes.
