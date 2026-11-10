@@ -207,8 +207,15 @@ class Summary(unittest.TestCase):
         self.assertIsNone(self.check('Done.', active=True))
 
     def test_complete_summary_passes(self):
-        msg = 'Complexity: O(n²) → O(n)\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'
+        msg = ('Complexity: O(n²) → O(n)\nContract changes: none\nBugs noticed: none\nHazards noticed: none\n'
+               'Commands not run: none')
         self.assertIsNone(self.check(msg))
+
+    def test_missing_contract_changes_blocks(self):
+        msg = 'Complexity: O(n²) → O(n)\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'
+        r = self.check(msg)
+        self.assertEqual(r['decision'], 'block')
+        self.assertIn('Contract changes', r['reason'])
 
     def test_questions_and_other_sessions_pass(self):
         self.assertIsNone(self.check('Which function should I look at?'))

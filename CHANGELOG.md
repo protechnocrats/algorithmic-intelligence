@@ -6,6 +6,27 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-10
+
+Brings the skill in line with what "no behavior change" was always meant to say: what the developer is building must do exactly what it did, only faster, while the interfaces inside the code may change. The agent also asks instead of deciding on the developer's behalf, including about bugs an optimization would remove.
+
+### Changed
+
+- **The outcome is what stays the same, not every interface.** Rule 11 now says to keep the outcome: what the system the developer is building (an app, a service, a library, a compiler, a database, a kernel) shows, returns, stores, and sends, its errors, and its security properties. Signatures, return types, and the structures parts of the code hand each other may change when that reaches a better complexity, and the agent updates every caller in the same change. A difference only code can see, which every caller absorbs, is no longer treated as a behavior change, but the agent has to show that each caller absorbs it.
+- **Callers out of reach mean explain and ask.** When a changed interface has callers the agent cannot update or check (users of a published library or API, plugins, other repositories, calls by reflection or by name, stored or serialized data), or it cannot work out whether a difference reaches the outcome, it explains what is uncertain and asks the developer what to do. Keeping the old interface beside the new one is offered as an option, not chosen for the developer.
+- **Bugs an optimization would remove are kept unless the developer approves.** Previously the agent could keep a bug fix that the best optimization made as a side effect, without asking. Now the bug stays by default: the agent explains it, with an input that triggers it, and the cost of keeping it, and removes it only when the developer approves that item by name. The separate unapproved-fix marker is gone; an approved removal uses the normal `BEHAVIOR-CHANGE` marker.
+- **Differential tests compare through an adapter when an interface changes.** Pin tests at the entry point stay the main evidence and compare exactly; the function itself is compared after converting both results to a common form, every updated caller is covered, and a planted difference must still be caught through the adapter.
+- **The description names the work in its key terms,** following Anthropic's skill-authoring guidance: the lowest time complexity a problem allows, timeouts, reviews for nested loops, N+1 queries, and repeated scans and sorts, and what stays the same in plain words (what the system does for its users) instead of "observable behavior".
+- **One set of terms in every file.** `SKILL.md` defines outcome, behavior, and contract together near the top, and the other files say "contract change" for any change callers absorb (an interface or the order of results), with "interface" kept for signatures and types. The domain technique files are linked directly from `SKILL.md`, so every file is one step away.
+- **The data structure audit no longer keeps a slower structure just because callers receive it.** Changing what callers receive is an interface change, so it is not a reason for not switching.
+
+### Added
+
+- **A definition of "behavior" at the top of the skill.** Agents read that "behavior" and "observable" mean the outcome, with three examples: showing a time where an amount was shown changes the outcome; returning a linked list instead of an array with every caller updated does not; a helper's new result order does not only if every caller is shown to absorb it. The README gains a section, "What 'no behavior change' means", listing what never changes without approval, what may change and is reported, and what the agent asks about.
+- **A "Contract changes" line in every final summary,** and a field in each report item and applied result: each interface changed, before and after, the callers updated, and any caller that could not be updated with what was asked about it. The guard plugin's Stop hook now checks for this line too.
+- **When the input is what limits a function, the agent says so and points to the real fix.** If a function is already as fast as its input allows, the agent reports the lower bound and what the input lacks (a sort, an index, being built once instead of on every call, being fetched in one query). Changing what the function takes, with its callers updated, is part of the item. A fix in code the developer did not name (a caller, the code that produces the input, a query) is proposed as its own item and made only after the developer agrees. The agent never answers just "cannot be optimized", and report items and applied results have an "At the bound for its input" status.
+- **A rule to ask instead of deciding.** When something the work depends on is unclear and only the developer can settle it, the agent explains what is unclear and why it matters, and asks; in a run where nobody can answer, it takes the choice that changes nothing and lists the question under "Waiting for approval".
+
 ## [0.6.0] - 2026-11-09
 
 Agents now look for what the project already has before writing a step or a structure, in every mode, and propose extracting or sharing steps instead of calling a larger function, copying it, or adding a dependency between modules.

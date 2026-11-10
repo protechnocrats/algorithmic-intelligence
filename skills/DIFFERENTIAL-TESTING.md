@@ -1,8 +1,8 @@
 # Differential Testing
 
-A differential test runs the original and the optimized implementation on the same inputs and asserts that everything observable is identical. It is the evidence rule 3 asks for. Write it before changing the code and run it against the unchanged code first. Passing tests show equivalence only on the inputs that ran, so report the level reached ("Verification levels"), what was covered, and what was not.
+A differential test runs the original and the optimized implementation on the same inputs and asserts that everything the outcome depends on is identical (rule 11: what the system does for whoever uses it, not the shape of the interfaces inside it). It is the evidence rule 3 asks for. Write it before changing the code and run it against the unchanged code first. Passing tests show equivalence only on the inputs that ran, so report the level reached ("Verification levels"), what was covered, and what was not.
 
-**Contents:** Which tests to write · Setup · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure
+**Contents:** Which tests to write · Setup · When the change alters an interface · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure
 
 ## Which tests to write
 
@@ -20,7 +20,7 @@ Both have to show they can fail ("Check the check"), and both are tests: neither
 When the computation sits inside a method that also does I/O or reads shared state, the seeded comparison cannot reach it. Make it reachable before optimizing, in this order:
 
 1. Pin the entry point on the original.
-2. Extract the computation into an internal pure function, visible to tests and no wider (the language file's testing section says how), changing nothing else. Clocks, configuration, and other reads become parameters, read at the same point and in the same order as before ("Moved reads" in `BEHAVIOR-TRAPS.md`). Public signatures stay as they were (rule 11).
+2. Extract the computation into an internal pure function, visible to tests and no wider (the language file's testing section says how), changing nothing else. Clocks, configuration, and other reads become parameters, read at the same point and in the same order as before ("Moved reads" in `BEHAVIOR-TRAPS.md`). Existing signatures stay as they were in this step; a contract change belongs to the optimization in step 5, never to the extraction.
 3. Run the pin tests. They have to pass unchanged; this step is its own commit if commits are authorized.
 4. Copy the extracted function verbatim as the reference and write the seeded comparison against it.
 5. Optimize the extracted function.
@@ -59,9 +59,21 @@ A verbatim copy may not compile or behave the same when it reads private state, 
 
 Options 2 and 3 are weaker: state which observables were not compared old against new. If none is possible, the item is unverified (rule 5) and is never described as differentially tested.
 
+## When the change alters an interface
+
+When the optimization changes a signature, a return type, or the structure handed to callers (rule 11), old and new no longer return the same kind of value, so they cannot be compared directly. Verify the outcome instead:
+
+1. **The pin tests at the entry point are the main evidence.** The entry point's own interface does not change unless the developer approved it (a caller outside the project); they compare exactly, as before, and run with every updated caller in place.
+2. **Compare the function through an adapter.** In test code, convert both results to one common form (a linked list and an array both to a list of values in order) and compare that. The adapter is a few obviously correct lines that keep order, duplicates, nulls, and identity where any caller uses them. Name what it leaves out (the concrete type, mutability, laziness), and for each, show from the code that every updated caller no longer depends on it.
+3. **Cover each updated caller.** Each one is reached by a pin test or gets its own old-against-new comparison of what it produces, since a caller that was adapted wrongly changes the outcome while the function itself compares equal.
+4. **Arguments too.** When a parameter's type changes, generate one input and convert it for each side with the same adapter in reverse, so both versions see the same values.
+5. **Check the check through the adapter.** A planted difference in the new code (a reordered element, a dropped duplicate) must still fail the comparison; an adapter that hides it hides real bugs.
+
+If the outcome cannot be compared this way (callers outside the project, a stored or serialized form), the item is an unknown effect on the outcome: explain and ask ("Rule 11" in "Rule details" in `WORKFLOW.md`).
+
 ## What to compare
 
-- **Return value,** including order, duplicates, nullability, and the concrete collection type where callers can observe it (mutable or read-only, list or lazy sequence).
+- **Return value,** including order, duplicates, nullability, and the concrete collection type where callers can observe it (mutable or read-only, list or lazy sequence). When the change replaces that type and updates every caller, compare through an adapter ("When the change alters an interface").
 - **Input mutation:** deep-copy inputs before the call and compare after, for both versions.
 - **Exceptions:** same type and message by default (drop the message only with a stated reason), and the same state, mutations, and recorded calls up to the throw.
 - **Side effects:** which collaborator calls, with what arguments, how many, in what order; writes, logs, events, analytics.
