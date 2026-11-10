@@ -70,7 +70,7 @@ End every apply run with a summary in the conversation, pointing to `APPLY-RESUL
 
 ## Code markers
 
-Write markers directly above the change, in the language's comment syntax.
+Write markers directly above the change, in the language's comment syntax. When the report was given only in the conversation, no `OPTIMIZATION-REPORT.md` or `BUGS-FOUND.md` exists: replace each "See …" line with the item's description in a sentence (and the bug's synthetic failing input), since the marker outlives the conversation.
 
 **Known behavior change,** approved by name in this conversation:
 

@@ -2,7 +2,7 @@
 
 Covers every Swift target, including Linux, Windows, WebAssembly, and Embedded Swift. Record the Swift version, the target, and the optimization mode: several APIs below need Swift 5.9 or 6.2, and `Int` is 32 bits on some targets (traps).
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · Swift-specific traps · Testing, profiling, and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · Swift-specific traps · Testing, profiling, and benchmarking
 
 ## Built-in structures
 
@@ -21,7 +21,7 @@ Covers every Swift target, including Linux, Windows, WebAssembly, and Embedded S
 
 ### Not in the standard library
 
-Deque, heap, ordered set and dictionary, bitset, and sorted collections. Apple's `swift-collections` package (a dependency) has `Deque`, `Heap`, `OrderedSet`, `OrderedDictionary`, `BitSet`, `BitArray`, `TreeSet`/`TreeDictionary` (persistent hash tries with cheap copies), and fixed-capacity `RigidArray`; its `SortedSet` and `SortedDictionary` are an unstable preview. The standard library also has no public binary search: check the manifest for `swift-algorithms`, whose `partitioningIndex(where:)` does this; otherwise offer that package beside a short in-project version with tests. It has no bounded LRU cache either `[unverified]`, and Foundation's `NSCache` is not one: swift-corelibs-foundation's evicts lowest cost first and reads do not reorder entries, and its eviction order is not a documented guarantee. Without the package: a queue is an array plus a head index, compacted occasionally; a heap is a small in-project binary heap; an ordered set is an `Array` for order plus a `Set` for membership.
+Deque, heap, ordered set and dictionary, bitset, and sorted collections. Apple's `swift-collections` package (a dependency) has `Deque`, `Heap`, `OrderedSet`, `OrderedDictionary`, `BitSet`, `BitArray`, `TreeSet`/`TreeDictionary` (persistent hash tries with cheap copies), and fixed-capacity `RigidArray`; its `SortedSet` and `SortedDictionary` are an unstable preview. The standard library also has no public binary search: check the manifest for `swift-algorithms`, whose `partitioningIndex(where:)` does this; otherwise offer that package beside a short in-project version with tests. It has no bounded LRU cache either, and Foundation's `NSCache` is not one: swift-corelibs-foundation's evicts lowest cost first and reads do not reorder entries, and its eviction order is not a documented guarantee. Without the package: a queue is an array plus a head index, compacted occasionally; a heap is a small in-project binary heap; an ordered set is an `Array` for order plus a `Set` for membership.
 
 ### Packages: `swift-algorithms`
 
@@ -60,13 +60,13 @@ Apple's `swift-algorithms` package (a dependency; source stable under semantic v
 | `Array(a.dropFirst())` in recursion | Copies each call: O(n²) | Pass indices, or an `ArraySlice` (base indices trap) |
 | A struct with an array or many fields as a `Dictionary` key | Synthesized `hash(into:)` feeds its stored properties on each hash | A small ID or a narrower key type |
 | A computed property that builds, filters, or sorts, read in a loop | Rebuilt per read | `let` it once before the loop |
-| `any Protocol` or unspecialized generics in a hot loop | Dynamic dispatch, boxing, no inlining | Generics or `some Protocol`; cross-module specialization needs `@inlinable`, an ABI change |
+| `any Protocol` or unspecialized generics in a hot loop | Dynamic dispatch, boxing, no inlining | Generics or `some Protocol`. Within one package build, cross-module optimization (on by default in SwiftPM release builds) can specialize across modules; only a module built with library evolution (a binary framework) needs `@inlinable`, which there is an ABI commitment |
 | Class instances in hot loops | Retain/release per access; copying a struct retains each class reference it holds | Structs, `final` or `private` classes, fewer references |
 | Regex, formatter, or `JSONDecoder` built in a loop | Expensive initialization | Create once. A global or `static let` is lazy and thread-safe, but a shared formatter captures locale and time zone at first use: a behavior change |
 
 ### Input handling and security
 
-- **Number parsing.** `Int(_: String)` accepts ASCII digits with an optional sign only and returns `nil` on whitespace or overflow; `Double(_: String)` also accepts `nan`, `inf`, and hex floats. `NumberFormatter`, `Decimal(string:)`, and `FormatStyle` follow the locale (`"1,5"`). `Character.isNumber` is true for non-ASCII digits and fractions.
+- **Number parsing.** `Int(_: String)` accepts ASCII digits with an optional sign only and returns `nil` on whitespace or overflow; `Double(_: String)` also accepts `nan`, `inf`, and hex floats. `NumberFormatter` and `FormatStyle` follow the locale (`"1,5"`). `Decimal(string:)` without a `locale:` behaves differently by platform (non-localized `.` on Apple platforms, reported to differ on Linux), and parses only a valid prefix (`"1.5abc"` gives 1.5); a replacement must match both, so pass an explicit locale. `Character.isNumber` is true for non-ASCII digits and fractions.
 - **Regex backtracks** (`Regex` and `NSRegularExpression`). Escape input with `NSRegularExpression.escapedPattern(for:)`.
 - **Locale and time zone.** `uppercased()`/`lowercased()` ignore the locale; `localizedCaseInsensitiveCompare`, `localizedStandardCompare`, and formatters use it. A fixed-format `DateFormatter` needs `Locale(identifier: "en_US_POSIX")`. `Calendar.current` and `TimeZone.current` are hidden inputs to any cache.
 - **Unsafe decoding.** `NSKeyedUnarchiver` without secure coding can instantiate arbitrary classes.
@@ -109,7 +109,3 @@ Apple's `swift-algorithms` package (a dependency; source stable under semantic v
 - **Benchmarks:** `package-benchmark` if present, or XCTest `measure { }`, in release builds (debug builds are dramatically slower). Foundation performance differs between platforms: measure on the deployment OS.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): Thread and Address Sanitizers; Swift 6 mode's complete concurrency checking rejects data races at compile time. No mainstream bounded model checker targets Swift.
 - **Constant-time comparison:** CryptoKit (or `swift-crypto`, a dependency) MAC and digest types compare in constant time with `==`; raw byte arrays do not, so compare those with a loop that combines every byte difference without exiting early.
-
-## References
-
-Sources: `references/languages/SWIFT.md`.

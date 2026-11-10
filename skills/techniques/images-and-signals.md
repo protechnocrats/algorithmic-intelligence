@@ -34,7 +34,3 @@ Rewrites that look equivalent but are not; check them alongside `BEHAVIOR-TRAPS.
 - **Color space and gamma.** Averaging, blending, or resizing gamma-encoded values differs from doing it in linear light; keep the original's color space for each step.
 - **Premultiplied alpha.** Converting between straight and premultiplied alpha, or filtering one as if it were the other, changes edges and transparent pixels.
 - **Channel order and layout.** RGBA versus BGRA, planar versus interleaved, and row padding (stride) must be preserved where callers or files observe them.
-
-## References
-
-Sources: `references/techniques/images-and-signals.md`, read only to verify a claim.

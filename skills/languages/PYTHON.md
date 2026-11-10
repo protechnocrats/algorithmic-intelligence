@@ -2,7 +2,7 @@
 
 Record the interpreter and version (`requires-python`, `.python-version`, CI matrix). CPython is the default; PyPy's JIT, GraalPy, and free-threaded CPython (3.13+, no global interpreter lock) change which costs matter. Several APIs below are version-specific.
 
-**Contents:** Built-in structures · Hidden costs · asyncio · Bit manipulation · Python-specific traps · Testing, profiling, and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · asyncio · Bit manipulation · Python-specific traps · Testing, profiling, and benchmarking
 
 ## Built-in structures
 
@@ -73,7 +73,7 @@ A blocking call (`time.sleep`, synchronous network, file, or database calls, hea
 | And, or, xor, not, shifts | `&`, `\|`, `^`, `~` (`~x == -x - 1`), `<<`, `>>` (arithmetic; no logical shift) |
 | Popcount | `x.bit_count()` (3.10+), else `bin(x).count("1")` |
 | Highest bit, lowest set bit | `x.bit_length()`, `x & -x` |
-| Fixed width | `int` never overflows: emulate wraparound with `& 0xFFFFFFFF` and sign conversion. NumPy wraps silently; `array` and `struct` raise. Moving arithmetic between them and `int` changes overflow behavior |
+| Fixed width | `int` never overflows: emulate wraparound with `& 0xFFFFFFFF` and sign conversion. NumPy integer arrays wrap silently, NumPy integer scalars wrap with a `RuntimeWarning`, and NumPy 2 raises `OverflowError` when a Python `int` does not fit the array's type; `array` and `struct` raise. Moving arithmetic between them and `int` changes overflow behavior |
 
 An `int` bitmask holds any number of flags, but every operation costs time proportional to its size and allocates. For many single-bit updates on a large set, a `bytearray` is faster.
 
@@ -103,7 +103,3 @@ An `int` bitmask holds any number of flags, but every operation costs time propo
 - **Benchmarks:** `timeit` for snippets; pyperf or pytest-benchmark if present. Account for garbage-collection pauses when the original runs with collection enabled.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): CrossHair (symbolic execution; `crosshair diffbehavior` searches for inputs where two functions differ, within its bounds); Nagini. Type checkers prove types, not equivalence.
 - **Constant-time comparison:** `hmac.compare_digest` (or `secrets.compare_digest`) for tokens and digests, not `==`.
-
-## References
-
-Sources: `references/languages/PYTHON.md`.

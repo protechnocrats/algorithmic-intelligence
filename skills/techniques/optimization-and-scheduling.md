@@ -2,7 +2,7 @@
 
 The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
-**Contents:** Before choosing · Polynomial special cases · Modeling and solvers · Heuristics with guarantees · Several objectives · Decisions without the future (online algorithms) · References
+**Contents:** Before choosing · Polynomial special cases · Modeling and solvers · Heuristics with guarantees · Several objectives · Decisions without the future (online algorithms)
 
 For code that searches for the best assignment, schedule, route, packing, or allocation (schedulers, compilers, query optimizers, logistics, timetabling, capacity planning). The slow form is usually a loop over permutations, subsets, or candidate plans, and the fix is often a better formulation, not a faster loop.
 
@@ -74,7 +74,3 @@ Decisions made before the future is known (spin or block, build an index or keep
 | Choosing a cache eviction policy and judging how good it is | Compare against Belady's optimal policy (evict the item used furthest in the future), computed offline on a recorded access trace; LRU and FIFO are k-competitive for a cache of k items | A representative trace is available; Belady's policy is optimal only when every item has the same size and miss cost (with variable sizes, as in byte-capacity caches, the exact offline optimum is NP-hard, so compare against a published bound instead); see "Caching and eviction" in `techniques/specialized-structures.md` for the policies | Shows how much hit rate any policy could still gain on this workload |
 | Jobs arriving one at a time must be assigned to identical machines | List scheduling: assign each job to the least-loaded machine (a heap of loads) | Jobs cannot be reassigned later; if all jobs are known first, sort them longest first ("Heuristics with guarantees") | Within 2 − 1/m of the optimal finishing time for m machines; O(log m) per job |
 | Items arriving one at a time must be packed into bins | First fit (place in the first bin with room) | Approximate packing accepted; if all items are known first, use first-fit decreasing | At most 1.7 times the optimal number of bins |
-
-## References
-
-Sources: `references/techniques/optimization-and-scheduling.md`, read only to verify a claim.

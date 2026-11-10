@@ -6,6 +6,22 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-09
+
+Corrects facts across the language, technique, and core files, removes contradictions between files, and moves the sources out of the installed skill. No intended change in how agents work: the fixes correct what agents are told about specific APIs and costs, and the sources now ship only to contributors.
+
+### Fixed
+
+- **Corrected facts in the Kotlin, Swift, and JavaScript/TypeScript files.** Kotlin's `reversed()` keeps surrogate pairs (it splits grapheme clusters); `list - other` stopped converting its argument to a set in Kotlin 1.6, not after it, and a JVM system property can restore the conversion; Kotlin's own `ArrayList`, `HashMap`, and `StringBuilder` are no longer listed as Java classes to replace; `getOrPut` on a `ConcurrentMap` and `NaN` in a manual maximum loop are described precisely; the Kotlin/JS `Long` representation is left to the build's settings. Swift's `Decimal(string:)` differs by platform without a locale and parses a prefix, and cross-module specialization needs `@inlinable` only under library evolution. JavaScript's `crypto.timingSafeEqual` throws on unequal lengths, and `new RegExp` in a loop is not always recompiled.
+- **Corrected facts in the C#, Java, Python, and C files.** `DistinctBy` is built into LINQ from .NET 6, so MoreLINQ is no longer suggested for it there; default `ValueType.GetHashCode` on a struct key may hash only the first field; Java's Turkish case mapping is stated for both directions, and `MessageDigest.isEqual` returns early for a `null` or empty second argument; NumPy's integer overflow differs between arrays, scalars, and NumPy 2 conversions; MSVC's `__popcnt` needs a CPU-feature check.
+- **Corrected facts and contradictions in the core files.** Java's `String.join` writes `"null"` for a null element instead of throwing; C#'s default string comparison and sort are culture-aware, not UTF-16 order; `OPTIMIZATION-REPORT.md` is never edited after it is written, in every file (corrections and later answers go in `APPLY-RESULTS.md`); code markers describe the item in full when the report was given only in the conversation, instead of pointing to a file that does not exist; and the README lists every lower-bound basis the report format allows.
+- **Corrected two technique entries.** JavaScript engines are described as giving no guarantee against chosen hash collisions, not as unkeyed (V8 seeds string hashes); the quorum row says that R + W > N avoids stale reads only with strict quorums, and that quorums alone are not linearizable under concurrent writes.
+
+### Removed
+
+- **The `references/` folder from the installed skill.** The sources behind each file's claims moved to `docs/sources/` in the repository, at the same paths, and the skill files no longer end with a pointer to them: agents did not use them, and they now ship only to contributors. Vague entries that named only a site's front page now name the page or section behind each claim, grouped by the section of the skill file they support.
+- **The suggestion to run analysis in parallel sub-agents.** Sub-agents do not load the skill, so their analysis skips its rules, and each one rereads the files, which raises cost rather than lowering it. One agent still owns all source edits.
+
 ## [0.5.0] - 2026-11-08
 
 Makes 0.4.0 work the way it was meant to. Reading every file in the project turned up instructions that still contradicted each other, most importantly at the step where a report's items are approved: "go ahead" now starts apply mode everywhere. The order for finding a missing data structure is the same in every file, the facts below are corrected, and the README and contributor documents match the skill.

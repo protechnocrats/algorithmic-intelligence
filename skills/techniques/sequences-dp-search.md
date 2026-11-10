@@ -2,7 +2,7 @@
 
 The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
-**Contents:** Sequences and ranges · Dynamic programming optimizations · Combinatorial search · Enumeration and random generation · After NP-hardness · Combinations · References
+**Contents:** Sequences and ranges · Dynamic programming optimizations · Combinatorial search · Enumeration and random generation · After NP-hardness · Combinations
 
 ## Sequences and ranges
 
@@ -64,7 +64,3 @@ A reduction from a known NP-hard problem (move 6 in `DISCOVERY.md`) means no kno
 |---|---|---|
 | Meet-in-the-middle + hashing or sorting | Subset sum, balanced partition for medium n | O(2^n) → roughly O(2^(n/2) · n) |
 | Gray-code enumeration + incremental scoring | Exhaustive search over subsets where each step changes one element | O(n · 2^n) → O(2^n) |
-
-## References
-
-Sources: `references/techniques/sequences-dp-search.md`, read only to verify a claim.

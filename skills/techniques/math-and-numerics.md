@@ -48,7 +48,3 @@ Quantum simulators and circuit compilers are classical programs with exponential
 | State-vector memory of 2ⁿ amplitudes limits the qubit count, on circuits with limited entanglement | Tensor-network or matrix-product-state simulation, with the contraction order chosen by a heuristic optimizer | Exact only without bond-dimension truncation; truncation is approximate (behavior change); cost depends heavily on contraction order, so measure it | Cost exponential in entanglement or treewidth instead of qubit count |
 | Many measurement shots sampled by re-running the whole simulation per shot | Simulate once and draw all shots from the final probability distribution | No mid-circuit measurements, resets, classically controlled gates, or per-shot noise trajectories (each shot then follows a different state), unless the simulator tracks the full density matrix; seeded sampling reproduces the original's sample only if the random draws match | Shots × simulation → one simulation plus sampling |
 | Mapping a circuit onto hardware connectivity (qubit routing) by exhaustive search | Heuristic routing such as SABRE, with several random trials | The problem is NP-hard: results are not optimal, and a different routed circuit with a different gate count is a behavior change | Exponential search → polynomial per trial: linear in gate count, polynomial in qubit count |
-
-## References
-
-Sources: `references/techniques/math-and-numerics.md`, read only to verify a claim.

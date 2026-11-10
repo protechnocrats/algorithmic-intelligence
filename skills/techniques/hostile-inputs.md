@@ -2,7 +2,7 @@
 
 The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply to every table here.
 
-**Contents:** Judge by the worst case · Optimizations that weaken a defense · Adaptive adversaries: when outputs reveal the randomness · Algorithmic complexity attacks · Secrets and timing side channels · Hard deadlines (worst-case execution time) · Finding worst-case inputs · References
+**Contents:** Judge by the worst case · Optimizations that weaken a defense · Adaptive adversaries: when outputs reveal the randomness · Algorithmic complexity attacks · Secrets and timing side channels · Hard deadlines (worst-case execution time) · Finding worst-case inputs
 
 For code where the exposure check (Phase 2 in `WORKFLOW.md`) finds untrusted input, secrets, or a hard deadline. Friendly benchmark data says nothing about these cases: the attacker, the secret, or the deadline picks the input that matters.
 
@@ -47,7 +47,7 @@ The expected bounds of randomized structures assume the input does not depend on
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| A map, set, counter, or group-by keyed by attacker-chosen values (query parameters, JSON keys, header names, form fields, IDs) | Keep the platform's keyed hashing where it exists (the language file says which hashes are keyed: CPython integers, JVM `String.hashCode`, and JavaScript engines are not), otherwise a keyed hash (SipHash) or a sorted structure; bound the number of distinct keys per request | Changing the hash or structure changes iteration order; the key for a keyed hash never leaks | Hash flooding O(n) per operation → O(1) expected with a secret key, or O(log n) worst case with a sorted structure |
+| A map, set, counter, or group-by keyed by attacker-chosen values (query parameters, JSON keys, header names, form fields, IDs) | Keep the platform's keyed hashing where it exists (the language file says which hashes are keyed: CPython integers and JVM `String.hashCode` are not, and JavaScript engines give no guarantee, since integer-like keys are unprotected and some embedders have shipped a fixed seed), otherwise a keyed hash (SipHash) or a sorted structure; bound the number of distinct keys per request | Changing the hash or structure changes iteration order; the key for a keyed hash never leaks | Hash flooding O(n) per operation → O(1) expected with a secret key, or O(log n) worst case with a sorted structure |
 | Quicksort or quickselect with a deterministic pivot rule (first element, median of three) on attacker-supplied data | Introsort or pattern-defeating quicksort (fall back to heapsort past a depth limit); for selection, introselect or median-of-medians | Stability unchanged (all of these are unstable, like quicksort); tie order among equal elements may change | Attacker-forced O(n²) → O(n log n) worst case; selection O(n) worst case with median-of-medians |
 | Randomized structures or algorithms (treaps, skip lists, cuckoo hashing, random pivots, randomized load balancing) on keys an attacker chooses | Draw the random choices from a source the attacker cannot predict or observe (seeded per process from the operating system), or switch to a structure with worst-case guarantees (balanced tree, introsort) | The seed never leaks through outputs, logs, or iteration order | Expected bounds then hold against an adversary; worst-case structures need no secret |
 | Recursive parsing or tree walking over nested input (JSON, XML, protocol buffers, syntax trees) | Explicit stack with a depth limit, or a depth counter that fails cleanly | Existing limits and their errors kept; a limit where none existed is a behavior change | Stack exhaustion → bounded memory and a clean error |
@@ -85,7 +85,3 @@ Measure the maximum and the highest percentiles over long runs, not the median. 
 - **Construct known worst cases:** sorted, reverse-sorted, and all-equal input; keys that collide under a known hash function; maximal nesting; the pathological strings for a regular expression; the adversary for a deterministic pivot rule.
 - **Performance fuzzing:** fuzzers that search for inputs maximizing running time or resource use (PerfFuzz, SlowFuzz), or a coverage-guided fuzzer with a size and time objective; these are tools to install.
 - **Report** the worst input found, its measured cost, and the worst-case bound it is consistent with. Describe a large or hostile input by the code that generates it rather than pasting it: fuzzer output can contain control characters or text addressed to AI assistants ("Untrusted content" in `SKILL.md`).
-
-## References
-
-Sources for the claims in this file are in `references/techniques/hostile-inputs.md`. Read them only to verify a claim.

@@ -2,7 +2,7 @@
 
 Record the target framework and runtime: several APIs below name the .NET version they need, and Mono and IL2CPP differ in garbage collection and available APIs.
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · C#-specific traps · Testing and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · C#-specific traps · Testing and benchmarking
 
 ## Built-in structures
 
@@ -30,7 +30,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 
 | Package | Provides | Watch for |
 |---|---|---|
-| `morelinq` | `PartialSort`, `PartialSortBy` (top-k), `DistinctBy` | Stability is not stated: test ties against the original |
+| `morelinq` | `PartialSort`, `PartialSortBy` (top-k); `DistinctBy` only for targets before .NET 6 | Stability is not stated: test ties against the original. `Enumerable.DistinctBy` is built in from .NET 6, so it needs no package; with MoreLINQ referenced, an unqualified `DistinctBy` call can fail to compile as ambiguous (CS0121) |
 | `BitFaster.Caching` | `ConcurrentLru`, `ConcurrentLfu` | Both are approximate: `ConcurrentLru` is a pseudo-LRU on the 2Q policy, so eviction differs from a strict LRU |
 | `Microsoft.Extensions.Caching.Memory` | `MemoryCache` | Not an LRU: it compacts by expiry and priority before recency. With `SizeLimit` every entry must set a size, and an entry that would exceed the limit is not cached. `GetOrCreate` is not atomic. Expiration is not done in the background |
 
@@ -54,7 +54,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 | `ContainsKey` then indexer | Two lookups | `TryGetValue`; `CollectionsMarshal.GetValueRefOrAddDefault` (.NET 6+) |
 | `ArrayList`, `Hashtable` with value types | Boxing | Generic collections |
 | Exceptions as control flow in hot loops | Very expensive throws | `TryParse`/`TryGetValue` |
-| A `struct` key without `IEquatable<T>` and `GetHashCode` | Default `ValueType.Equals` boxes and uses reflection | Implement both, or use a `record struct` |
+| A `struct` key without `IEquatable<T>` and `GetHashCode` | Default `ValueType.Equals` boxes and uses reflection, and default `ValueType.GetHashCode` may hash only the first field, so keys that differ elsewhere share one hash and lookups degrade toward O(n) | Implement both, or use a `record struct` |
 
 ### Input handling and security
 
@@ -97,7 +97,3 @@ Shift counts are masked to 5 bits for `int` and 6 bits for `long`.
 - **Benchmarks:** BenchmarkDotNet if already present, with `[MemoryDiagnoser]`; Release builds, no debugger. Otherwise `Stopwatch` with warmup long enough for tiered compilation to settle, medians, and results kept observable.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): Coyote for concurrent and async code (explores interleavings, replays failures); Dafny, compiling verified code to C#.
 - **Constant-time comparison:** `CryptographicOperations.FixedTimeEquals`. `SequenceEqual` stops at the first difference.
-
-## References
-
-Sources: `references/languages/CSHARP.md`.

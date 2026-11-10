@@ -2,7 +2,7 @@
 
 Record the C standard (`-std=c99`, `c11`, `c17`, `c23`), the compiler and version (GCC, Clang, MSVC), the target, and the optimization flags; builtins and headers below depend on them. C++ projects build a `CPP.md` profile with `GENERIC.md` and also use this file for the subset the languages share (undefined behavior, flags, sanitizers, number parsing, shifts); it does not cover the C++ standard library.
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · C-specific traps · Testing and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · C-specific traps · Testing and benchmarking
 
 ## Built-in structures
 
@@ -47,7 +47,7 @@ Record the C standard (`-std=c99`, `c11`, `c17`, `c23`), the compiler and versio
 | And, or, xor, not, shifts | `&`, `\|`, `^`, `~`, `<<`, `>>` |
 | Popcount, trailing / leading zeros (C23) | `<stdbit.h>`: `stdc_count_ones`, `stdc_trailing_zeros`, `stdc_leading_zeros` |
 | Same (GCC, Clang) | `__builtin_popcount(ll)`, `__builtin_ctz(ll)`, `__builtin_clz(ll)` |
-| Same (MSVC) | `__popcnt`, `_BitScanForward`, `_BitScanReverse` |
+| Same (MSVC) | `__popcnt` (emits the POPCNT instruction without checking the CPU supports it: guard with a CPU-feature check unless the build's `/arch` guarantees it), `_BitScanForward`, `_BitScanReverse` |
 | Fixed-width types | `<stdint.h>`: `uint32_t`, `uint64_t` |
 
 Use unsigned types. Shifting by at least the type width is undefined; so are left-shifting a negative value and a signed left shift that overflows. Right-shifting a negative value is implementation-defined. `__builtin_ctz(0)` and `__builtin_clz(0)` are undefined.
@@ -72,7 +72,3 @@ Use unsigned types. Shifting by at least the type width is undefined; so are lef
 - **Benchmarks:** the project's release flags (`-O0` or a sanitizer build measures something else). `clock_gettime(CLOCK_MONOTONIC)` or `QueryPerformanceCounter`, medians, results stored to a `volatile` sink. `perf` for hotspots and cache misses; Massif or heaptrack for peak heap.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): CBMC, including equivalence harnesses asserting `old(x) == new(x)` within bounds; KLEE; Frama-C with WP or E-ACSL.
 - **Constant-time comparison:** `CRYPTO_memcmp` (OpenSSL), `sodium_memcmp`, or `timingsafe_bcmp`. `memcmp` returns at the first differing byte.
-
-## References
-
-Sources: `references/languages/C.md`.

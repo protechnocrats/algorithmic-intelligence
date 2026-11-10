@@ -2,7 +2,7 @@
 
 The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply to every table here.
 
-**Contents:** Streaming and external memory · Storage and indexing · Change propagation · Compression and encoding · References
+**Contents:** Streaming and external memory · Storage and indexing · Change propagation · Compression and encoding
 
 ## Streaming and external memory
 
@@ -56,7 +56,3 @@ Random or already-compressed data does not compress (Shannon's source coding the
 | Long runs of repeated values (sorted columns, flags, bitmaps) | Run-length encoding, and operating directly on runs | Runs are long on real data (measure) | O(n) work → O(runs) |
 | Transfer or storage bound by bytes moved, with CPU to spare | A fast general-purpose codec chosen by measured ratio and speed (for example LZ4, Zstandard, Snappy, or the platform's built-in compression) | CPU headroom measured; a codec outside the standard library is a dependency (rule 7) | Bytes moved reduced by the measured ratio |
 | Custom encoding of symbols whose frequencies are skewed (compressors, codecs, index formats) | Huffman coding, or arithmetic coding or asymmetric numeral systems (ANS) to get closer to the entropy | Encoder and decoder change together; output bits change | Average code length within 1 bit of the entropy (Huffman), or very close to it (arithmetic coding, ANS) |
-
-## References
-
-Sources for the claims in this file are in `references/techniques/data-at-scale.md`. Read them only to verify a claim.

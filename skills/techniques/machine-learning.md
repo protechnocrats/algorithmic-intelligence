@@ -82,7 +82,3 @@ Rewrites that look equivalent but are not; check them alongside `BEHAVIOR-TRAPS.
 - **Training versus inference mode.** Dropout and batch normalization behave differently in each mode; a rewrite that runs in or switches to the other mode changes outputs.
 - **Data types and promotion.** Lower precision, implicit type promotion, or a different accumulator type changes results, and can overflow or lose precision. IEEE half precision (fp16) has a largest finite value of 65,504, and values from 65,520 up round to infinity; bfloat16 has the range of 32-bit floats, so it rarely overflows, but keeps only about 8 bits of precision.
 - **Tokenization.** Any change to merge order, normalization, or special tokens changes model inputs and outputs for the same text.
-
-## References
-
-Sources: `references/techniques/machine-learning.md`, read only to verify a claim.

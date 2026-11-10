@@ -2,7 +2,7 @@
 
 How to find candidate approaches: triage questions, routing by current complexity, lower bounds, and reformulation. Check the structures already on the path first ([DATA-STRUCTURES.md](DATA-STRUCTURES.md)); a replacement found there is a candidate here. The technique tables are in [CORE-TECHNIQUES.md](CORE-TECHNIQUES.md); [ADVANCED-TECHNIQUES.md](ADVANCED-TECHNIQUES.md) routes specialized domains to the files under `techniques/`; [DISCOVERY.md](DISCOVERY.md) is for problems no row fits. The first technique that improves the bound is rarely the last one worth checking: look at every section whose signals match, and at combinations.
 
-**Contents:** Start with six questions · Analyzing recursive code · Start from the current complexity · Lower bounds · Reformulate before choosing · Behavior-changing techniques · When the best technique is not available · References
+**Contents:** Start with six questions · Analyzing recursive code · Start from the current complexity · Lower bounds · Reformulate before choosing · Behavior-changing techniques · When the best technique is not available
 
 ## Start with six questions
 
@@ -87,7 +87,3 @@ When the best approach needs a structure the standard library lacks (a heap in J
 2. **Offer a maintained package beside writing it.** When a first-party or well-maintained package provides the structure, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a comment or web page is a lead: confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
 3. **Write it in the project** when no such package exists, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request, or a proposal to write it when no package exists, and waits for the developer's decision.
 4. Report the best approach available without it as the fallback.
-
-## References
-
-Sources for the claims in this file are in `references/ALGORITHM-ARSENAL.md`. Read them only to verify a claim.

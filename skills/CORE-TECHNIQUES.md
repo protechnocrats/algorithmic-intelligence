@@ -2,7 +2,7 @@
 
 Lookup tables for known techniques: the signal in code, the technique, the conditions under which it is valid, and the typical result. `ALGORITHM-ARSENAL.md` routes to the sections; domain-specific techniques are under `techniques/`, indexed by `ADVANCED-TECHNIQUES.md`.
 
-**Contents:** Signals and techniques · Production patterns · Bit manipulation · Combinations · References
+**Contents:** Signals and techniques · Production patterns · Bit manipulation · Combinations
 
 ## Signals and techniques
 
@@ -120,7 +120,7 @@ How to read the tables here and in the domain files:
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
-| String concatenation in a loop | Builder or join | Measure the starting cost: CPython's in-place `+=` and JavaScript ropes are already near-linear, Java's `+` is not. Null and non-string operands convert as before (Java `+` and `StringBuilder` append `"null"`, `String.join` throws) | O(n²) → O(n) |
+| String concatenation in a loop | Builder or join | Measure the starting cost: CPython's in-place `+=` and JavaScript ropes are already near-linear, Java's `+` is not. Null and non-string operands convert as before (Java `+`, `StringBuilder`, and `String.join` all write `"null"` for a null element; other joiners, such as Guava's `Joiner` or `Collectors.joining` over a mapping that dereferences the element, throw instead) | O(n²) → O(n) |
 | Substring search with long patterns or many searches | KMP, Z-algorithm, or the platform's optimized search | Same matching semantics (case, culture, overlapping matches) | O(n·m) → O(n + m) |
 | Comparing many substrings | Rolling hash with prefix hashes and powers | Every hash match confirmed by direct comparison. With untrusted input, a random base per run and a large prime modulus (2^61 − 1, or two moduli): a fixed base lets an attacker force collisions, and modulus 2^64 by overflow collides on Thue-Morse strings for any base. Text with many true matches ("aaaa…") returns to O(n·m): use KMP or the Z-algorithm there | O(n·m) → O(n + m + z·m) expected for z true matches; O(1) per substring hash after O(n) setup |
 | Anagram or character-frequency checks | Fixed-size count array | Small, known alphabet; characters outside it (non-ASCII, combining marks, case variants) behave as in the original | O(n log n) → O(n) |
@@ -210,7 +210,3 @@ The best solution often connects two techniques, especially when a problem has t
 | Sweep line + coordinate compression + Fenwick tree | Counting overlaps, inversions, or active values | As the two rows above; interval endpoints as the original | O(n²) → O(n log n) |
 
 More combinations: "Combinations" in `techniques/sequences-dp-search.md` (meet-in-the-middle) and `techniques/strings-and-text.md` (Aho-Corasick with DP), and the "Trees" table in `techniques/graphs-and-trees.md` (Euler tour with a range structure, rerooting, heavy-light decomposition).
-
-## References
-
-Sources for the claims in this file are in `references/CORE-TECHNIQUES.md`. Read them only to verify a claim.

@@ -54,7 +54,3 @@ Rule 1 requires bounded memory, so measure it for both versions:
 - **Retained memory** after the call returns, to catch caches or indexes that grow without bound. In garbage-collected runtimes, force a full collection first, and prefer allocation volume as the comparable number, since peak and retained figures depend on when the collector ran.
 
 If the platform cannot measure memory, say so and report the expected bound as estimated.
-
-## References
-
-Sources for the claims in this file are in `references/BENCHMARKING.md`. Read them only to verify a claim.

@@ -57,7 +57,3 @@ Hit rate decides whether a cache pays off, and the eviction policy decides the h
 | Cheap pre-check before an exact lookup, where items are also removed | Cuckoo filter | Used only as a pre-filter; delete only inserted items; inserts can fail when the filter is nearly full: handle that by resizing or falling back to the exact check | Same benefit as a Bloom filter, plus deletion; less space than a Bloom filter at low false-positive rates |
 | Timers or timeouts scheduled and cancelled far more often than they fire (network stacks, kernels, connection pools) | Hierarchical timing wheel | Firing times rounded to the wheel's granularity match the original | O(log n) heap insert and cancel → O(1) |
 | Approximate counts, frequencies, or distinct counts over huge streams | Count-min sketch, HyperLogLog | The developer accepts approximate results, and nothing that decides access, money, limits, or deduplication rests on the estimate alone (shared rules in `ADVANCED-TECHNIQUES.md`); exposed estimates can be steered ("Adaptive adversaries" in `techniques/hostile-inputs.md`) | O(n) memory → O(1) or O(log n) memory, with fast updates |
-
-## References
-
-Sources for the claims in this file are in `references/techniques/specialized-structures.md`. Read them only to verify a claim.

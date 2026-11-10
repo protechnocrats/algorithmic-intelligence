@@ -2,7 +2,7 @@
 
 Record the toolchain, edition, and minimum supported Rust version (`rust-version` in `Cargo.toml`); several APIs below were stabilized in specific versions. A `no_std` crate has no `std::collections`: `alloc` still provides `Vec`, `VecDeque`, `BTreeMap`, `BinaryHeap`, but not `HashMap`.
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · Rust-specific traps · Testing and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · Rust-specific traps · Testing and benchmarking
 
 ## Built-in structures
 
@@ -98,7 +98,3 @@ Shifting by at least the bit width panics in debug builds and masks the count in
 - **Benchmarks:** `criterion` or `divan` if present; otherwise `std::time::Instant` with `std::hint::black_box` (1.66+), built with `--release`. Memory: `dhat` (a dependency), heaptrack, Massif.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): Kani (`#[kani::proof]` harnesses, including old-versus-new equivalence over bounded inputs); loom (every thread interleaving up to a bound); Verus, Prusti, Creusot for contracts.
 - **Constant-time comparison:** the `subtle` crate's `ConstantTimeEq` (a dependency), not `==` on secret slices.
-
-## References
-
-Sources: `references/languages/RUST.md`.

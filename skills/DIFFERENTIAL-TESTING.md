@@ -2,7 +2,7 @@
 
 A differential test runs the original and the optimized implementation on the same inputs and asserts that everything observable is identical. It is the evidence rule 3 asks for. Write it before changing the code and run it against the unchanged code first. Passing tests show equivalence only on the inputs that ran, so report the level reached ("Verification levels"), what was covered, and what was not.
 
-**Contents:** Which tests to write · Setup · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure · References
+**Contents:** Which tests to write · Setup · What to compare · Inputs · Verification levels · The contract as executable properties · Check the check · When equivalence counts as verified · Reporting verification · Testing a new data structure
 
 ## Which tests to write
 
@@ -148,7 +148,3 @@ If tests could not run at all, say so; the item is unverified (rule 5) and not a
 ## Testing a new data structure
 
 A structure written in the project (a heap, a deque, a bitset) gets its own unit tests in addition to the differential test of the function using it, including a differential test against a simple model (a heap against a sorted list) on generated operation sequences.
-
-## References
-
-Sources for the claims in this file are in `references/DIFFERENTIAL-TESTING.md`. Read them only to verify a claim.

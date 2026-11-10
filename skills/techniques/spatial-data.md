@@ -20,7 +20,3 @@ Check before choosing:
 | Points with uneven density in 2D or 3D | Quadtree (octree in 3D) | Maximum depth or minimum cell size bounded, so duplicate points cannot force unbounded subdivision | Per-query scan → proportional to depth plus output, workload-dependent |
 | Nearest-neighbor or range search over points in low dimensions | k-d tree | Low dimensionality (roughly under 10); data mostly static; many points equal to the splitting value kept on a consistent side | Build: O(n log n). Query: O(log n) average for well-distributed data, degrading toward O(n) for skewed data or higher dimensions; workload-dependent |
 | Nearest neighbor in high dimensions (embeddings, feature vectors) | Exact: a well-vectorized linear scan usually beats trees above roughly 10 to 20 dimensions. Approximate: HNSW graphs, locality-sensitive hashing, product quantization | Approximate methods can miss true neighbors: behavior change | Exact scan: constant-factor gains only. Approximate: sublinear queries in practice |
-
-## References
-
-Sources: `references/techniques/spatial-data.md`, read only to verify a claim.
