@@ -2,7 +2,8 @@
 """Stop hook for the algorithmic-intelligence skill.
 
 When the skill was used in this session and the agent is about to finish, check that its
-final message has four of the lines every final summary needs ("Every final summary" in SKILL.md): Complexity, Bugs noticed, Hazards noticed, and Commands not run.
+final message has five of the lines every final summary needs ("Every final summary" in SKILL.md): Complexity,
+Contract changes, Bugs noticed, Hazards noticed, and Commands not run.
 If any is missing, ask the agent once to add them. A message that ends in a question is
 the agent waiting for the developer, not a final summary, so it is left alone.
 
@@ -13,7 +14,7 @@ import os
 import re
 import sys
 
-REQUIRED = ['Complexity', 'Bugs noticed', 'Hazards noticed', 'Commands not run']
+REQUIRED = ['Complexity', 'Contract changes', 'Bugs noticed', 'Hazards noticed', 'Commands not run']
 
 
 def skill_used(transcript_path: str) -> bool:

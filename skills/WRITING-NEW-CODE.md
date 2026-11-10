@@ -22,7 +22,7 @@ The mandatory rules in `SKILL.md` apply as written, with these differences for n
 | 6. Best complexity | Reach the best bound for the workload the code will actually see; build nothing for workloads it will not. Compare approaches only where the choice is not obvious |
 | 8. Measure | Estimate sizes before choosing. Benchmark only when two candidates are close or the developer gave a performance requirement (`BENCHMARKING.md`), prediction first. Label every claim measured or estimated |
 | 10. Beyond CPU loops | Batch database, network, and I/O access from the first version |
-| 11. Public contract | Holds for existing public APIs; new APIs follow the request |
+| 11. Outcome and interfaces | The outcome of existing code stays. Where the request requires changing existing code, its interfaces may change for a better design, with every caller in the project updated and each change listed under "Contract changes"; a caller outside the project means explain and ask. New APIs follow the request |
 | 12. Start green | Only when existing code changes. A new project without tests skips it |
 
 ## Designing the code
@@ -77,4 +77,4 @@ End with the normal summary of the work, then a short **Performance decisions** 
 
 After the entries, list as applicable: bottlenecks in existing code, as proposed items awaiting a decision; steps reused, steps proposed for extraction or for moving to a shared module (with the cost of the move), and what was searched for each substantial step found nowhere; dependencies you would have used but did not; which claims are measured and which estimated.
 
-Close with the lines from "Every final summary" in `SKILL.md`: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Data structures, Bugs noticed, Hazards noticed, Commands not run, and Waiting for approval.
+Close with the lines from "Every final summary" in `SKILL.md`: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Data structures, Contract changes (interfaces of existing code changed, with the callers updated; new APIs are not listed), Bugs noticed, Hazards noticed, Commands not run, and Waiting for approval.

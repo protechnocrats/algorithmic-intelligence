@@ -16,7 +16,7 @@ Covers every Swift target, including Linux, Windows, WebAssembly, and Embedded S
 | Contiguous storage | `ContiguousArray` | Like `Array`, no Objective-C bridging | Matters only on Apple platforms with class elements |
 | Fixed-size inline array | `InlineArray<N, T>` (Swift 6.2+; on Apple platforms also an OS 26 deployment target, not back-deployed) | O(1), no heap allocation | Small buffers, embedded |
 | Borrowed view | `Span`, `MutableSpan` (6.2+) | O(1), no copy or refcounting | Safe replacement for `withUnsafeBufferPointer` |
-| Unique ownership | `~Copyable`, `borrowing`/`consuming` (5.9+) | No implicit copies or copy-on-write checks | Changes how callers use the type: a contract change (rule 11) |
+| Unique ownership | `~Copyable`, `borrowing`/`consuming` (5.9+) | No implicit copies or copy-on-write checks | Changes how callers use the type: an interface change; update every caller (rule 11) |
 | Lazy pipeline | `.lazy` | No intermediate arrays | Changes evaluation order |
 
 ### Not in the standard library

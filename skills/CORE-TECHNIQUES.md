@@ -146,11 +146,11 @@ In real systems, removing repeated work, allocation, and I/O often matters more 
 | Many tiny objects or linked structures | Contiguous arrays, flat maps, packed representations | Callers do not rely on object identity | Identity |
 | Expensive result that depends on a small set of inputs | Memoization or caching with explicit bounds, scope, and invalidation | Pure, including hidden inputs (time, locale, configuration, user or tenant context) | Staleness if not pure; data leaking across users if the key omits user, tenant, or permission context |
 | Database rows fetched one at a time (N+1) | Batch loading, joins, eager loading, DataLoader-style batching | The batched query returns the same rows (duplicates, missing keys, filters); batches stay under the database's parameter and query-size limits | Result order, transaction boundaries, partial failure |
-| Whole dataset loaded when a subset is used | Projection, filtering at the source, streaming, pagination | Every caller uses only the subset | Behavior change if callers receive different objects or pages |
+| Whole dataset loaded when a subset is used | Projection, filtering at the source, streaming, pagination | Every caller uses only the subset | Callers that receive different objects are updated (rule 11); a behavior change if what reaches the outcome differs (pages, missing fields) |
 | Independent network or I/O operations run sequentially | Batching or bounded concurrency | Truly independent (no shared state, ordering, or rate limit between them); the concurrency limit is fixed, not taken from input | Ordering, error handling, rate limits |
 | Unbounded queues or unbounded concurrent requests | Backpressure, bounded queues, admission control (`techniques/queues-and-latency.md`) | The rejection or blocking signal becomes part of the contract | Behavior change under load |
 | Full recomputation after a small change | Incremental computation, dependency tracking | Every dependency is tracked | Staleness if a dependency is missed |
-| Heavy work on a UI thread, event loop, or request thread | Move work elsewhere; precompute; cache derived values | Threading is part of the contract (rule 11) | Behavior change |
+| Heavy work on a UI thread, event loop, or request thread | Move work elsewhere; precompute; cache derived values | Which thread runs the work can change what users see: ordering, partial or late updates, races. Callers are updated for the new threading (rule 11) | Behavior change unless shown not to reach the outcome; when you cannot tell, explain and ask |
 
 ### Database queries
 
