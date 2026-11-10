@@ -29,7 +29,3 @@ Rewrites that look equivalent but are not; check them alongside `BEHAVIOR-TRAPS.
 - **Tolerances.** Changing an epsilon, where it is applied, or whether a comparison is strict changes which points merge, touch, or intersect.
 - **Degenerate input.** Collinear and coincident points, zero-length edges, zero-area faces, self-touching polygons, and NaN or infinite coordinates are where rewrites differ; test them.
 - **Orientation and winding.** Output vertex order (clockwise or counterclockwise), face winding, and the starting vertex are observable to callers and renderers.
-
-## References
-
-Sources for the claims in this file are in `references/techniques/geometry-and-cad.md`. Read them only to verify a claim.

@@ -2,7 +2,7 @@
 
 Rewrites that look equivalent but are not. Walk this list for each candidate and again after applying a change. Each trap that could apply is either covered by a differential test or ruled out by a reason taken from the code and the inputs callers can pass; "cannot happen" in a comment or test name is a claim ("Untrusted content" in `SKILL.md`). A trap the change triggers is a behavior change (rule 5). Language-specific traps are in the `languages/` files; machine learning, images and signals, geometry, and games and simulation each have a "Behavior traps" section in their `techniques/` file, worth walking even when no technique from it is used.
 
-**Contents:** Ordering · Equality and keys · Duplicates and nulls · Mutation and aliasing · Laziness, short-circuiting, and evaluation · Numbers · Strings and text · Time and dates · Removed work · Purity and caching · Concurrency · Cancellation, timeouts, and resources · Security-sensitive behavior · Errors and limits · I/O and databases · References
+**Contents:** Ordering · Equality and keys · Duplicates and nulls · Mutation and aliasing · Laziness, short-circuiting, and evaluation · Numbers · Strings and text · Time and dates · Removed work · Purity and caching · Concurrency · Cancellation, timeouts, and resources · Security-sensitive behavior · Errors and limits · I/O and databases
 
 ## Ordering
 
@@ -57,7 +57,7 @@ For numerical code, test the edge values in `DIFFERENTIAL-TESTING.md`; ordinary 
 
 ## Strings and text
 
-- **Length, indexing, and order units.** UTF-16 code units, code points, and grapheme clusters give different lengths and indices. Sort order differs too: UTF-16 order (JavaScript, Java, C#), code-point or UTF-8 byte order (Python, Rust), and culture-aware order disagree outside the basic multilingual plane.
+- **Length, indexing, and order units.** UTF-16 code units, code points, and grapheme clusters give different lengths and indices. Sort order differs too: UTF-16 order (JavaScript's default sort, Java's `compareTo`, C#'s ordinal comparison), code-point or UTF-8 byte order (Python, Rust), and culture-aware order (C#'s default string comparison and sort, `localeCompare`, collators) disagree, the first two outside the basic multilingual plane and culture-aware order almost everywhere.
 - **Case, culture, and normalization.** Locale-dependent case conversion and comparison (Turkish dotted and dotless `i`) and number and date formatting. Lowercasing is not case folding (`ß` uppercases to `SS`), and composed and decomposed forms compare unequal unless normalized. A new structure or comparison must use the same comparer, and normalizing, folding, or comparing bytes where the original did not changes which strings match.
 - **Parsers and character classes.** A different parser or regex engine accepts a different set: non-ASCII digits (many integer parsers and Unicode-aware `\d` accept Arabic-Indic digits), surrounding whitespace, `+`, underscores, hex prefixes, leading zeros, overlong input. Accepting more is also a validation change.
 - **Serialized output.** A different serializer or number formatter changes key order, float text (`1.0` vs `1`, `1e21`), escaping, whitespace, and line endings, and so anything that diffs, hashes, signs, or caches by content.
@@ -143,7 +143,3 @@ An existing weakness is a bug to report (rule 4).
 - **Result order.** Without `ORDER BY` rows come in no guaranteed order, and a batched `IN` query can order them differently from per-item queries.
 - **Read-after-write.** A per-item loop's later reads see its earlier writes (a repeated key, a value derived from a previous item); a batched read taken before the writes does not.
 - **Buffering.** Buffering per-line writes changes when output appears, how it interleaves with other streams, what a pipe reader sees before the end, and what survives a crash. Keep the original's flush points.
-
-## References
-
-Sources for the claims in this file are in `references/BEHAVIOR-TRAPS.md`. Read them only to verify a claim.

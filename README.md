@@ -18,14 +18,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.0/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.1/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.5.0` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.5.1` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -34,7 +34,7 @@ The agent returns a ranked report and changes no source code until you approve s
 The skill guides the agent through six stages. Each is backed by reference files that the agent loads only when a step needs them.
 
 1. **Understand the problem.** Translate the request first: people describe symptoms and business needs, so the agent separates the goal from any fix proposed, traces a symptom to the code behind it, derives sizes from business facts with the arithmetic shown, turns constraints stated in business words into contract items, and names the computational problem underneath. Then it writes the code's contract (what it requires, returns, changes, and throws, including order, ties, and duplicates), traces callers up to a real entry point, multiplies the cost along that call chain, estimates input sizes and call frequency, and names the resource that limits it: CPU, memory, I/O, network, a lock, or a queue. Untrusted input, secrets, or a hard deadline means judging by the worst case.
-2. **Analyze the current solution.** State the current complexity in every size variable, labeled worst, average, expected, or amortized, and the problem's lower bound with its basis: proven, conditional, conjectured, or unknown. A bound is never invented.
+2. **Analyze the current solution.** State the current complexity in every size variable, labeled worst, average, expected, or amortized, and the problem's lower bound with its basis: proven, conditional, conjectured, workload-dependent, or unknown. A bound is never invented.
 3. **Explore alternatives.** Audit every collection on a hot path (its dominant operations, current cost, the best structure, and the reason for not switching), then compare approaches in proportion to the problem's difficulty: at least three for nontrivial problems, including combinations of techniques, with every technique's assumptions checked against the code. The algorithm and the data structure are searched together, asking what structure would make a different algorithm possible, and the lowest complexity reachable is recommended; an easier partial improvement is listed as an alternative. When no known technique fits, derive one (see "The discovery method"), and label every algorithm established, experimental, or derived.
 4. **Engineer the solution.** Choose what is best for the real workload, not on paper: memory that lowers time complexity is worth spending as long as it fits, and stays bounded across every copy that can exist at once. Structures come from the language first, then your existing direct dependencies, with a maintained package offered next to writing one. New dependencies need your permission, and the project's idioms are respected.
 5. **Verify correctness.** The agent reads how your nearby tests are written and follows them. Pin tests drive the real entry point with real local collaborators, a seeded comparison checks pure functions against the original, and anything the change assumes from elsewhere (data already sorted, say) gets a test that fails if it stops being true. Differential tests compare return values, input mutation, exceptions, side effects, and ordering. They must first prove they can fail: catch a deliberately planted difference, and pass with the original on both sides. Then the agent climbs the verification ladder where it is cheap: tested, property-checked, exhaustively checked to a stated bound, proven. Passing tests are evidence, not proof; only a machine-checked proof or a check of the whole input domain is called proven.
@@ -74,12 +74,12 @@ The agent names the mode it picked in its first line, so you can redirect it. If
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.5.0/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.5.1/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.0/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.1/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -98,7 +98,7 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 Copy the `skills/` folder (it contains `SKILL.md` and the files it links to) into your agent's skills directory, as a folder named `algorithmic-intelligence`:
 
 ```bash
-git clone --branch 0.5.0 https://github.com/protechnocrats/algorithmic-intelligence.git
+git clone --branch 0.5.1 https://github.com/protechnocrats/algorithmic-intelligence.git
 cp -r algorithmic-intelligence/skills <your-agent-skills-dir>/algorithmic-intelligence
 ```
 
@@ -302,9 +302,8 @@ The skill's knowledge base is modular and organized around its workflow. `SKILL.
 | `BEHAVIOR-TRAPS.md` | Rewrites that look equivalent but are not: ordering, equality and keys, duplicates and nulls, aliasing, laziness and key functions, numbers, strings, time, removed work, hidden inputs and caching, concurrency, cancellation, security, errors and limits, I/O and databases; domain traps (machine learning, images, geometry, simulation) are in the matching `techniques/` file |
 | `REPORTING.md` | Report mode's formats: where reports go, report header (request as understood, test baseline, scope, text addressed to AI assistants, hazards, language profile), item format, tried and rejected, bug log, behavior changes for review, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions (structures and their costs, verified maintained packages, hidden costs, traps, and tooling), and `GENERIC.md` for building and saving a profile for any other language |
-| `references/` | The sources behind each file's claims, at the same path as the file they support and kept out of the files the agent loads; read only to verify a claim |
 
-Outside `skills/`, [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, the hook registration in `hooks/hooks.json`, and their tests in `tests/`), listed for installation in `.claude-plugin/marketplace.json`.
+Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the same path as the file they support, for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, the hook registration in `hooks/hooks.json`, and their tests in `tests/`), listed for installation in `.claude-plugin/marketplace.json`.
 
 ## Releases and security
 

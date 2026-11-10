@@ -2,7 +2,7 @@
 
 `CORE-TECHNIQUES.md` and the files under `techniques/` hold known solutions. This file is for when none matches: a set of heuristics, each with a canonical example, drawn from how algorithm designers find better solutions (Bentley, Dijkstra, Tarjan, Knuth, Sedgewick, Pólya, and others). They are ways of looking at a problem, not a checklist, and the reason one fails usually points to the next.
 
-**Contents:** When to use it · The loop · Consulting the literature · The moves · When a move stalls · Combining moves · Recording the result · References
+**Contents:** When to use it · The loop · Consulting the literature · The moves · When a move stalls · Combining moves · Recording the result
 
 ## When to use it
 
@@ -211,7 +211,3 @@ Most real derivations chain moves. Bentley's maximum subarray is 1 → 2 → 3. 
 ## Recording the result
 
 In the item's "Candidates" field (`REPORTING.md`), say how each candidate was found (a table row, or a move by number). Mark derived algorithms *derived* with their invariant or correctness argument in a sentence or two. Summarize the research log, including the moves that produced nothing and what blocked them, so the developer can see where the search stopped. For a conjecture from small cases, say whether it was proved or only checked, and up to which sizes. A log, derived algorithm, or bound from an earlier session is a claim to recheck.
-
-## References
-
-Sources for the claims in this file are in `references/DISCOVERY.md`. Read them only to verify a claim.

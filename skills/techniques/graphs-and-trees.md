@@ -69,7 +69,3 @@ A faster program analysis must reach the same fixed point, or the compiler's out
 | An answer computed for every possible root | Tree DP with rerooting | The per-root answer can be combined from child and parent contributions | O(n²) → O(n) |
 | Path queries and updates between arbitrary nodes | Heavy-light decomposition + segment tree | Tree shape does not change | O(n) per query → O(log² n) |
 | Distance-based counting over all pairs of nodes | Centroid decomposition | — | O(n²) → O(n log n) or O(n log² n) |
-
-## References
-
-Sources for the claims in this file are in `references/techniques/graphs-and-trees.md`. Read them only to verify a claim.

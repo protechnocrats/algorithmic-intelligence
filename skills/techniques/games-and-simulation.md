@@ -40,7 +40,3 @@ Rewrites that look equivalent but are not; check them alongside `BEHAVIOR-TRAPS.
 - **Update order.** Object update order within a frame affects outcomes (which collision resolves first, which event fires first). Spatial structures and parallel updates change that order.
 - **Time step.** Changing from variable to fixed time steps, or the step size, changes simulation results. Measure frame time with a monotonic clock: wall-clock time jumps when the system clock is corrected or changed, giving negative or huge steps.
 - **Frame timing of effects.** Moving work to another frame, a background thread, or an event changes when its effects appear, which players and other systems can observe.
-
-## References
-
-Sources for the claims in this file are in `references/techniques/games-and-simulation.md`. Read them only to verify a claim.

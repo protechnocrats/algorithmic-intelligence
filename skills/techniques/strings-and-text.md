@@ -44,7 +44,3 @@ A rewrite reproduces accept and reject decisions, match priorities, error positi
 | Combination | Solves | Valid when | Result |
 |---|---|---|---|
 | Aho-Corasick + failure links + DP | Counting or avoiding many patterns in generated strings | The automaton's size (patterns × alphabet) is bounded when untrusted parties supply patterns; the count type or modulus cannot overflow differently from the original | Repeated scans → linear in text and automaton size |
-
-## References
-
-Sources: `references/techniques/strings-and-text.md`, read only to verify a claim.

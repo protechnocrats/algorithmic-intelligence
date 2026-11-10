@@ -2,7 +2,7 @@
 
 Record the runtime (Node version, browsers, Deno, Bun, Hermes) and the ECMAScript target. TypeScript types are erased, so every runtime cost below applies to both.
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · JavaScript-specific traps · Testing and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · JavaScript-specific traps · Testing and benchmarking
 
 ## Built-in structures
 
@@ -48,7 +48,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 | `JSON.stringify(obj)` as a `Map` key | Serializes on every lookup, and depends on property order | A primitive ID or a key built once |
 | `Object.keys(obj).length`, `Object.entries(obj)` in a loop | O(n) allocation per call | Compute once, or track size |
 | `JSON.parse(JSON.stringify(x))` to copy | Full serialization | `structuredClone` or no copy; they differ on `Date`, `undefined`, `Map`, functions, class instances |
-| `new RegExp(...)` in a loop | Recompiles | Hoist. A hoisted regex with `g` or `y` shares `lastIndex` across calls, changing `test` and `exec` results: reset it or drop the flag |
+| `new RegExp(...)` in a loop | A new object each time; engines such as V8 cache compiled patterns by source and flags, so recompilation is not guaranteed, and a dynamic pattern can still miss the cache | Hoist. A hoisted regex with `g` or `y` shares `lastIndex` across calls, changing `test` and `exec` results: reset it or drop the flag |
 | `delete obj.key` in hot code | Can deoptimize object shapes | `Map`, or set `undefined` if semantics allow |
 | `await` in a loop over independent items | Sequential latency | `Promise.all` or bounded concurrency; this changes ordering and error timing |
 | `string += x` in a loop | Usually fine (engines use ropes) | Leave it without a benchmark |
@@ -97,8 +97,4 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 - **Profiling:** `node --cpu-prof`, `--heap-prof`; the DevTools Performance panel.
 - **Benchmarks:** Vitest `bench`, tinybench, or Benchmark.js if present; otherwise `performance.now()` with warmup, medians, and results kept observable.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): fast-check reaches level 2 with shrinking; reach level 3 by enumerating small domains in tests. TypeScript's checker proves types, never equivalence.
-- **Constant-time comparison:** `crypto.timingSafeEqual` in Node; in browsers, `crypto.subtle.verify` for MACs.
-
-## References
-
-Sources: `references/languages/JAVASCRIPT-TYPESCRIPT.md`.
+- **Constant-time comparison:** `crypto.timingSafeEqual` in Node; in browsers, `crypto.subtle.verify` for MACs. `timingSafeEqual` throws `RangeError` when the inputs differ in length, where `===` returned `false`: compare fixed-length values (MACs, or hashes of both inputs) or check the length first, or the replacement adds an exception (rule 5).

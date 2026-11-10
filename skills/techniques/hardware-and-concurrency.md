@@ -72,7 +72,3 @@ Threads waiting on the same lock, atomic, or cache line can cost more than the w
 | Single producer and single consumer exchanging items through a locked queue | Lock-free bounded ring buffer with acquire and release memory ordering | Exactly one producer thread and one consumer thread; memory ordering correct on every target architecture; behavior when full (block, drop, or fail) matches the original | No lock per item |
 
 General lock-free and wait-free structures (multi-producer queues, lock-free hash maps) are easy to get wrong: prefer the platform's own concurrent structures, or a reviewed library (rule 7).
-
-## References
-
-Sources for the claims in this file are in `references/techniques/hardware-and-concurrency.md`. Read them only to verify a claim.

@@ -2,7 +2,7 @@
 
 Record the Java language level; some APIs below need newer versions. Kotlin projects use this file only for JVM structures Kotlin lacks (rule 14, `KOTLIN.md`).
 
-**Contents:** Built-in structures · Hidden costs · Bit manipulation · Java-specific traps · Testing and benchmarking · References
+**Contents:** Built-in structures · Hidden costs · Bit manipulation · Java-specific traps · Testing and benchmarking
 
 ## Built-in structures
 
@@ -58,7 +58,7 @@ These are dependencies (rule 7): check the module's manifest first, and follow "
 - **Number parsing.** `Integer.parseInt`/`Long.parseLong` accept non-ASCII digits (`"٥"` is 5) and a leading `+`, but no whitespace or underscores; `Integer.decode` also accepts `0x` and leading-zero octal. `Double.parseDouble` trims whitespace and accepts `NaN`, `Infinity`, hex floats, and a trailing `d` or `f`. A fast parser has to match, including `NumberFormatException` on overflow.
 - **`java.util.regex` backtracks.** Quote input in a pattern with `Pattern.quote`, and in a `replaceAll` replacement with `Matcher.quoteReplacement` (`$` and `\` are special).
 - **Unkeyed hashing.** `String.hashCode` and boxed-integer hashes are fixed, so chosen keys collide; only `Comparable` keys get O(log n) lookups in a tree bin (non-`Comparable` keys with one hash are searched linearly). Worst case O(n) per lookup for untrusted non-`Comparable` keys.
-- **Default locale, charset, and time zone are hidden inputs.** `toUpperCase()`/`toLowerCase()` without a `Locale` give dotless `ı` in Turkish; `String.format` uses the default locale's decimal separator; date formatting uses the default zone; the default charset is UTF-8 only from Java 18. New code passes `Locale.ROOT`, a charset, and a `ZoneId`.
+- **Default locale, charset, and time zone are hidden inputs.** `toUpperCase()`/`toLowerCase()` without a `Locale` follow Turkish rules there (`"i".toUpperCase()` is dotted `İ`, `"I".toLowerCase()` is dotless `ı`); `String.format` uses the default locale's decimal separator; date formatting uses the default zone; the default charset is UTF-8 only from Java 18. New code passes `Locale.ROOT`, a charset, and a `ZoneId`.
 - **Deserialization and recursion.** `ObjectInputStream.readObject` on untrusted data can run code. `StackOverflowError` depth depends on thread stack size and JIT state.
 
 ## Bit manipulation
@@ -96,8 +96,4 @@ Shift counts are masked (`1 << 32 == 1` for `int`).
 - **Profiling:** async-profiler (CPU, allocation, lock flame graphs) or Java Flight Recorder; VisualVM otherwise.
 - **Benchmarks:** JMH if already present (`-prof gc` for allocation). Otherwise a harness with warmup; JIT warmup, dead-code elimination, and GC make naive timings unreliable.
 - **Verification beyond tests** ("Verification levels" in `DIFFERENTIAL-TESTING.md`): JBMC (bounded model checking of bytecode, including equivalence harnesses); jcstress (outcomes under the memory model); Java PathFinder (thread interleavings); OpenJML (JML contracts).
-- **Constant-time comparison:** `MessageDigest.isEqual` (time depends only on the first argument's length). `Arrays.equals` and `String.equals` stop at the first difference.
-
-## References
-
-Sources: `references/languages/JAVA.md`.
+- **Constant-time comparison:** `MessageDigest.isEqual` (time depends only on the first argument's length, except that it returns at once when the second is `null` or empty). `Arrays.equals` and `String.equals` stop at the first difference.

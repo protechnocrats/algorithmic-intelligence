@@ -53,7 +53,7 @@ When nobody can answer (a scheduled or unattended run), nothing that needs appro
 | Measuring | [BENCHMARKING.md](BENCHMARKING.md) |
 | Untrusted input, secrets, or a hard deadline | [techniques/hostile-inputs.md](techniques/hostile-inputs.md) |
 
-The domain files under `techniques/`: specialized-structures (hash table design, caches, filters, and other specialized structures), strings-and-text, sequences-dp-search, graphs-and-trees, math-and-numerics, data-at-scale, queues-and-latency, distributed-systems, hardware-and-concurrency, optimization-and-scheduling, geometry-and-cad, spatial-data, images-and-signals, machine-learning, games-and-simulation, hostile-inputs. The `references/` directory holds source lists only.
+The domain files under `techniques/`: specialized-structures (hash table design, caches, filters, and other specialized structures), strings-and-text, sequences-dp-search, graphs-and-trees, math-and-numerics, data-at-scale, queues-and-latency, distributed-systems, hardware-and-concurrency, optimization-and-scheduling, geometry-and-cad, spatial-data, images-and-signals, machine-learning, games-and-simulation, hostile-inputs.
 
 These files hold the preconditions and pitfalls that make familiar techniques go wrong, so open them even when the technique seems obvious.
 
@@ -101,4 +101,4 @@ Whatever the mode, end with these lines so the developer can see at a glance wha
 
 ## Working efficiently
 
-Each tool call resends the conversation, so the number of steps drives cost: batch independent reads and searches, keep one differential-test harness and one benchmark for the whole run, and filter long command output. On platforms with sub-agents, independent analysis can run in parallel, but one agent owns all source edits.
+Each tool call resends the conversation, so the number of steps drives cost: batch independent reads and searches, keep one differential-test harness and one benchmark for the whole run, and filter long command output. One agent owns all source edits.

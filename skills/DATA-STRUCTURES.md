@@ -61,7 +61,3 @@ Now: O(n) per removal, O(n²) total. Best: deque, O(1) amortized, keeps order ("
 `labels` (hash map, Scheduler:18). Dominant: lookup, 1 per job.
 Now: O(1) expected. Best: hash map. Not switching: already the best.
 ```
-
-## References
-
-This file routes to tables held elsewhere. Sources are in the reference files of those tables, such as `references/CORE-TECHNIQUES.md`.
