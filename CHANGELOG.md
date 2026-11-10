@@ -6,6 +6,18 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-09
+
+Agents now look for what the project already has before writing a step or a structure, in every mode, and propose extracting or sharing steps instead of calling a larger function, copying it, or adding a dependency between modules.
+
+### Added
+
+- **Agents look for what the project already has before writing a step.** In every mode, before writing a step or a structure, the agent searches the module in scope, the modules it may depend on, and a shared module if there is one, by name, by the data the step touches (which still finds steps written as lambdas or held in variables), and by type where the language allows, and reports what it searched. It reuses a match only when its contract is the same. It never calls a larger function for part of its work or copies the steps out of it: it proposes extracting them, and when two modules need a step, proposes moving its pure part to the shared module, with the cost of the move. It never adds a dependency between modules. When optimizing, the same intermediate result computed by different functions or modules in one operation is treated as repeated work.
+
+### Changed
+
+- **The README describes reuse.** The feature list, the write-mode row, and a new tip (say where shared code lives) explain how the agent searches for existing steps and what it proposes.
+
 ## [0.5.1] - 2026-11-09
 
 Corrects facts across the language, technique, and core files, removes contradictions between files, and moves the sources out of the installed skill. No intended change in how agents work: the fixes correct what agents are told about specific APIs and costs, and the sources now ship only to contributors.
