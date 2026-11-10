@@ -60,6 +60,7 @@ Each concept has one home; other files point to it.
 | Phases of report and apply mode | `WORKFLOW.md` (1–4), `APPLYING.md` (5–6) | — |
 | Reachability and entry points | `WORKFLOW.md`, Phase 2, step 2 | rule 8 |
 | Counting costs, lower bounds, routing | `ALGORITHM-ARSENAL.md` | rule 6 |
+| Reusing what the project already has (searching for existing steps, extracting instead of calling a larger function, moving shared steps to a shared module) | "Reuse what the project already has" in `ALGORITHM-ARSENAL.md` | "Look for the steps before writing them" in `WRITING-NEW-CODE.md`; Phases 2 and 3 in `WORKFLOW.md` |
 | Pin tests, following existing tests, extracting buried hot paths, pinning assumptions | "Which tests to write" in `DIFFERENTIAL-TESTING.md` | Phase 3 in `WORKFLOW.md`; Phase 5 in `APPLYING.md` |
 | The data structure audit; the operation-mix table | `DATA-STRUCTURES.md` | rule 7; Phase 3 in `WORKFLOW.md`; the item formats in `REPORTING.md` |
 | Differential tests before the first speed edit, however approval was worded | "Differential tests come before the edit" in `SKILL.md` | Phase 4 in `WORKFLOW.md`; Phase 5 in `APPLYING.md` |

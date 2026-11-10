@@ -7,6 +7,7 @@ Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding a
 - **In existing code, it changes no behavior without your approval.** Every change is backed by tests written before the edit: pin tests through the real entry point, and differential tests that run the original and the optimized code on the same inputs and compare the results. Anything that would behave differently is listed for your decision first. The one exception, a bug the optimization removes as a side effect, is rule 4 under "Rules it enforces".
 - **It searches the algorithm and the data structure together,** auditing every collection on a hot path and recommending the lowest complexity reachable, even when that needs a structure the code does not use yet.
 - **In new code, it chooses efficient algorithms and data structures from the first version,** sized for the inputs the code will really see.
+- **It reuses what your project already has.** Before writing a step or a structure, it searches the project, including other modules and a shared module, for an existing implementation with the same contract. It never calls a larger function for part of its work or copies steps out of it: it proposes extracting them, or moving them to a shared module, and never adds a dependency between modules on its own.
 - **It is written for any coding agent that supports skills, any programming language,** and any kind of codebase: applications, backends, libraries, databases, compilers, kernels, and embedded firmware.
 
 Sometimes the best engineering decision is to leave the code alone, and the skill says so when it is.
@@ -18,14 +19,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.1/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.0/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.5.1` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.6.0` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -36,7 +37,7 @@ The skill guides the agent through six stages. Each is backed by reference files
 1. **Understand the problem.** Translate the request first: people describe symptoms and business needs, so the agent separates the goal from any fix proposed, traces a symptom to the code behind it, derives sizes from business facts with the arithmetic shown, turns constraints stated in business words into contract items, and names the computational problem underneath. Then it writes the code's contract (what it requires, returns, changes, and throws, including order, ties, and duplicates), traces callers up to a real entry point, multiplies the cost along that call chain, estimates input sizes and call frequency, and names the resource that limits it: CPU, memory, I/O, network, a lock, or a queue. Untrusted input, secrets, or a hard deadline means judging by the worst case.
 2. **Analyze the current solution.** State the current complexity in every size variable, labeled worst, average, expected, or amortized, and the problem's lower bound with its basis: proven, conditional, conjectured, workload-dependent, or unknown. A bound is never invented.
 3. **Explore alternatives.** Audit every collection on a hot path (its dominant operations, current cost, the best structure, and the reason for not switching), then compare approaches in proportion to the problem's difficulty: at least three for nontrivial problems, including combinations of techniques, with every technique's assumptions checked against the code. The algorithm and the data structure are searched together, asking what structure would make a different algorithm possible, and the lowest complexity reachable is recommended; an easier partial improvement is listed as an alternative. When no known technique fits, derive one (see "The discovery method"), and label every algorithm established, experimental, or derived.
-4. **Engineer the solution.** Choose what is best for the real workload, not on paper: memory that lowers time complexity is worth spending as long as it fits, and stays bounded across every copy that can exist at once. Structures come from the language first, then your existing direct dependencies, with a maintained package offered next to writing one. New dependencies need your permission, and the project's idioms are respected.
+4. **Engineer the solution.** Choose what is best for the real workload, not on paper: memory that lowers time complexity is worth spending as long as it fits, and stays bounded across every copy that can exist at once. Before writing a step or a structure, the agent searches the project for an implementation it already has (by name, by the data the step touches, and in a shared module), and proposes extracting a step buried in a larger function rather than calling the whole function. Structures come from the language first, then your existing direct dependencies, with a maintained package offered next to writing one. New dependencies need your permission, and the project's idioms are respected.
 5. **Verify correctness.** The agent reads how your nearby tests are written and follows them. Pin tests drive the real entry point with real local collaborators, a seeded comparison checks pure functions against the original, and anything the change assumes from elsewhere (data already sorted, say) gets a test that fails if it stops being true. Differential tests compare return values, input mutation, exceptions, side effects, and ordering. They must first prove they can fail: catch a deliberately planted difference, and pass with the original on both sides. Then the agent climbs the verification ladder where it is cheap: tested, property-checked, exhaustively checked to a stated bound, proven. Passing tests are evidence, not proof; only a machine-checked proof or a check of the whole input domain is called proven.
 6. **Measure performance.** Predict the speedup before benchmarking, then measure time and memory at realistic and larger sizes against the noise floor of an identical A/A run, and report the changed code's share of the whole operation: a 10× speedup of code that takes 2% of a request saves under 2%, and the report says so. Every number is labeled measured or estimated.
 
@@ -66,7 +67,7 @@ The algorithm tables are the toolbox, not the product: the skill's value is the 
 |---|---|---|
 | **Report** | "find performance problems", "review this for complexity", "what can be optimized?" | The agent surveys existing code, analyzes it, and returns a ranked report. **No code changes.** |
 | **Apply** | "apply items 1 and 3", "optimize `findDuplicates` in `Util.kt`" | The agent changes only the existing code you named, one optimization at a time, with pin tests, differential tests, and a benchmark for each. |
-| **Write** | "add CSV export for orders", "build a rate limiter", "write a function that merges these feeds" | The agent writes the new code you asked for, choosing algorithms and data structures for the expected input sizes, and ends with a short list of its performance decisions. It does not change existing code just for speed; if existing code is the bottleneck, it tells you and asks. |
+| **Write** | "add CSV export for orders", "build a rate limiter", "write a function that merges these feeds" | The agent writes the new code you asked for, choosing algorithms and data structures for the expected input sizes, and reuses existing steps whose contract matches (proposing to extract any buried inside a larger function), and ends with a short list of its performance decisions. It does not change existing code just for speed; if existing code is the bottleneck, it tells you and asks. |
 
 The agent names the mode it picked in its first line, so you can redirect it. If the request is ambiguous, or you invoke the skill with no task, it asks. Approving a report's items, however you word it ("go ahead", "implement the plan"), starts apply mode, so the tests are written before the first edit. Approving one item never approves another.
 
@@ -74,12 +75,12 @@ The agent names the mode it picked in its first line, so you can redirect it. If
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.5.1/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.6.0/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.5.1/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.0/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -98,7 +99,7 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 Copy the `skills/` folder (it contains `SKILL.md` and the files it links to) into your agent's skills directory, as a folder named `algorithmic-intelligence`:
 
 ```bash
-git clone --branch 0.5.1 https://github.com/protechnocrats/algorithmic-intelligence.git
+git clone --branch 0.6.0 https://github.com/protechnocrats/algorithmic-intelligence.git
 cp -r algorithmic-intelligence/skills <your-agent-skills-dir>/algorithmic-intelligence
 ```
 
@@ -178,6 +179,7 @@ For small results (one or two items), the report is given in the conversation in
 - **For existing code, start in report mode.** Read the report, then approve items by ID. You stay in control of every change.
 - **Start from a clean working tree on a new branch.** With commits authorized, each optimization lands as its own commit; without them, the results list the files each item changed, so any one can be reviewed or reverted.
 - **Share what you know about performance.** Profiler output, slow screens, slow endpoints, or "this list can hold 50,000 items" helps the agent focus on what matters. Without it, the agent estimates input sizes from the code, configuration, and documentation, says so, and tells you when those sources disagree.
+- **Say where shared code lives.** In a multi-module project, naming the shared module or the place a helper lives ("tax rules are in `billing`") saves searching. The agent searches anyway and reports what it searched, so a miss is visible and you can point it to the right place.
 - **Narrow the scope for large projects.** Point it at a module, a directory, a file, or a single function instead of the whole repository.
 - **Have a working test suite.** The agent runs it before and after every change, and writes its new tests the way your nearby tests are written, reusing their fixtures and fakes. Projects with no tests still work, because the agent writes its own pin and differential tests, but your own tests catch more.
 - **Answer dependency requests deliberately.** When the best data structure is not in your language's standard library, the agent first checks your module's direct dependencies. If none provides it, it offers a maintained package next to writing the structure in the project, and explains what the package buys. You can decline; it then uses the best option without the dependency.
