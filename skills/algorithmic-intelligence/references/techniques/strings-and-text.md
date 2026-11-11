@@ -4,7 +4,10 @@ The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
 ## Strings
 
-Before replacing a string operation, record its unit (bytes, UTF-16 code units, code points, or grapheme clusters) and its comparison (ordinal; case-insensitive with which folding, since Turkish dotted and dotless i and ß becoming "SS" differ by locale; locale collation; NFC versus NFD). An ASCII or byte fast path matches the original on non-ASCII input, combining marks, and right-to-left text, or falls back. Case conversion and normalization can change length, so an index into a lowered or normalized copy is not an index into the original. Some digit tests and number parsers accept non-ASCII digits (`\d` in Unicode mode, `int()`, `isdigit`); a replacement accepts exactly the same set.
+Before replacing a string operation, record its unit (bytes, UTF-16 code units, code points, or grapheme clusters) and its comparison (ordinal; case-insensitive with which folding, since Turkish dotted and dotless i and ß becoming "SS" differ by locale; locale collation; NFC versus NFD).
+- An ASCII or byte fast path matches the original on non-ASCII input, combining marks, and right-to-left text, or falls back.
+- Case conversion and normalization can change length, so an index into a lowered or normalized copy is not an index into the original.
+- Some digit tests and number parsers accept non-ASCII digits (`\d` in Unicode mode, `int()`, `isdigit`); a replacement accepts exactly the same set.
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|

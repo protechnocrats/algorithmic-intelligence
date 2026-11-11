@@ -12,7 +12,10 @@ When no row in the arsenal or the domain files matches the abstract problem; whe
 
 Pin the problem down first: the abstract statement, the contract as the code implements it (outputs, order, ties, errors, edge cases), every size variable, and the lower bound (move 10). A wrong statement yields a fast algorithm for a different problem. Keep the existing code, or in write mode the simplest correct version, as the baseline that every derivation is tested against.
 
-Then try the moves, cheapest first, and keep a short research log: what each move gave (a candidate, a bound, or nothing) and what blocked it. A candidate from here still has to state its assumptions, have them confirmed from the code, and compete with the other candidates. Stop when a candidate reaches the lower bound, when a conditional bound (move 10) says the gap needs a breakthrough, or when the moves run out; record the gap and why it remains.
+Then try the moves, cheapest first, and keep a short research log: what each move gave (a candidate, a bound, or nothing) and what blocked it. A candidate from here still has to state its assumptions, have them confirmed from the code, and compete with the other candidates. Stop when:
+- a candidate reaches the lower bound;
+- a conditional bound (move 10) says the gap needs a breakthrough; or
+- the moves run out. Record the gap and why it remains.
 
 This is the algorithm-engineering cycle (Sanders; McGeoch): design, analyze, implement, experiment, and let the experiment send you back to the design. A measurement that contradicts the analysis (move 12) or a small case that breaks a conjecture (move 13) sends you back to the problem statement or the moves, not forward with the candidate.
 
@@ -80,7 +83,11 @@ An expensive operation is fine if enough cheap ones pay for it: rebuild periodic
 
 A random pivot makes selection O(n) expected whatever the input order, if the adversary cannot predict the pivots; a random sample estimates a distribution or picks partition boundaries (sample sort); hashing maps a large key space into a small one; two random choices instead of one balance load almost perfectly.
 
-*Check:* randomness that changes only running time gives an expected bound; state what it is over. Randomness that can change the result (Monte Carlo, as opposed to Las Vegas, which is always right) makes the answer approximate, so it is a behavior change and unsuitable where the answer decides access, money, or deletion. Seed and reproducibility requirements still hold. If whoever chooses the inputs sees outputs that depend on the random choices before choosing more, the expected bound may not hold ("Adaptive adversaries" in `techniques/hostile-inputs.md`).
+*Check:*
+- Randomness that changes only running time gives an expected bound; state what it is over.
+- Randomness that can change the result (Monte Carlo, as opposed to Las Vegas, which is always right) makes the answer approximate. So it is a behavior change, and unsuitable where the answer decides access, money, or deletion.
+- Seed and reproducibility requirements still hold.
+- If whoever chooses the inputs sees outputs that depend on the random choices before choosing more, the expected bound may not hold ("Adaptive adversaries" in `techniques/hostile-inputs.md`).
 
 ### 9. Shorten the critical path (Leiserson)
 
@@ -101,7 +108,7 @@ Each bound holds in a model. Leaving the model (hashing instead of comparing, bo
 
 ### 11. Estimate before building (Bentley)
 
-Multiply a candidate out before writing it: sizes × calls per period × operations per call. Take sizes from what the deployed code and configuration enforce, and from data the developer gives. A size nothing enforces is not a bound, so size for the largest input the code accepts. When sources disagree, state both; ask the developer if they would select different candidates, and when nobody can answer, pick the one that is safe at the larger size.
+Multiply a candidate out before writing it: sizes × calls per period × operations per call. Take sizes from what the deployed code and configuration enforce, and from data the developer gives. A size nothing enforces is not a bound, so size for the largest input the code accepts. When sources disagree, state both. Ask the developer if they would select different candidates. When nobody can answer, pick the one that is safe at the larger size.
 
 Rough orders of magnitude, for estimates only: a core runs about 10⁸ to 10⁹ simple operations per second; a main-memory cache miss costs about 100 ns; a random SSD read about 100 µs; a round trip inside a data center about 0.5 ms, across continents about 100 ms. An estimate in seconds against a budget in milliseconds rules a candidate out without building it; one far inside the budget says further moves are not needed.
 
@@ -124,7 +131,10 @@ Big-O claims are hypotheses an experiment can refute. Measure the growth exponen
 
 ### 13. Experiment on small cases, then conjecture (Pólya, Knuth)
 
-When you cannot see the structure, compute it. Run the brute force on every small input (all lists up to length 6 or 7 over a few values, every graph on up to 6 vertices) and tabulate answers and optimal solutions against the parameters. Look for a recurrence, a closed form, monotonicity, symmetry, or a choice optimal solutions always make (the smallest element, the earliest deadline). For an integer sequence of answers, check the On-Line Encyclopedia of Integer Sequences (oeis.org), which often names the problem. Then prove the conjecture (moves 3, 10, 14) or check it at level 3 in `DIFFERENTIAL-TESTING.md`.
+When you cannot see the structure, compute it.
+1. Run the brute force on every small input (all lists up to length 6 or 7 over a few values, every graph on up to 6 vertices), and tabulate answers and optimal solutions against the parameters.
+2. Look for a recurrence, a closed form, monotonicity, symmetry, or a choice optimal solutions always make (the smallest element, the earliest deadline). For an integer sequence of answers, check the On-Line Encyclopedia of Integer Sequences (oeis.org), which often names the problem.
+3. Prove the conjecture (moves 3, 10, 14) or check it at level 3 in `DIFFERENTIAL-TESTING.md`.
 
 *Example:* does "largest coin first" give the fewest coins? For coins {1, 3, 4}, greedy pays 6 as 4 + 1 + 1, the optimum is 3 + 3: one counterexample settles it, so use a DP over amounts. For {1, 5, 10, 25} the table agrees with greedy on every amount tested, which is evidence, not proof. *Check:* small-case patterns can break later. The regions formed by chords between n points on a circle go 1, 2, 4, 8, 16, then 31 (Moser's circle problem, OEIS A000127).
 
@@ -174,7 +184,10 @@ Start from the clearest correct version and rewrite it in small meaning-preservi
 
 When something can predict part of the answer (a model, last run's result, a frequency estimate, where a key usually lands), use it to skip work, but bound the cost of a wrong prediction. State **consistency** (how good it is when the prediction is exact) and **robustness** (how bad when the prediction is arbitrarily wrong: never much worse than the classic algorithm).
 
-*Example (learned indexes, Kraska et al., 2018):* a model predicts a key's position p in a sorted array; exponential search outward from p costs O(log d) for an error of d, so a good prediction is near O(1) and a useless one still O(log n). For caching, a randomized policy that follows predicted next-use times but falls back to randomized marking stays within a constant factor of optimal when predictions are good and within O(log k) for cache size k when not (Lykouris and Vassilvitskii, 2018); deterministic LRU guarantees only O(k), the best any deterministic policy can. *Check:* measure the prediction error on real data and the predictor's own cost (training, memory, staleness). Predictions that decide something callers observe (which entries are evicted, who is served first) change behavior. Untrusted inputs can steer the predictor, so judge robustness by the worst case.
+*Example (learned indexes, Kraska et al., 2018):* a model predicts a key's position p in a sorted array; exponential search outward from p costs O(log d) for an error of d, so a good prediction is near O(1) and a useless one still O(log n). For caching, a randomized policy that follows predicted next-use times but falls back to randomized marking stays within a constant factor of optimal when predictions are good and within O(log k) for cache size k when not (Lykouris and Vassilvitskii, 2018); deterministic LRU guarantees only O(k), the best any deterministic policy can. *Check:*
+- Measure the prediction error on real data and the predictor's own cost (training, memory, staleness).
+- Predictions that decide something callers observe (which entries are evicted, who is served first) change behavior.
+- Untrusted inputs can steer the predictor, so judge robustness by the worst case.
 
 ### 20. Work backward, and from the extremes (Pólya)
 
@@ -210,4 +223,10 @@ Most real derivations chain moves. Bentley's maximum subarray is 1 → 2 → 3. 
 
 ## Recording the result
 
-In the item's "Candidates" field (`REPORTING.md`), say how each candidate was found (a table row, or a move by number). Mark derived algorithms *derived* with their invariant or correctness argument in a sentence or two. Summarize the research log, including the moves that produced nothing and what blocked them, so the developer can see where the search stopped. For a conjecture from small cases, say whether it was proved or only checked, and up to which sizes. A log, derived algorithm, or bound from an earlier session is a claim to recheck.
+In the item's "Candidates" field (`REPORTING.md`):
+- say how each candidate was found (a table row, or a move by number);
+- mark derived algorithms *derived*, with their invariant or correctness argument in a sentence or two;
+- summarize the research log, including the moves that produced nothing and what blocked them, so the developer can see where the search stopped;
+- for a conjecture from small cases, say whether it was proved or only checked, and up to which sizes.
+
+A log, derived algorithm, or bound from an earlier session is a claim to recheck.

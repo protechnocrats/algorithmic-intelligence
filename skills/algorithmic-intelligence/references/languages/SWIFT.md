@@ -21,7 +21,11 @@ Covers every Swift target, including Linux, Windows, WebAssembly, and Embedded S
 
 ### Not in the standard library
 
-Deque, heap, ordered set and dictionary, bitset, and sorted collections. Apple's `swift-collections` package (a dependency) has `Deque`, `Heap`, `OrderedSet`, `OrderedDictionary`, `BitSet`, `BitArray`, `TreeSet`/`TreeDictionary` (persistent hash tries with cheap copies), and fixed-capacity `RigidArray`; its `SortedSet` and `SortedDictionary` are an unstable preview. The standard library also has no public binary search: check the manifest for `swift-algorithms`, whose `partitioningIndex(where:)` does this; otherwise offer that package beside a short in-project version with tests. It has no bounded LRU cache either, and Foundation's `NSCache` is not one: swift-corelibs-foundation's evicts lowest cost first and reads do not reorder entries, and its eviction order is not a documented guarantee. Without the package: a queue is an array plus a head index, compacted occasionally; a heap is a small in-project binary heap; an ordered set is an `Array` for order plus a `Set` for membership.
+Deque, heap, ordered set and dictionary, bitset, and sorted collections. Apple's `swift-collections` package (a dependency) has `Deque`, `Heap`, `OrderedSet`, `OrderedDictionary`, `BitSet`, `BitArray`, `TreeSet`/`TreeDictionary` (persistent hash tries with cheap copies), and fixed-capacity `RigidArray`; its `SortedSet` and `SortedDictionary` are an unstable preview. 
+
+The standard library also has no public binary search: check the manifest for `swift-algorithms`, whose `partitioningIndex(where:)` does this; otherwise offer that package beside a short in-project version with tests. It has no bounded LRU cache either, and Foundation's `NSCache` is not one: swift-corelibs-foundation's evicts lowest cost first and reads do not reorder entries, and its eviction order is not a documented guarantee.
+
+Without the package: a queue is an array plus a head index, compacted occasionally; a heap is a small in-project binary heap; an ordered set is an `Array` for order plus a `Set` for membership.
 
 ### Packages: `swift-algorithms`
 

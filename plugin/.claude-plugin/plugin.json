@@ -1,6 +1,6 @@
 {
   "name": "algorithmic-intelligence-guard",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "Optional guard hooks for the algorithmic-intelligence skill: asks before commits, git commands that discard uncommitted work, root, risky permission changes, piped installs, installs outside the project, deletes outside the project or of .git, secret files, and edits to existing tests; checks the final summary lines.",
   "author": { "name": "Protechnocrats" },
   "repository": "https://github.com/protechnocrats/algorithmic-intelligence",

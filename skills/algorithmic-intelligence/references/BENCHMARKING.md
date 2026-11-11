@@ -32,7 +32,7 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 - Absolute times with the percentage change, plus machine and runtime details.
 - Label every number measured or estimated (rule 8). Report what the runs gave, even when the developer expects a different result.
 - Benchmark harnesses stay out of production code.
-- **Offer a regression guard:** where the code exposes one, prefer a test that checks a size-dependent count (key-function calls, comparisons, queries, allocations), for example that a sort key ran exactly n times: it is deterministic, and it fails when the complexity regresses. Otherwise keep the benchmark in the project's tooling or as a CI job with a threshold against a recorded baseline; timing assertions in unit tests are flaky. Adding a CI job is a configuration change that needs approval.
+- **Offer a regression guard:** where the code exposes one, prefer a test that checks a size-dependent count (key-function calls, comparisons, queries, allocations), for example that a sort key ran exactly n times: it is deterministic, and it fails when the complexity regresses. Otherwise keep the benchmark in the project's tooling or as a CI job with a threshold against a recorded baseline. Timing assertions in unit tests are flaky. Adding a CI job is a configuration change that needs approval.
 
 ## Component and end-to-end
 
@@ -43,7 +43,12 @@ A benchmark of the changed function shows how much faster the function became, n
 
 The end-to-end saving cannot exceed the changed code's share of the time (Amdahl's law). State the share next to the component numbers: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component win with a small end-to-end saving is still worth reporting, honestly labeled; it may matter more once other bottlenecks are fixed.
 
-**Check that the proxy implies the target.** A component benchmark, operation count, cost model, or heuristic score is a proxy. Before optimizing against it, check on a few cases that it moves with the target: the component winner also wins end to end, fewer operations also means less time, a better score means a better real result. When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix it or measure the target directly. Learning theory makes the same point: optimizing a surrogate loss guarantees nothing unless the surrogate is consistent with the true objective (Bartlett, Jordan, and McAuliffe, 2006).
+**Check that the proxy implies the target.** A component benchmark, operation count, cost model, or heuristic score is a proxy. Before optimizing against it, check on a few cases that it moves with the target:
+- the component winner also wins end to end;
+- fewer operations also means less time;
+- a better score means a better real result.
+
+When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix it or measure the target directly. Learning theory makes the same point: optimizing a surrogate loss guarantees nothing unless the surrogate is consistent with the true objective (Bartlett, Jordan, and McAuliffe, 2006).
 
 ## Memory measurement
 
