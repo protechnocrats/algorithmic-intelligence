@@ -25,7 +25,7 @@ Deque, heap, ordered set and dictionary, bitset, and sorted collections. Apple's
 
 ### Packages: `swift-algorithms`
 
-Apple's `swift-algorithms` package (a dependency; source stable under semantic versioning) adds algorithms rather than structures. Check the module's manifest for it and for `swift-collections` before writing your own ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`). Costs are from the package's guides:
+Apple's `swift-algorithms` package (a dependency; source stable under semantic versioning) adds algorithms rather than structures. Consider it and `swift-collections` in every analysis, whether or not the module's manifest declares them; besides what the project declares and what the developer names, they are the only packages to consider: use a declared one like the standard library, and propose an undeclared one when it beats what the standard library offers ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`). Costs are from the package's guides:
 
 | Need | API | Cost | Notes |
 |---|---|---|---|

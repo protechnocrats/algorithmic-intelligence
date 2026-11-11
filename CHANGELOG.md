@@ -6,6 +6,11 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+### Changed
+
+- **Packages the project does not declare yet are considered, not skipped.** Agents searched for the best approach only among the standard library and the project's declared dependencies: when a maintained package such as Swift's `swift-collections` or `swift-algorithms` was not in the manifest, they did not ask whether it would make the code faster. Now the search covers the packages each language file lists, whether or not the project declares them, for algorithms as well as data structures. When one beats what is available without it, the agent proposes it with what it buys over the best approach without it, and adds it only with the developer's permission. Being declared decides only whether a package can be used straight away.
+- **The search for packages stops at the reviewed list.** Agents consider the standard library, the project's declared dependencies, the packages named in the language file, and any package the developer names, and nothing else: they do not browse package registries or the web, and a library mentioned in a comment or web page is passed on as a lead, not proposed. First-party packages come first. For a language without a file, the profile the agent builds lists first-party packages only, unless the developer approves others.
+
 ## [0.6.2] - 2026-11-10
 
 Moves the skill into the folder layout of Anthropic's skill format. No intended change in how agents work: every instruction is the same, only where the files sit.

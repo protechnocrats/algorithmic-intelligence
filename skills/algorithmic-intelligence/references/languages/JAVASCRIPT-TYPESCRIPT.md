@@ -23,7 +23,7 @@ No heap, deque, sorted map or set, balanced tree, trie, binary search, or multi-
 
 ### Packages
 
-These are dependencies (rule 7): check the module's manifest first, and follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`.
+These are dependencies (rule 7). Besides what the project declares and what the developer names, they are the only packages to consider, whether or not the module's manifest declares them: use a declared one like the standard library, and propose an undeclared one when it beats what the standard library offers ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`).
 
 | Package | Provides | Watch for |
 |---|---|---|
