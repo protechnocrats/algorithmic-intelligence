@@ -10,7 +10,11 @@ A differential test runs the original and the optimized implementation on the sa
 
 Each hot path gets two kinds of evidence, because each sees what the other cannot:
 
-- **Pin tests at the real entry point.** Drive the route, command, job, or public function callers actually use, with real collaborators: mappers, repositories, parsers, serializers, and anything else local and safe run for real, including a throwaway local database when one can be used. Fake only what leaves the machine, reaches a shared system, or cannot be bounded. Run them on the original in this session and record everything observable, then compare after the change. They catch wiring, caller interaction, and real ordering, and they stay useful as regression guards. "Real" never widens "Before running a command" in `SKILL.md`.
+- **Pin tests at the real entry point.** Drive the route, command, job, or public function callers actually use, with real collaborators.
+  - Mappers, repositories, parsers, serializers, and anything else local and safe run for real, including a throwaway local database when one can be used.
+  - Fake only what leaves the machine, reaches a shared system, or cannot be bounded.
+
+  Run them on the original in this session and record everything observable, then compare after the change. They catch wiring, caller interaction, and real ordering, and they stay useful as regression guards. "Real" never widens "Before running a command" in `SKILL.md`.
 - **Seeded old-versus-new comparison of pure functions.** The computation itself, against a verbatim copy of the original, on edge cases and generated inputs from a fixed seed ("Setup", "Inputs"). It covers far more inputs than a pin test can.
 
 Both have to show they can fail ("Check the check"), and both are tests: neither alone reaches "proven" ("Verification levels").
@@ -35,7 +39,10 @@ When a change relies on something established elsewhere (data already sorted, ke
 
 Give each version a fresh copy of the same fakes and inputs on every call, so one side's mutations cannot reach the other, and record every collaborator call for comparison.
 
-**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do, and fake every effect that leaves the machine, reaches a shared system, or cannot be bounded (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory). Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant. A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
+**The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do.
+- Fake every effect that leaves the machine, reaches a shared system, or cannot be bounded (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory).
+- Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant.
+- A path whose effect cannot be faked is not run and is reported as not compared ("Before running a command" in `SKILL.md`).
 
 ### Changes to calls into other systems
 
@@ -114,7 +121,10 @@ Report every change at the highest level it reached:
 | 3. Exhaustively checked | Old and new agree on every input up to a stated bound, or every thread interleaving up to a bound | Exhaustive enumeration; a bounded model checker on an equivalence harness; a concurrency checker | "Equivalent on <domain>" |
 | 4. Proven | Equivalence or the contract holds for all inputs | A machine-checked proof, or level 3 over the entire domain (every value of a fixed-width scalar input) | "Proven: <what, by which tool, on which build and platform>" |
 
-Aim for the highest cheap level. An experimental or derived algorithm ("Name the source" in `DISCOVERY.md`) needs level 2 or higher before it ships. Level 3 is often cheaper than it sounds, since most rewrite bugs show up on small inputs (the small-scope hypothesis): a bounded model checker can often check `old(x) == new(x)` for all arrays up to a small length in minutes, though multiplication, division, floating point, and deep unrolling can make it time out, so treat the time as unknown until it runs. A pure function of one 32-bit argument can be checked on all 2³² inputs; that is level 4 only for the build, flags (floating-point contraction), and CPU-feature path that ran. Concurrency changes that tests cannot verify reach level 3 with a tool that enumerates interleavings.
+Aim for the highest cheap level. An experimental or derived algorithm ("Name the source" in `DISCOVERY.md`) needs level 2 or higher before it ships.
+- **Level 3 is often cheaper than it sounds,** since most rewrite bugs show up on small inputs (the small-scope hypothesis). A bounded model checker can often check `old(x) == new(x)` for all arrays up to a small length in minutes. Multiplication, division, floating point, and deep unrolling can make it time out, so treat the time as unknown until it runs.
+- **Exhaustive checks.** A pure function of one 32-bit argument can be checked on all 2³² inputs. That is level 4 only for the build, flags (floating-point contraction), and CPU-feature path that ran.
+- **Concurrency.** Concurrency changes that tests cannot verify reach level 3 with a tool that enumerates interleavings.
 
 Verification tools beyond the test framework are dependencies: use the project's, otherwise ask (rule 7). The language files name them. Report what the tool checked, its bounds, and its version; the result is only as strong as the harness and the bounds.
 
@@ -130,7 +140,12 @@ Turn the function's contract (rule 3) into checks the tests run, so the new code
 
 A passing test is evidence only if it could have failed.
 
-- **Plant differences (mutation testing).** In a temporary copy of the code under test, make one small change at a time that the test should catch: an off-by-one at a boundary, a reversed tie order, a dropped edge case, a changed exception type, a skipped side effect, and the tempting wrong rewrite rejected during analysis (the unstable sort, the version without wraparound). Run each mutant under a time limit. An uncaught mutant marks a property the test cannot see: add inputs or comparisons, or report that property unverified. Delete mutants afterward and confirm with version control that only intended changes remain.
+- **Plant differences (mutation testing).** In a temporary copy of the code under test, make one small change at a time that the test should catch:
+  - an off-by-one at a boundary, a reversed tie order, a dropped edge case;
+  - a changed exception type, a skipped side effect;
+  - the tempting wrong rewrite rejected during analysis (the unstable sort, the version without wraparound).
+
+  Run each mutant under a time limit. An uncaught mutant marks a property the test cannot see: add inputs or comparisons, or report that property unverified. Delete mutants afterward and confirm with version control that only intended changes remain.
 - **Run the original against itself (A/A), always.** It costs one run and catches nondeterminism the test did not account for: time, randomness, hash or iteration order, concurrency, external systems. It must pass. If it fails, control the source (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison.
 
 ## When equivalence counts as verified

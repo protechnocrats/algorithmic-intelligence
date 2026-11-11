@@ -1,6 +1,6 @@
 # Data Structures
 
-The audit every hot path gets, in report and apply mode for each candidate and in write mode for each designed part, before choosing an approach. The wrong structure is the most common source of avoidable complexity, and it often shows no nested loop: a membership check behind a helper, a removal from the front of an array, a re-sort after each insert. Developers also read the audit to judge the analysis, so an item without one looks unexamined even when it was not.
+The audit every hot path gets before choosing an approach: in report and apply mode for each candidate, and in write mode for each designed part. The wrong structure is the most common source of avoidable complexity, and it often shows no nested loop: a membership check behind a helper, a removal from the front of an array, a re-sort after each insert. Developers also read the audit to judge the analysis, so an item without one looks unexamined even when it was not.
 
 **Contents:** The audit · Which structure suits the operations · Choosing the best structure · Recording the audit
 
@@ -8,10 +8,31 @@ The audit every hot path gets, in report and apply mode for each candidate and i
 
 Cover every collection on a hot path: fields, locals, parameters, return values, caches, and those hidden behind helpers and library calls. Code whose sizes are provably small and that does not run hot (rule 8 in "Rule details" in `WORKFLOW.md`) is left out, with one line saying why. A collection a candidate approach introduces gets the same audit before the approach is chosen. For each collection, establish all four:
 
-1. **Dominant operations.** What the code actually does to the collection, and how often per operation of the caller: lookup by key, membership, insert or remove at the ends or the middle, iteration, sorted iteration, range or nearest-value queries, taking the minimum or maximum, grouping, counting, updates to stored keys, and whether it is built once or changes throughout. The operation that costs the most in total, count times size, is dominant. Name the question each loop over the collection answers, not only the calls that implement it: a scan for the smallest element is "take the minimum", a filter inside a loop is a lookup, a loop over a slice is a range query.
+1. **Dominant operations.** What the code actually does to the collection, and how often per operation of the caller:
+   - lookup by key, membership, insert or remove at the ends or the middle;
+   - iteration, sorted iteration, range or nearest-value queries;
+   - taking the minimum or maximum, grouping, counting, updates to stored keys;
+   - whether it is built once or changes throughout.
+
+   The operation that costs the most in total, count times size, is dominant. Name the question each loop over the collection answers, not only the calls that implement it: a scan for the smallest element is "take the minimum", a filter inside a loop is a lookup, a loop over a slice is a range query.
 2. **Current cost.** Each operation's cost from the "Built-in structures" section of the language file, multiplied by how often it runs. Library structures have documented costs; do not assume them from the name.
-3. **Best structure.** The one that makes the dominant operation as cheap as possible, from the table below, named concretely from the "Built-in structures" section of the language file (if none matches, "When the best technique is not available" in `ALGORITHM-ARSENAL.md`), confirmed against the "Valid when" column of the section it names, and able to provide what the outcome relies on (callers can be updated to receive a different structure, rule 11): iteration order (insertion, sorted, or none), duplicates, which equality it uses, null handling, whether callers modify what they receive, and whether threads share it. Name it even when you will not switch to it.
-4. **Reason for not switching.** One of: it is already the best; the outcome relies on something no version of the best structure can provide, even with every caller updated (name it); switching changes an interface whose callers are outside the project and the developer has not approved the change; it exceeds a hard memory budget (give the numbers); sizes are provably small; it needs a dependency the developer declined or has not yet approved, and is too large or subtle to write in the project ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`); a benchmark showed it is not faster at realistic sizes (give the numbers); or the chosen approach replaces or removes the collection (name the approach). "It works", "it is the one already there", and "it uses more memory" are not reasons.
+3. **Best structure.** The one that makes the dominant operation as cheap as possible, from the table below. It must be:
+   - named concretely from the "Built-in structures" section of the language file (if none matches, "When the best technique is not available" in `ALGORITHM-ARSENAL.md`);
+   - confirmed against the "Valid when" column of the section it names;
+   - able to provide what the outcome relies on: iteration order (insertion, sorted, or none), duplicates, which equality it uses, null handling, whether callers modify what they receive, and whether threads share it. Callers can be updated to receive a different structure (rule 11).
+
+   Name it even when you will not switch to it.
+4. **Reason for not switching.** One of:
+   - it is already the best;
+   - the outcome relies on something no version of the best structure can provide, even with every caller updated (name it);
+   - switching changes an interface whose callers are outside the project, and the developer has not approved the change;
+   - it exceeds a hard memory budget (give the numbers);
+   - sizes are provably small;
+   - it needs a dependency the developer declined or has not yet approved, and is too large or subtle to write in the project ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`);
+   - a benchmark showed it is not faster at realistic sizes (give the numbers);
+   - the chosen approach replaces or removes the collection (name the approach).
+
+   "It works", "it is the one already there", and "it uses more memory" are not reasons.
 
 ## Which structure suits the operations
 
@@ -49,7 +70,7 @@ Section names are in `CORE-TECHNIQUES.md` unless a file is named. When a languag
 - **Time comes first.** Extra memory that lowers time complexity is worth spending, whatever its size, as long as it fits the memory actually available (rule 1); if it does not, present both costs and ask. The time has to really go away: an index built for a single lookup saves nothing, and at provably small sizes a small array can beat a hash map.
 - **Check the rest of the workload.** Making the dominant operation cheap can make a rarer one expensive enough to become dominant: multiply each operation's new cost by its count and compare totals, build cost included.
 - **Replacing a structure is where behavior changes hide:** iteration order, duplicates collapsing, a different equality, and rejected nulls. Walk "Ordering", "Equality and keys", "Duplicates and nulls", and "Mutation and aliasing" in `BEHAVIOR-TRAPS.md`. With attacker-chosen keys, see `techniques/hostile-inputs.md`.
-- **Prefer what is already available when it is as good:** the language's own structures (rule 14), then the project's own and those from direct dependencies in its manifest. Availability breaks ties; it does not limit the search. A structure from a package the language file lists, which the project does not declare yet, is still a candidate, and when it reaches a lower complexity or a clear gain, follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`, which proposes it beside writing one. Adding the package needs permission (rule 7); considering it does not.
+- **Prefer what is already available when it is as good:** the language's own structures (rule 14), then the project's own and those from direct dependencies in its manifest. Availability breaks ties; it does not limit the search. A structure from a package the language file lists, which the project does not declare yet, is still a candidate. When it reaches a lower complexity or a clear gain, follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`, which proposes it beside writing one. Adding the package needs permission (rule 7); considering it does not.
 
 ## Recording the audit
 

@@ -6,6 +6,14 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-11-10
+
+Rewrites the skill's densest passages so each instruction stands on its own. No intended change in how agents work: every instruction, condition, example, and heading is still there, only easier to follow.
+
+### Changed
+
+- **The instructions are easier to follow.** Across the skill, long sentences that stacked several conditions are split into short sentences and lists, one instruction each, so a step at the end of a long sentence is no longer easy to miss. This covers `SKILL.md`, the mode files, the files every analysis uses (`DATA-STRUCTURES.md`, `ALGORITHM-ARSENAL.md`, `BEHAVIOR-TRAPS.md`, `DIFFERENTIAL-TESTING.md`, `BENCHMARKING.md`), and the densest passages of `DISCOVERY.md`, `ADVANCED-TECHNIQUES.md`, and the technique and language files; tables are unchanged. No instruction, condition, example, or heading was removed, and no intended change in how agents work.
+
 ## [0.6.3] - 2026-11-10
 
 Agents now weigh the reviewed packages for each language even when the project has not added them yet, and stop there: they do not search package registries or the web for others.

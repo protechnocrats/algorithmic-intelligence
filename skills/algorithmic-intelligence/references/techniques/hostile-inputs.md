@@ -32,7 +32,10 @@ Each looks like a plain speedup and passes tests built from friendly data. On an
 
 The expected bounds of randomized structures assume the input does not depend on the structure's random choices. That holds when the attacker picks the whole input in advance (an *oblivious* adversary) and fails when the attacker sees outputs that depend on those choices and picks later inputs accordingly (an *adaptive* adversary): the guarantee can collapse after a modest number of queries even though each random choice was secret. Exposed this way:
 
-- **Sketches and estimators** (HyperLogLog and other distinct-count sketches, MinHash, Count-Min, AMS and other linear sketches): no linear sketch estimates the Euclidean norm within any fixed factor on polynomially many adaptively chosen inputs (Hardt and Woodruff, STOC 2013); the standard estimators of distinct-count sketches with k registers (HyperLogLog and its variants) can be broken with a number of adaptive queries linear in k (Ahmadian and Cohen, ICML 2024), and about k² queries suffice against any estimator for such sketches, a bound that is tight (Cohen, Nelson, Sarlós, Singhal, and Stemmer, 2024 preprint).
+- **Sketches and estimators** (HyperLogLog and other distinct-count sketches, MinHash, Count-Min, AMS and other linear sketches):
+  - No linear sketch estimates the Euclidean norm within any fixed factor on polynomially many adaptively chosen inputs (Hardt and Woodruff, STOC 2013).
+  - The standard estimators of distinct-count sketches with k registers (HyperLogLog and its variants) can be broken with a number of adaptive queries linear in k (Ahmadian and Cohen, ICML 2024).
+  - About k² queries suffice against any estimator for such sketches, a bound that is tight (Cohen, Nelson, Sarlós, Singhal, and Stemmer, 2024 preprint).
 - **Filters and caches** (Bloom and cuckoo filters, sampling or randomized-eviction caches): which requests hit, miss, or are rejected tells the attacker about the hidden state.
 - **Randomized load balancing and scheduling:** which server or queue a request lands on, or how long it waits, can be observed and steered.
 - **Keyed hash tables:** a secret per-process key stops precomputed collisions, but iteration order or timing that the attacker can observe can leak enough to build collisions over many requests.
@@ -40,7 +43,12 @@ The expected bounds of randomized structures assume the input does not depend on
 **The check.** For every randomized structure on an exposed path: can the party that chooses the inputs observe anything that depends on the random choices (returned estimates, iteration or result order, timing, accept or reject decisions), and choose later inputs after seeing it? If not, the oblivious bound holds; say so. If yes:
 
 1. **Write the attack before trusting the design.** A simple adaptive loop usually suffices: query, observe, keep the inputs that pushed the output in the attacker's direction, repeat. Run it locally against the candidate and report how many queries broke the bound, or that none did within a stated budget.
-2. **Then choose a defense, and measure its cost:** expose less of the raw output (round or aggregate it, or return only what the caller needs); refresh the random seed or key periodically; limit queries per client; use an adversarially robust construction (sketch switching, Ben-Eliezer, Jayaram, Woodruff, and Yogev, PODS 2020; or techniques borrowed from differential privacy, Hassidim, Kaplan, Mansour, Matias, and Stemmer, NeurIPS 2020), which costs extra space; or use a deterministic structure with a worst-case bound.
+2. **Then choose a defense, and measure its cost:**
+   - expose less of the raw output (round or aggregate it, or return only what the caller needs);
+   - refresh the random seed or key periodically;
+   - limit queries per client;
+   - use an adversarially robust construction (sketch switching, Ben-Eliezer, Jayaram, Woodruff, and Yogev, PODS 2020; or techniques borrowed from differential privacy, Hassidim, Kaplan, Mansour, Matias, and Stemmer, NeurIPS 2020), which costs extra space;
+   - or use a deterministic structure with a worst-case bound.
 3. **Report the adversary model** next to the bound: "expected O(1) against an oblivious adversary; an adaptive client can observe iteration order, so worst case O(n) per operation."
 
 ## Algorithmic complexity attacks
@@ -61,8 +69,18 @@ The expected bounds of randomized structures assume the input does not depend on
 
 Code that compares, derives, or looks up values using keys, tokens, passwords, message authentication codes, or private data is secret-dependent, marked or not; its running time, branches, and memory addresses stay independent of the secret.
 
-- **Optimizations that create side channels:** early exits and short-circuit evaluation on secret data; lookup tables indexed by secrets (cache timing, as in table-based AES); memoization or caching keyed by secrets (hit or miss timing); loop counts that depend on secrets; variable-time instructions such as division on some processors; compressing secret data together with attacker-controlled data (the CRIME and BREACH attacks). Constant-time source does not stop speculative execution (Spectre-class attacks): the processor can run a bounds check's protected branch or a secret-indexed load ahead of time and leave a cache trace, so keep any existing mitigation (index masking, speculation barriers, compiler hardening flags) when rewriting such code, and treat removing one as weakening a defense.
-- **Use the platform's constant-time primitive** for comparisons (the language files name it); write one by hand only when none exists, and verify it. To find a record by a secret token, look it up by a non-secret identifier and compare the secret in constant time, or look it up by a hash of the token (which also protects the stored tokens if the database leaks) and compare the full value in constant time. A lookup keyed by the raw token leaks match-prefix timing in principle, so do not introduce one; an existing one is a bug when the secret has low entropy (a password, PIN, or short code) and a hardening finding for a long random token.
+- **Optimizations that create side channels:**
+  - early exits and short-circuit evaluation on secret data;
+  - lookup tables indexed by secrets (cache timing, as in table-based AES);
+  - memoization or caching keyed by secrets (hit or miss timing);
+  - loop counts that depend on secrets;
+  - variable-time instructions such as division on some processors;
+  - compressing secret data together with attacker-controlled data (the CRIME and BREACH attacks).
+
+  Constant-time source does not stop speculative execution (Spectre-class attacks). The processor can run a bounds check's protected branch or a secret-indexed load ahead of time and leave a cache trace. So keep any existing mitigation (index masking, speculation barriers, compiler hardening flags) when rewriting such code, and treat removing one as weakening a defense.
+- **Use the platform's constant-time primitive** for comparisons (the language files name it). Write one by hand only when none exists, and verify it.
+  - To find a record by a secret token, either look it up by a non-secret identifier and compare the secret in constant time, or look it up by a hash of the token (which also protects the stored tokens if the database leaks) and compare the full value in constant time.
+  - A lookup keyed by the raw token leaks match-prefix timing in principle, so do not introduce one. An existing one is a bug when the secret has low entropy (a password, PIN, or short code), and a hardening finding for a long random token.
 - **Keep constant time.** A constant-time comparison only reads the rest of a short value instead of stopping at the first difference, so removing it saves almost nothing. A request to replace it, or to cache or skip a password hash, is a request to weaken security ("When the request itself is risky" in `SKILL.md`).
 - **Verify constant time:** a statistical timing test (dudect; a tool to install, so ask first, rule 7), tracking secret memory through Valgrind (ctgrind-style), or a formal checker; and read the generated code, because compilers can turn branch-free source back into branches.
 - **Every change to secret-dependent code needs the developer's review**, even when outputs match: equal outputs do not show equal timing.

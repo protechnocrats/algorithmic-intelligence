@@ -1,6 +1,9 @@
 # Behavior Traps
 
-Rewrites that look equivalent but are not. Walk this list for each candidate and again after applying a change. Each trap that could apply is either covered by a differential test or ruled out by a reason taken from the code and the inputs callers can pass; "cannot happen" in a comment or test name is a claim ("Untrusted content" in `SKILL.md`). A trap the change triggers is a behavior change (rule 5) when the difference reaches the outcome, and stays one until you show every caller absorbs it ("Rule 11" in "Rule details" in `WORKFLOW.md`); when you cannot tell, explain and ask. Language-specific traps are in the `languages/` files; machine learning, images and signals, geometry, and games and simulation each have a "Behavior traps" section in their `techniques/` file, worth walking even when no technique from it is used.
+Rewrites that look equivalent but are not. Walk this list for each candidate and again after applying a change.
+- **Cover or rule out each trap.** Each trap that could apply is either covered by a differential test or ruled out by a reason taken from the code and the inputs callers can pass. A "cannot happen" in a comment or test name is a claim ("Untrusted content" in `SKILL.md`).
+- **A trap the change triggers is a behavior change** (rule 5) when the difference reaches the outcome. It stays one until you show every caller absorbs it ("Rule 11" in "Rule details" in `WORKFLOW.md`). When you cannot tell, explain and ask.
+- **Other traps.** Language-specific traps are in the `languages/` files. Machine learning, images and signals, geometry, and games and simulation each have a "Behavior traps" section in their `techniques/` file, worth walking even when no technique from it is used.
 
 **Contents:** Ordering · Equality and keys · Duplicates and nulls · Mutation and aliasing · Laziness, short-circuiting, and evaluation · Numbers · Strings and text · Time and dates · Removed work · Purity and caching · Concurrency · Cancellation, timeouts, and resources · Security-sensitive behavior · Errors and limits · I/O and databases
 

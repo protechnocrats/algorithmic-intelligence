@@ -11,7 +11,7 @@ How to find candidate approaches: triage questions, routing by current complexit
 3. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table. With attacker-chosen keys, keep the platform's randomized hashing or use a sorted structure (`techniques/hostile-inputs.md`).
 4. **Am I keeping more information than I need?** Rolling state, a bounded heap, a streaming algorithm, a compact representation.
 5. **Can I reorder or batch the work?** Sort offline, sweep, batch I/O, process independent work together.
-6. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign, ordering requirements, purity, memory limits. Most wrong optimizations are a technique used outside its "Valid when" column, so settle each condition from a check the code enforces or the code that builds the data, for every input the code accepts; a name, type, or comment saying "sorted" or "non-negative" is a claim. A combination inherits the conditions of every row it combines (the "Combinations" table in `techniques/sequences-dp-search.md` has no column of its own).
+6. **What assumptions make the faster algorithm valid?** Monotonicity, static versus changing data, value bounds, sign, ordering requirements, purity, memory limits. Most wrong optimizations are a technique used outside its "Valid when" column. So settle each condition from a check the code enforces or the code that builds the data, for every input the code accepts. A name, type, or comment saying "sorted" or "non-negative" is a claim. A combination inherits the conditions of every row it combines (the "Combinations" table in `techniques/sequences-dp-search.md` has no column of its own).
 
 ## Analyzing recursive code
 
@@ -57,7 +57,13 @@ A lower bound tells you when to stop. Each holds in a model (comparison-based, h
 - **Repeated calls:** for m calls on the same or slowly changing data, the cost is the total across calls; preprocessing once can beat any per-call algorithm.
 - **No bound can be established:** costs dominated by a query plan, round trips, lock contention, cache behavior, or the data distribution often have none. Report "unknown" with the reason, give the strongest bound you can support ("one pass over the input", "one round trip per distinct key", "the size of the output"), and record which approaches you weighed, since you cannot prove you are done.
 
-A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of: the better bound needs an unapproved dependency, exceeds a hard memory budget (give the numbers), would change something callers rely on, preprocessing the call pattern cannot amortize, an assumption the code does not satisfy, or constant factors that lose at realistic sizes (shown by a benchmark).
+A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of these, for the better bound:
+- it needs an unapproved dependency;
+- it exceeds a hard memory budget (give the numbers);
+- it would change something callers rely on;
+- it needs preprocessing the call pattern cannot amortize;
+- it needs an assumption the code does not satisfy;
+- its constant factors lose at realistic sizes (shown by a benchmark).
 
 ## Reformulate before choosing
 
@@ -77,25 +83,48 @@ Many large wins come from changing the problem rather than speeding up the loop.
 
 ## Behavior-changing techniques
 
-Some techniques here and in the domain files necessarily change what callers observe: element order, laziness, skipped side effects, concurrency, errors and crashes, approximate instead of exact results, different floating-point results, model outputs, images or geometry. A different shape of what callers receive (another collection type or signature) is a contract change, not a behavior change, once every caller is updated (rule 11). Rule 5 governs the rest: look for a version that keeps the behavior first; otherwise the item goes under "Behavior changes for review" and, once approved by name, carries the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`). Parallel versions are behavior changes unless shown otherwise (output and side-effect order, regrouped floating-point sums, races, run-to-run differences). An approximate answer (a Bloom filter without the exact check, a sketch, sampling) is never offered as equivalent; when a false positive or wrong count would decide access, money, or deletion, name that risk with the item.
+Some techniques here and in the domain files necessarily change what callers observe: element order, laziness, skipped side effects, concurrency, errors and crashes, approximate instead of exact results, different floating-point results, model outputs, images or geometry.
+- **Contract, not behavior.** A different shape of what callers receive (another collection type or signature) is a contract change, not a behavior change, once every caller is updated (rule 11).
+- **Rule 5 governs the rest.** Look for a version that keeps the behavior first. Otherwise the item goes under "Behavior changes for review" and, once approved by name, carries the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`).
+- **Parallel versions** are behavior changes unless shown otherwise (output and side-effect order, regrouped floating-point sums, races, run-to-run differences).
+- **Approximate answers** (a Bloom filter without the exact check, a sketch, sampling) are never offered as equivalent. When a false positive or wrong count would decide access, money, or deletion, name that risk with the item.
 
 ## Reuse what the project already has
 
 Before writing a step or a structure, in any mode, look for an existing implementation in the project: a function that does the step, an index or cache already built on the same data, a parser for the same format. Tested code is lower risk than new code, and within one operation two paths computing the same intermediate result is repeated work.
 
-- **Search; do not read the repository.** Search the module in scope, the modules it may depend on (its build file declares them), and a shared module if the build has one. Search by name; by what the step touches (the fields, tables, constants, API calls, and error messages it uses, which still identify a step written as a lambda, held in a variable, or composed point-free); by type signature where the language makes types searchable; and with the language server's references or a code index when one is available. Open only the candidates: the cost grows with the matches, not with the size of the repository.
+- **Search; do not read the repository.** Search the module in scope, the modules it may depend on (its build file declares them), and a shared module if the build has one. Search:
+  - by name;
+  - by what the step touches: the fields, tables, constants, API calls, and error messages it uses, which still identify a step written as a lambda, held in a variable, or composed point-free;
+  - by type signature, where the language makes types searchable;
+  - with the language server's references or a code index, when one is available.
+
+  Open only the candidates: the cost grows with the matches, not with the size of the repository.
 - **Check it does the same thing.** A candidate is reused only if its contract matches what the code needs: rounding, locale, time zone, null and error handling, ordering, and limits. Similar code that differs in one of these is not the same step; reusing it is a behavior change for the code that adopts it.
 - **Never call a larger function for part of its work.** Calling a function that does x, y, and z to get x and y runs z for nothing and inherits z's effects (writes, logs, calls, errors); copying x and y duplicates them. Propose extracting them: each becomes its own function, the original calls them in the same order with the same behavior, and new code calls only the ones it needs. That changes existing code, so it is apply mode, with the developer's agreement and pin tests on the original first ("Buried hot paths" in `DIFFERENTIAL-TESTING.md`).
-- **Across modules, keep the dependency direction.** Use only code the module in scope may already depend on, as its build file, the code's visibility, and the layering the build enforces allow, and never add a dependency between modules. When two modules need the same step and the build has a shared module both already depend on, propose moving the step's pure part there: the computation with its inputs passed in, not its database access, framework types, or another module's types, which would make the shared module depend on them. The original delegates to the moved code, so its callers see no change. Name the cost with the proposal: every module that depends on the shared one rebuilds and retests, a published one needs a version bump, and its owners may need to review. Moving code between modules is the developer's decision.
+- **Across modules, keep the dependency direction.** Use only code the module in scope may already depend on, as its build file, the code's visibility, and the layering the build enforces allow. Never add a dependency between modules.
+  - When two modules need the same step and the build has a shared module both already depend on, propose moving the step's pure part there: the computation with its inputs passed in. Not its database access, framework types, or another module's types, which would make the shared module depend on them.
+  - The original delegates to the moved code, so its callers see no change.
+  - Name the cost with the proposal: every module that depends on the shared one rebuilds and retests, a published one needs a version bump, and its owners may need to review.
+  - Moving code between modules is the developer's decision.
 - **Report what was searched.** Name the searches and the places covered ("the address normalization: by name, by the `postcode` field, and in `common`; not found"), so a miss is visible and a developer who knows where it lives can say so. When a substantial step is found nowhere and the developer can answer, one short question ("is there an existing implementation of X?") can be cheaper than more searching.
 
 ## When the best technique is not available
 
-Search for the best approach in these places: the language's standard library, code the project already has, the project's declared dependencies, the packages named in the language file (its "Packages" section and the packages it names for gaps in the standard library), and a package the developer names. Whether a package is declared decides how you may use it, not whether you consider it: a listed package the project does not declare yet is a candidate like any other, weighed on the same terms, for algorithms as well as structures. Search no further. Do not browse package registries or the web for other packages: the listed ones were reviewed for maintenance, publisher, and behavior, and an unvetted package is a supply-chain risk. When two listed packages do the same job, prefer the first-party one, published by the language's or platform's maintainers.
+Search for the best approach in these places:
+- the language's standard library;
+- code the project already has;
+- the project's declared dependencies;
+- the packages named in the language file (its "Packages" section and the packages it names for gaps in the standard library);
+- a package the developer names.
+
+Whether a package is declared decides how you may use it, not whether you consider it: a listed package the project does not declare yet is a candidate like any other, weighed on the same terms, for algorithms as well as structures.
+
+Search no further. Do not browse package registries or the web for other packages: the listed ones were reviewed for maintenance, publisher, and behavior, and an unvetted package is a supply-chain risk. When two listed packages do the same job, prefer the first-party one, published by the language's or platform's maintainers.
 
 When the best approach needs a structure or algorithm the standard library lacks (a heap in JavaScript, a deque in Swift, a sorted map in Kotlin Multiplatform common code):
 
 1. **Check what the project already declares.** Read the manifest of the module in scope. If a direct dependency provides the structure, use it: it is not a new dependency. A transitive dependency does not count, since the project does not declare it and it can disappear in any update.
-2. **Offer a listed package beside writing it.** When a package the language file names, or one the developer names, provides it, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a project comment or a web page is not a candidate: mention it to the developer as a lead if it looks useful, and only if they name it, confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
+2. **Offer a listed package beside writing it.** When a package the language file names, or one the developer names, provides it, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a project comment or a web page is not a candidate. Mention it to the developer as a lead if it looks useful. Only if they name it, confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
 3. **Write it in the project** when no listed package provides it, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request, or a proposal to write it when no listed package provides it, and waits for the developer's decision.
 4. **Report the best approach available without it** as the fallback, and what the package adds over it: a lower complexity, or a measured or estimated gain. In report mode the package is part of the item, as a dependency request the developer answers before anything is applied. An approach is never dropped only because its package is not declared yet.
