@@ -33,3 +33,7 @@ jobs:
         run: grep -q '^## \[Unreleased\]' CHANGELOG.md
       - name: Guard hook tests
         run: python3 -m unittest discover -s plugin/tests
+      - name: Cross-references and frontmatter
+        run: python3 tools/check_refs.py .
+      - name: Skill script and checker tests
+        run: python3 -m unittest discover -s tests
