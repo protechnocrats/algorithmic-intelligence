@@ -1,4 +1,4 @@
-# Sources for `skills/languages/C.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/C.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Section numbers are from the C17 standard (ISO/IEC 9899:2018); the free draft N2176 uses the same numbering.
 

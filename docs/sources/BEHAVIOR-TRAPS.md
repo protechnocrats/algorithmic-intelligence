@@ -1,4 +1,4 @@
-# Sources for `skills/BEHAVIOR-TRAPS.md`
+# Sources for `skills/algorithmic-intelligence/references/BEHAVIOR-TRAPS.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 

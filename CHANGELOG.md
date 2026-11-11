@@ -6,6 +6,16 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-10
+
+Moves the skill into the folder layout of Anthropic's skill format. No intended change in how agents work: every instruction is the same, only where the files sit.
+
+### Changed
+
+- **The skill lives in `skills/algorithmic-intelligence/`.** The folder now carries the skill's name, as the skill format requires, so tools that check the folder name against the `name` in `SKILL.md` accept it, and a manual install no longer has to rename the folder. `SKILL.md` sits at the top of the folder and every file it points to is under `references/` (with the language files in `references/languages/` and the domain technique files in `references/techniques/`); all links were updated.
+- **Manual install copies `skills/algorithmic-intelligence`.** The README's manual install command copies that folder as is. The Skills CLI command is unchanged apart from the release tag. Releases up to 0.6.1 keep the old layout, and the README says how to install them.
+- **Contributor documents follow the new paths.** `docs/sources/` keeps its files at each skill file's path relative to `references/`, and the README, `CONTRIBUTING.md`, `SECURITY.md`, `docs/ARCHITECTURE.md`, the pull request template, and the pull request checks name the new locations.
+
 ## [0.6.1] - 2026-11-10
 
 Brings the skill in line with what "no behavior change" was always meant to say: what the developer is building must do exactly what it did, only faster, while the interfaces inside the code may change. The agent also asks instead of deciding on the developer's behalf, including about bugs an optimization would remove.

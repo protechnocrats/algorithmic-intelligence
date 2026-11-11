@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/data-at-scale.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/data-at-scale.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 

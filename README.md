@@ -20,14 +20,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.1/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.2/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.6.1` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.6.2` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -101,12 +101,12 @@ If your project publishes a library or an API that other people call, an interfa
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.6.1/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.6.2/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.1/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.2/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -122,21 +122,21 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 
 ### Option 2: Manual install
 
-Copy the `skills/` folder (it contains `SKILL.md` and the files it links to) into your agent's skills directory, as a folder named `algorithmic-intelligence`:
+Copy the `skills/algorithmic-intelligence/` folder (it contains `SKILL.md` and the `references/` folder it links to) into your agent's skills directory:
 
 ```bash
-git clone --branch 0.6.1 https://github.com/protechnocrats/algorithmic-intelligence.git
-cp -r algorithmic-intelligence/skills <your-agent-skills-dir>/algorithmic-intelligence
+git clone --branch 0.6.2 https://github.com/protechnocrats/algorithmic-intelligence.git
+cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
 ```
 
-For example, Claude Code reads skills from `.claude/skills/` in a project or `~/.claude/skills/` for your user. For other agents, check their documentation for the skills directory. Keep the folder intact: `SKILL.md` links to the other files by relative path.
+For example, Claude Code reads skills from `.claude/skills/` in a project or `~/.claude/skills/` for your user. For other agents, check their documentation for the skills directory. Keep the folder intact: `SKILL.md` links to the files under `references/` by relative path. Releases up to 0.6.1 keep every file directly in `skills/`; for those, copy `algorithmic-intelligence/skills` to `<your-agent-skills-dir>/algorithmic-intelligence`.
 
 ### Option 3: Agents without skill support
 
 If your agent does not support skills but reads a project instructions file (such as `AGENTS.md`), copy the folder into your repository and add a line to that file:
 
 ```markdown
-For performance, time complexity, or data-structure work, or when something is late or takes too long, follow skills/SKILL.md and the files it links to.
+For performance, time complexity, or data-structure work, or when something is late or takes too long, follow skills/algorithmic-intelligence/SKILL.md and the files it links to.
 ```
 
 ### Optional: guard hooks (Claude Code, Grok Build)
@@ -284,7 +284,7 @@ What you should do in return:
 - **Review your agent-instructions file.** `CLAUDE.md`, `AGENTS.md`, or your agent's equivalent is the one project file the agent treats as instructions: it can set conventions, name commands, and authorize commits, though it cannot waive a rule of the skill. In a project that accepts outside contributions, check changes to it in every pull request.
 - **Install the skill only from a source you trust, and review updates.** The skill's files are themselves instructions your agent follows. A fork or an unreviewed update can change what the agent runs or approves, so read the diff of `skills/` and the [changelog](CHANGELOG.md) before installing a fork or updating.
 
-The rules in brief are in [`SKILL.md`](skills/SKILL.md), and their full text in "Rule details" in [`WORKFLOW.md`](skills/WORKFLOW.md).
+The rules in brief are in [`SKILL.md`](skills/algorithmic-intelligence/SKILL.md), and their full text in "Rule details" in [`WORKFLOW.md`](skills/algorithmic-intelligence/references/WORKFLOW.md).
 
 ## Languages
 
@@ -312,7 +312,7 @@ The skill will be evaluated by running the same coding agent on projects with pl
 
 ## Files
 
-The skill's knowledge base is modular and organized around its workflow. `SKILL.md` names every other file and when to open it, so the agent loads only what the current step needs.
+The skill lives in `skills/algorithmic-intelligence/`. Its knowledge base is modular and organized around its workflow: `SKILL.md` names every other file and when to open it, so the agent loads only what the current step needs. Every file other than `SKILL.md` is under `references/`, and the paths below are relative to it.
 
 | File | Purpose |
 |---|---|
@@ -330,9 +330,9 @@ The skill's knowledge base is modular and organized around its workflow. `SKILL.
 | `BENCHMARKING.md` | How to measure: predictions, doubling experiments, the noise floor from an A/A run, sound statistics, memory, regression guards, component versus end-to-end effect, and whether a proxy metric implies the real target |
 | `BEHAVIOR-TRAPS.md` | Rewrites that look equivalent but are not: ordering, equality and keys, duplicates and nulls, aliasing, laziness and key functions, numbers, strings, time, removed work, hidden inputs and caching, concurrency, cancellation, security, errors and limits, I/O and databases; domain traps (machine learning, images, geometry, simulation) are in the matching `techniques/` file |
 | `REPORTING.md` | Report mode's formats: where reports go, report header (request as understood, test baseline, scope, text addressed to AI assistants, hazards, language profile), item format, tried and rejected, bug log, behavior changes for review, final summary |
-| `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions (structures and their costs, verified maintained packages, hidden costs, traps, and tooling), and `GENERIC.md` for building and saving a profile for any other language |
+| `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions (structures and their costs, verified maintained packages, hidden costs, traps, and tooling), and `languages/GENERIC.md` for building and saving a profile for any other language |
 
-Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the same path as the file they support, for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, the hook registration in `hooks/hooks.json`, and their tests in `tests/`), listed for installation in `.claude-plugin/marketplace.json`.
+Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the file's path relative to `references/` (`docs/sources/languages/KOTLIN.md` for `references/languages/KOTLIN.md`), for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, the hook registration in `hooks/hooks.json`, and their tests in `tests/`), listed for installation in `.claude-plugin/marketplace.json`.
 
 ## Releases and security
 

@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/images-and-signals.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/images-and-signals.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 

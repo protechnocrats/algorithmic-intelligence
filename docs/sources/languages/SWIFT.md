@@ -1,4 +1,4 @@
-# Sources for `skills/languages/SWIFT.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/SWIFT.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Apple documentation pages are under developer.apple.com/documentation/ followed by the path given. Source paths are in github.com/swiftlang/swift unless another repository is named. "TSPL" is *The Swift Programming Language* (docs.swift.org/swift-book/).
 

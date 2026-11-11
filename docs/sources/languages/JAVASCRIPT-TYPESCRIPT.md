@@ -1,4 +1,4 @@
-# Sources for `skills/languages/JAVASCRIPT-TYPESCRIPT.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/JAVASCRIPT-TYPESCRIPT.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. MDN pages are under developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/ followed by the path given (for example `Global_Objects/Array/sort`). Section names in the ECMAScript specification are from tc39.es/ecma262/.
 
