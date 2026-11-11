@@ -27,8 +27,8 @@ jobs:
       - name: Skill name and layout
         run: |
           set -euo pipefail
-          test -f skills/SKILL.md
-          grep -q '^name: algorithmic-intelligence$' skills/SKILL.md
+          test -f skills/algorithmic-intelligence/SKILL.md
+          grep -q '^name: algorithmic-intelligence$' skills/algorithmic-intelligence/SKILL.md
       - name: CHANGELOG.md has an Unreleased section
         run: grep -q '^## \[Unreleased\]' CHANGELOG.md
       - name: Guard hook tests

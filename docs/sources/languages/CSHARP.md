@@ -1,4 +1,4 @@
-# Sources for `skills/languages/CSHARP.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/CSHARP.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. API pages are under learn.microsoft.com/dotnet/api/ followed by the lowercase type name (for example `system.collections.generic.sortedset-1`); the costs are in each page's Remarks.
 

@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/sequences-dp-search.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/sequences-dp-search.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Rows marked folklore below have no standard published source: verify them against the project's own tests.
 

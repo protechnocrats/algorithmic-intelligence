@@ -1,4 +1,4 @@
-# Sources for `skills/languages/JAVA.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/JAVA.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Javadoc pages are under docs.oracle.com/en/java/javase/21/docs/api/java.base/ followed by the class path (for example `java/util/PriorityQueue.html`); replace `21` with the project's version. Source paths are under src/java.base/share/classes/ in github.com/openjdk/jdk.
 

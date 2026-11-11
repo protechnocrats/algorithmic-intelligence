@@ -1,4 +1,4 @@
-# Sources for `skills/languages/RUST.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/RUST.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Standard library pages are under doc.rust-lang.org/std/ followed by the path given. Source paths are in github.com/rust-lang/rust.
 

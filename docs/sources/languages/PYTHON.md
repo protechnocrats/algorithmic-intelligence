@@ -1,4 +1,4 @@
-# Sources for `skills/languages/PYTHON.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/PYTHON.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. Documentation pages are under docs.python.org/3/ followed by the path given. Source paths are in github.com/python/cpython.
 

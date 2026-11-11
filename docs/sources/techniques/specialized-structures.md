@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/specialized-structures.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/specialized-structures.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 

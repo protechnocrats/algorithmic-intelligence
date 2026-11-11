@@ -1,4 +1,4 @@
-# Sources for `skills/languages/KOTLIN.md`
+# Sources for `skills/algorithmic-intelligence/references/languages/KOTLIN.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill. API pages are under kotlinlang.org/api/core/kotlin-stdlib/ followed by the package and the function name in lowercase with hyphens (for example `kotlin.collections/get-or-put.html`). Source paths are in github.com/JetBrains/kotlin. Claims marked *(measured)* in the skill file have no published source; they were measured on Kotlin 2.4.
 

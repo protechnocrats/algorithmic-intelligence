@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/math-and-numerics.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/math-and-numerics.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 

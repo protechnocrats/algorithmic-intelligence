@@ -1,4 +1,4 @@
-# Sources for `skills/techniques/hostile-inputs.md`
+# Sources for `skills/algorithmic-intelligence/references/techniques/hostile-inputs.md`
 
 Where each claim in that file comes from, for maintainers and reviewers. Not part of the installed skill.
 
