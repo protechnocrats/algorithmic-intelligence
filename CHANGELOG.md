@@ -6,6 +6,12 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-10
+
+Agents now weigh the reviewed packages for each language even when the project has not added them yet, and stop there: they do not search package registries or the web for others.
+
+The `0.6.3` tag was pushed before this section was written, so the files at that tag list these changes under "Unreleased" and still give 0.6.2 as the guard plugin's version and in the README's install commands. The skill's instructions at the tag are the ones described here.
+
 ### Changed
 
 - **Packages the project does not declare yet are considered, not skipped.** Agents searched for the best approach only among the standard library and the project's declared dependencies: when a maintained package such as Swift's `swift-collections` or `swift-algorithms` was not in the manifest, they did not ask whether it would make the code faster. Now the search covers the packages each language file lists, whether or not the project declares them, for algorithms as well as data structures. When one beats what is available without it, the agent proposes it with what it buys over the best approach without it, and adds it only with the developer's permission. Being declared decides only whether a package can be used straight away.
