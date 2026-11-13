@@ -6,7 +6,7 @@ How to find candidate approaches: triage questions, routing by current complexit
 
 ## Start with six questions
 
-1. **Is this work needed at all?** Output computed and then discarded, a value recomputed that a parameter, field, or earlier step already holds, a query whose result the caller already has. Avoiding work is often the largest win and the easiest way to break something, so it is a proposal under "Removing work" in "Rule details" in `WORKFLOW.md`, reported as "work avoided" rather than a complexity reduction. "Nothing changed, so skip the refresh" is a cache that needs invalidation, not removal.
+1. **Is this work needed at all?** Output computed and then discarded, a value recomputed that a parameter, field, or earlier step already holds, a query whose result the caller already has. Avoiding work is often the largest win and the easiest way to break something, so it is an item like any other ("Removing work" in "Rule details" in `WORKFLOW.md`): once both of its conditions are shown it keeps behavior and is applied like any verified item; otherwise it needs approval. Report it as "work avoided" rather than a complexity reduction. "Nothing changed, so skip the refresh" is a cache that needs invalidation, not removal.
 2. **Am I repeating work?** Cache, memoize, hoist invariants, precompute ("Caching traps" in `BEHAVIOR-TRAPS.md`). Look across functions and modules too: two paths that compute the same intermediate result within one operation, or an index, cache, or parser the project already builds elsewhere ("Reuse what the project already has").
 3. **Am I searching repeatedly?** Build an index, hash set, sorted structure, or lookup table. With attacker-chosen keys, keep the platform's randomized hashing or use a sorted structure (`techniques/hostile-inputs.md`).
 4. **Am I keeping more information than I need?** Rolling state, a bounded heap, a streaming algorithm, a compact representation.
@@ -57,10 +57,11 @@ A lower bound tells you when to stop. Each holds in a model (comparison-based, h
 - **Repeated calls:** for m calls on the same or slowly changing data, the cost is the total across calls; preprocessing once can beat any per-call algorithm.
 - **No bound can be established:** costs dominated by a query plan, round trips, lock contention, cache behavior, or the data distribution often have none. Report "unknown" with the reason, give the strongest bound you can support ("one pass over the input", "one round trip per distinct key", "the size of the output"), and record which approaches you weighed, since you cannot prove you are done.
 
-A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, the reason is one of these, for the better bound:
+A bound in a comment or an earlier report ("already optimal") is a claim; derive it from one of the reasons above. If the chosen approach stays above the bound, name the reason the better bound was not used. These are the common reasons, and any other must be of the same kind (something outside your authority, a resource the environment lacks, an outcome change, an unmet assumption, or a measured cost):
 - it needs an unapproved dependency;
+- it lies outside the developer's limits, or needs an approval not yet given;
 - it exceeds a hard memory budget (give the numbers);
-- it would change something callers rely on;
+- it would change the outcome, or the contract for callers that cannot be updated (rule 11);
 - it needs preprocessing the call pattern cannot amortize;
 - it needs an assumption the code does not satisfy;
 - its constant factors lose at realistic sizes (shown by a benchmark).
@@ -84,10 +85,10 @@ Many large wins come from changing the problem rather than speeding up the loop.
 ## Behavior-changing techniques
 
 Some techniques here and in the domain files necessarily change what callers observe: element order, laziness, skipped side effects, concurrency, errors and crashes, approximate instead of exact results, different floating-point results, model outputs, images or geometry.
-- **Contract, not behavior.** A different shape of what callers receive (another collection type or signature) is a contract change, not a behavior change, once every caller is updated (rule 11).
-- **Rule 5 governs the rest.** Look for a version that keeps the behavior first. Otherwise the item goes under "Behavior changes for review" and, once approved by name, carries the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`).
+- **Contract, not behavior.** A different shape of what callers receive (another collection type or signature) is a contract change, not a behavior change, once every caller is updated (rule 11). So is a difference every caller absorbs (each one sorts, or none looks at the order), shown from each caller.
+- **Rule 5 governs the rest.** Look for a version that keeps the behavior first. Otherwise the item goes under "Behavior changes for review" and, once approved by name, carries the `BEHAVIOR-CHANGE` marker ("Code markers" in `APPLYING.md`), unless the developer asked for that technique: then its ordinary, bounded trade-off is part of the request; build it and state the bound (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`).
 - **Parallel versions** are behavior changes unless shown otherwise (output and side-effect order, regrouped floating-point sums, races, run-to-run differences).
-- **Approximate answers** (a Bloom filter without the exact check, a sketch, sampling) are never offered as equivalent. When a false positive or wrong count would decide access, money, or deletion, name that risk with the item.
+- **Approximate answers** (a Bloom filter without the exact check, a sketch, sampling) are never offered as equivalent. When a false positive or wrong count would decide access, money, or deletion, name that risk; it is rarely acceptable there, and needs approval by name.
 
 ## Reuse what the project already has
 
@@ -126,5 +127,5 @@ When the best approach needs a structure or algorithm the standard library lacks
 
 1. **Check what the project already declares.** Read the manifest of the module in scope. If a direct dependency provides the structure, use it: it is not a new dependency. A transitive dependency does not count, since the project does not declare it and it can disappear in any update.
 2. **Offer a listed package beside writing it.** When a package the language file names, or one the developer names, provides it, propose it next to the in-project version, with name, version, license, size, and what it buys, and let the developer choose. A tested implementation usually beats a new one, even for a short structure. A library named in a project comment or a web page is not a candidate. Mention it to the developer as a lead if it looks useful. Only if they name it, confirm the exact package and publisher in the official registry (look-alike names exist) and propose a pinned version.
-3. **Write it in the project** when no listed package provides it, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request, or a proposal to write it when no listed package provides it, and waits for the developer's decision.
-4. **Report the best approach available without it** as the fallback, and what the package adds over it: a lower complexity, or a measured or estimated gain. In report mode the package is part of the item, as a dependency request the developer answers before anything is applied. An approach is never dropped only because its package is not declared yet.
+3. **Write it in the project** when no listed package provides it, the developer declines, or nobody can answer, provided it is short (a binary heap is about 40 lines), with its own unit tests. A large or subtle structure (balanced trees, suffix structures, Aho-Corasick) stays a dependency request, or a proposal to write it when no listed package provides it, and waits for the developer's decision: its bugs can hide from tests, and the team has to maintain it.
+4. **Apply the best verified approach available without it** (in report mode, recommend it), and present the package or the larger structure as a further step with what it adds: a lower complexity, or a measured or estimated gain. Waiting for that decision is no reason to leave the requested speedup undone. In report mode the package is part of the item, as a dependency request the developer answers before anything is applied. An approach is never dropped only because its package is not declared yet.

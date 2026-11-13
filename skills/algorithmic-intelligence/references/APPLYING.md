@@ -19,11 +19,11 @@ Apply mode only: Phases 5 and 6, after Phases 1 to 4 in `WORKFLOW.md`, with the 
 ## Phase 5: Apply
 
 One approved item at a time.
-- **An item that keeps behavior** is approved when, in this conversation, the developer named it or the code it changes, or gave a general instruction after seeing the report ("go ahead", "implement the plan", "apply all").
+- **An item that keeps behavior** is approved when, in this conversation, the developer named it or the code it changes, asked in the request for the change the item makes (its goal covers the item), or gave a general instruction after seeing the report ("go ahead", "implement the plan", "apply all").
 - **A known behavior change, or equivalence no test can verify,** needs approval of that item ("Approval names the item" under rule 5 in "Rule details" in `WORKFLOW.md`).
 - **Arriving from report mode,** settle commits first (Phase 1, step 4, in `WORKFLOW.md`) and start each item at step 1, with the tests its plan named.
 
-Change only the code the developer named, plus the callers a contract change requires (rule 11).
+Stay inside the request's limits ("Translate the request" in `SKILL.md`). When the developer named code, change only that code, plus the callers a contract change requires (rule 11). When they described a symptom without naming code, the code traced from it to its cause is in scope.
 
 Sometimes the named function is already as fast as its input allows and the fix lies elsewhere (a caller's logic, the code that produces the input, a query). Then do not change that code on your own, and do not stop at "cannot be optimized". Explain the limit and the fix, and ask, as "When the input is what limits the function" (Phase 2, step 4, in `WORKFLOW.md`) describes. Once approved, the fix is an item like any other, starting at step 1.
 
@@ -47,8 +47,8 @@ Sometimes the named function is already as fast as its input allows and the fix 
    - original and new at realistic `n`, a larger `n`, and worst-case inputs where relevant;
    - the end-to-end effect ("Component and end-to-end").
 
-   Compare with the Phase 3 prediction. A disagreement means the analysis missed a cost, so find it before keeping the change. A version that is not faster at realistic sizes is not kept unless the developer agrees for scaling reasons; it goes under "Tried and rejected". If verification or benchmarking cannot be completed, the gain is estimated and the change is not a confirmed win.
-5. **Unverified parts, behavior changes, and unknown effects on the outcome.** Something may turn up while applying: something no test verifies, a difference in the outcome, or a difference you cannot trace to the outcome. Then stop work on the item:
+   Compare with the Phase 3 prediction. A disagreement means the analysis missed a cost, so find it before keeping the change. A version that is not faster at realistic sizes is not kept unless the developer agrees for scaling reasons; it goes under "Tried and rejected". When this environment can hide the cost (a warm cache, a copy-on-write or in-memory disk, a small data set: rule 8 in "Rule details" in `WORKFLOW.md`), decide from the production-scale estimate as well, labeled estimated, not from the local measurement alone. If verification or benchmarking cannot be completed, the gain is estimated and the change is not a confirmed win.
+5. **Unverified parts, behavior changes, and unknown effects on the outcome.** Something may turn up while applying: something no test verifies, a difference in the outcome the request did not decide, or a difference you cannot trace to the outcome. A requested technique's ordinary, bounded trade-off is not such a difference: it is part of the request; build it and state the bound (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`). Then stop work on the item:
    - restore its original code (only that code, never the developer's own uncommitted changes);
    - do not commit;
    - list it under "Behavior changes for review", and move on.
@@ -79,7 +79,7 @@ Write `APPLY-RESULTS.md` once, and leave `OPTIMIZATION-REPORT.md` as the analysi
 ## Apply results format
 
 `APPLY-RESULTS.md` (or, for a small result, the summary in the conversation) starts with:
-- the request as understood;
+- the request as understood, with the bound of any technique the developer named (rule 5);
 - the test suite status before and after, from runs on the final code;
 - the input sizes with their sources and any disagreement.
 
@@ -107,7 +107,7 @@ Then these sections, each only if it has entries:
 
 End every apply run with a summary in the conversation, pointing to `APPLY-RESULTS.md` for detail. These lines, in order, each "none" when empty:
 
-- **Request as understood:** goal and problem underneath in one line, and whether a fix the developer proposed was used, changed, or advised against, and why.
+- **Request as understood:** goal and problem underneath in one line, and whether a fix the developer proposed was used, changed, or advised against, and why; for a technique the developer named, the bound of its trade-off (the maximum age, the sampling error) (rule 5).
 - **Applied:** each item with its verification level and one line of evidence, or why it was not applied.
 - **Complexity:** each item, before → after in every size variable (O(n·k) → O(n), not O(n²) → O(n)), with the case and the lower bound with its reason, or "unknown, because …".
 - **Data structures:** each collection on a hot path, by item: dominant operations, current cost, best structure, and kept or replaced with the reason in a few words.

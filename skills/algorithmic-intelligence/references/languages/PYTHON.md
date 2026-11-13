@@ -52,7 +52,7 @@ These are dependencies (rule 7). Besides what the project declares and what the 
 | A frozen dataclass, or a `tuple` built per lookup, as a `dict` key | Hashes every field or element each time: a dataclass's `__hash__` builds a new tuple per call, and CPython caches a tuple's hash on the object only from 3.14 | A small ID or a narrower key type |
 | `copy.deepcopy` in a loop | Walks the whole object graph | Copy only what changes |
 | Deep recursion | `RecursionError` near 1000 frames, plus call overhead | An explicit stack; raising the limit can crash the interpreter on the C stack. A `RecursionError` on accepted input is an existing bug (rule 4) |
-| CPU-bound threads with the global interpreter lock | No parallel speedup | Processes (pickling, side-effect order change), vectorization, or a free-threaded build: each is a behavior or build change (rule 5) |
+| CPU-bound threads with the global interpreter lock | No parallel speedup | Check each option: processes reorder side effects and need picklable arguments; vectorization adds a dependency (rule 7) and can change floating-point results; a free-threaded build is a build change (rule 5). A change that gives every input the code accepts today the same result is a verified item, not a behavior change (rule 5) |
 
 ### Input handling and security
 

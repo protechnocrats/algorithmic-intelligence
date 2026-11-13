@@ -25,8 +25,9 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 - **Match production cache state.** A cache the change adds is measured at a realistic hit rate, cold and warm runs reported separately, not by repeating one input until every call hits. The same applies to file and database caches.
 
 **Separating the effect from noise**
-- **Measure the noise first (A/A):** benchmark the reference against an identical copy in the same harness. The difference is the noise floor. A large A/A difference means the setup is biased: environment size, link order, and memory layout can shift results by more than the effect (Mytkowicz et al., 2009), so randomize the setup and repeat in fresh processes.
+- **Measure the noise first (A/A):** benchmark the reference against an identical copy in the same harness. The difference is the noise floor. A large A/A difference means the setup is biased: environment size, link order, and memory layout can shift results by more than the effect, so randomize the setup and repeat in fresh processes.
 - **Show the difference exceeds the noise** with a confidence interval for the difference (a bootstrap over per-run times) or at least a gap between medians larger than the spread. Inside the noise is "no measurable difference". Use the tool's own statistics when it has them (JMH, BenchmarkDotNet, Criterion, Google Benchmark).
+- **No measurable difference here is not no difference in production.** A measurement describes the machine it ran on, and this one can hide costs the developer's users pay (rule 8, "Your environment is not the developer's" in "Rule details" in `WORKFLOW.md`). When the sizes you could run are below production, or the cost depends on cache or disk state, estimate the work at production scale (bytes copied, rows read, calls made), label it estimated, and decide from both the measurement and the estimate.
 
 **Reporting**
 - Absolute times with the percentage change, plus machine and runtime details.
@@ -38,7 +39,7 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 
 A benchmark of the changed function shows how much faster the function became, not the program. Report both:
 
-1. **Component:** the changed function or path, measured as above.
+1. **Component:** the changed function or path, measured as above, with the inputs real callers give it, built the way they build them (reached through the entry point where you can). A speedup measured only on objects you constructed may not exist for real callers: if the gain depends on how a caller creates an argument (a particular connection or request type), check that every hot caller creates it that way, or make the speedup independent of it, or state it as the main caveat. "Your environment is not the developer's" under rule 8 in "Rule details" in `WORKFLOW.md` covers the machine itself.
 2. **End-to-end:** the whole operation the developer cares about (request, page load, frame, batch job, command), before and after, where the project can run it safely against local or faked services. If it cannot run, take the function's share from a profile or estimate it from survey call counts, labeled estimated.
 
 The end-to-end saving cannot exceed the changed code's share of the time (Amdahl's law). State the share next to the component numbers: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component win with a small end-to-end saving is still worth reporting, honestly labeled; it may matter more once other bottlenecks are fixed.
@@ -48,7 +49,7 @@ The end-to-end saving cannot exceed the changed code's share of the time (Amdahl
 - fewer operations also means less time;
 - a better score means a better real result.
 
-When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix it or measure the target directly. Learning theory makes the same point: optimizing a surrogate loss guarantees nothing unless the surrogate is consistent with the true objective (Bartlett, Jordan, and McAuliffe, 2006).
+When they disagree, the proxy is missing a cost (I/O, allocation, cache effects, a different input distribution); fix it or measure the target directly. Learning theory makes the same point: optimizing a surrogate loss guarantees nothing unless the surrogate is consistent with the true objective.
 
 ## Memory measurement
 

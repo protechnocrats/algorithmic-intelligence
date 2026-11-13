@@ -127,7 +127,7 @@ End a report-mode run with a short summary in the conversation (apply mode: "Fin
 - When the report is in files, give each point below in a line or two and point to the files.
 - When the report itself is in the conversation, it needs only the closing lines.
 
-- Request as understood, and whether a fix the developer proposed was advised for or against, and why.
+- Request as understood, and whether a fix the developer proposed was advised for or against, and why; for a technique the developer named, the bound of its trade-off (the maximum age, the sampling error) (rule 5 in "Rule details" in `WORKFLOW.md`).
 - Items ranked; behavior changes awaiting review; dependency requests pending.
 - Test suite baseline, including tests already failing.
 - Parts of the scope not inspected; code with no entry point found, with the question about each.

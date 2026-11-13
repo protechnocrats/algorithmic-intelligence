@@ -15,7 +15,9 @@ Pin the problem down first: the abstract statement, the contract as the code imp
 Then try the moves, cheapest first, and keep a short research log: what each move gave (a candidate, a bound, or nothing) and what blocked it. A candidate from here still has to state its assumptions, have them confirmed from the code, and compete with the other candidates. Stop when:
 - a candidate reaches the lower bound;
 - a conditional bound (move 10) says the gap needs a breakthrough; or
-- the moves run out. Record the gap and why it remains.
+- the moves whose obstacle matches ("When a move stalls") have been tried. Record the gap and why it remains.
+
+The moves are not a checklist to exhaust: try the ones the problem's obstacles point to.
 
 This is the algorithm-engineering cycle (Sanders; McGeoch): design, analyze, implement, experiment, and let the experiment send you back to the design. A measurement that contradicts the analysis (move 12) or a small case that breaks a conjecture (move 13) sends you back to the problem statement or the moves, not forward with the candidate.
 
@@ -29,7 +31,7 @@ Experimental and derived algorithms carry a minimum verification level ("Verific
 
 ## Consulting the literature
 
-When the tables and moves leave a gap on a nontrivial problem, or to check whether a derived algorithm is already known, consult published sources if the environment allows; without web access, use the references in this skill and say no further search was possible. Prefer textbooks, standard references, and peer-reviewed papers over course notes, preprints, and blog posts; a result found only in the last two is experimental.
+When the tables and moves leave a gap on a nontrivial problem, or to check whether a derived algorithm is already known, consult published sources if the environment allows; without web access, use the references in this skill and say no further search was possible. Search by the problem's abstract, standard terms: never put project code, identifiers, or data into a query, since a search sends it outside the machine. Prefer textbooks, standard references, and peer-reviewed papers over course notes, preprints, and blog posts; a result found only in the last two is experimental.
 
 - **Cite only what you have read** in this session or what this skill's references list; otherwise give the technique's name and mark the citation "reference not checked". An invented or misattributed citation is worse than none.
 - **Check the claim, not the title.** Confirm the source states the bound and conditions you rely on, in your model (comparison-based, word RAM, external memory, expected or worst case).
@@ -85,7 +87,7 @@ A random pivot makes selection O(n) expected whatever the input order, if the ad
 
 *Check:*
 - Randomness that changes only running time gives an expected bound; state what it is over.
-- Randomness that can change the result (Monte Carlo, as opposed to Las Vegas, which is always right) makes the answer approximate. So it is a behavior change, and unsuitable where the answer decides access, money, or deletion.
+- Randomness that can change the result (Monte Carlo, as opposed to Las Vegas, which is always right) makes the answer approximate. So it is a behavior change; where the answer decides access, money, or deletion, name that risk; it is rarely acceptable there, and needs approval by name.
 - Seed and reproducibility requirements still hold.
 - If whoever chooses the inputs sees outputs that depend on the random choices before choosing more, the expected bound may not hold ("Adaptive adversaries" in `techniques/hostile-inputs.md`).
 
@@ -108,7 +110,7 @@ Each bound holds in a model. Leaving the model (hashing instead of comparing, bo
 
 ### 11. Estimate before building (Bentley)
 
-Multiply a candidate out before writing it: sizes × calls per period × operations per call. Take sizes from what the deployed code and configuration enforce, and from data the developer gives. A size nothing enforces is not a bound, so size for the largest input the code accepts. When sources disagree, state both. Ask the developer if they would select different candidates. When nobody can answer, pick the one that is safe at the larger size.
+Multiply a candidate out before writing it: sizes × calls per period × operations per call. Take sizes from what the deployed code and configuration enforce, and from data the developer gives. A size nothing enforces is not a bound, so design for the largest input the code accepts. When sources disagree (a comment, the configuration, the README, the developer), report each source and its number, and say which size you used and why. Ask only when the design for the larger size costs something the developer would weigh (a new dependency, much more memory, much more code); otherwise proceed with it. When nobody can answer, use the design that is safe at the larger size. Ask one short question when a size decides the design and can be neither found nor estimated.
 
 Rough orders of magnitude, for estimates only: a core runs about 10⁸ to 10⁹ simple operations per second; a main-memory cache miss costs about 100 ns; a random SSD read about 100 µs; a round trip inside a data center about 0.5 ms, across continents about 100 ms. An estimate in seconds against a budget in milliseconds rules a candidate out without building it; one far inside the budget says further moves are not needed.
 

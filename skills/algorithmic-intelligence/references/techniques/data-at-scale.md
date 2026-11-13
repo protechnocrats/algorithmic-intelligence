@@ -38,7 +38,7 @@ Read amplification (pages read per lookup), write amplification (bytes written p
 
 ## Change propagation
 
-Rescanning everything to find what changed costs O(data) per update; when changes are small relative to the data, propagate them instead. First record the read-after-write contract: how soon a reader must see a change. Any delay the original did not have is a behavior change.
+Rescanning everything to find what changed costs O(data) per update; when changes are small relative to the data, propagate them instead. First record the read-after-write contract: how soon a reader must see a change. Any delay the original did not have is a behavior change, unless the developer asked for that technique: then its ordinary, bounded trade-off is part of the request; build it and state the bound (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`).
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|

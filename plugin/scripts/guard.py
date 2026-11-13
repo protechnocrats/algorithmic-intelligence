@@ -6,7 +6,12 @@ committing or pushing, discarding uncommitted work, running as root, changing ow
 risky permissions, piping a download into an interpreter, deleting outside the project or a
 temporary directory (or the repository's own `.git`), installing software outside the project,
 reading a secret file, or editing an existing test. It never blocks outright: the developer can
-approve, and in an unattended run (nobody to answer) the call is refused with the reason.
+approve, and in an unattended run (nobody to answer) the call is refused with the reason, which
+also tells the agent what to do next.
+
+PowerShell commands are passed through the same checks, but the patterns are written for POSIX
+shells, so a PowerShell command gets only the checks whose patterns happen to apply (git commands,
+for example). Do not assume PowerShell commands are covered.
 
 Reads the hook event as JSON on stdin; prints a PreToolUse decision as JSON on stdout.
 Any error lets the call through (exit 0, no output): a broken guard must not stop work.
@@ -30,11 +35,17 @@ SECRET_NAME = re.compile(
 NOT_SECRET = re.compile(r'\.(example|sample|template|dist|defaults?)$', re.I)
 
 
+# Added to every reason. The developer sees the reason when asked; in an unattended run the agent sees it
+# after the refusal, and without a next step it may stop the whole task or reach the same effect another way.
+IF_REFUSED = (' If this is refused, do not reach the same effect another way: list it under "Commands not run" '
+              '(or "Waiting for approval") and continue with the rest of the work.')
+
+
 def ask(reason: str) -> None:
     print(json.dumps({'hookSpecificOutput': {
         'hookEventName': 'PreToolUse',
         'permissionDecision': 'ask',
-        'permissionDecisionReason': f'algorithmic-intelligence: {reason}',
+        'permissionDecisionReason': f'algorithmic-intelligence: {reason}{IF_REFUSED}',
     }}))
     sys.exit(0)
 
@@ -163,8 +174,11 @@ def expand_git_aliases(code: str, cwd: str) -> str:
 def check_bash(cmd: str, cwd: str) -> None:
     code = expand_git_aliases(shell_code(cmd), cwd)
     if re.search(GIT + r'(commit|push)\b', code, re.M):
-        ask('a commit or push. Commits are opt-in: the developer authorizes them in this conversation or in '
-            'the project\'s agent instructions. Approve only if you authorized commits for this task.')
+        ask('a commit or push. Commits are opt-in: the developer authorizes them in this conversation, or the '
+            'project\'s agent-instruction files may authorize them, but this hook cannot see those files, so it asks '
+            'every time. Approve only if commits are authorized for this task. A refusal leaves the changes '
+            'uncommitted; the agent lists the files and functions each change touched so they can be reviewed, '
+            'committed, or reverted on their own.')
     if re.search(GIT + r'(?:reset\s+(?:\S+\s+)*--hard\b|clean\s+(?:-\S*[fdx]|--force)|stash\s+(?:drop|clear)\b'
                  r'|checkout\s+(?:--\s|\.(?:\s|$))|restore\b(?![^;&|\n]*--staged))', code, re.M):
         ask('this discards uncommitted work in the working tree or the stash. The skill restores only the code '
@@ -235,7 +249,9 @@ def check_edit(path: str, cwd: str) -> None:
         ask(f'editing the existing test {path}. Existing tests are the evidence that behavior is unchanged. '
             'Approve if you asked for this test to change, or if the edit only updates how the test calls an '
             'interface the change altered (its inputs, assertions, and expected values stay the same; the agent '
-            'lists it under "Contract changes"). Any other edit weakens the evidence. New test files do not need approval.')
+            'lists it under "Contract changes"). Any other edit weakens the evidence. New test files do not need approval. '
+            'A refusal here is not evidence that the outcome changed: keep the original interface for this item, '
+            'or list the needed test edit under "Waiting for approval".')
 
 
 def main() -> None:

@@ -4,7 +4,7 @@ The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply to ever
 
 For code spread across processes or machines. A fast local algorithm still loses to network round trips, coordination, and data movement, so count those first: messages and round trips per operation, bytes moved, and machines each operation waits for.
 
-Consistency is part of the contract: letting a reader see older data, letting replicas disagree temporarily, or changing which writes win is a behavior change.
+Consistency is part of the contract: letting a reader see older data, letting replicas disagree temporarily, or changing which writes win is a behavior change, unless the developer asked for that technique: then its ordinary, bounded trade-off is part of the request; build it and state the bound (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`).
 
 Duplicates are the default. A call can fail after the other side acted, so retrying, hedging, replaying a log, rerunning a slow task (speculative execution), or resending after a rebalance can run a side effect twice. Each of these needs the operation to be idempotent or to carry an idempotency key the receiver stores atomically with the effect. "Exactly once" across a network holds only through such deduplication, whatever a framework's name or documentation says.
 

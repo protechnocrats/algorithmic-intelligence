@@ -85,7 +85,7 @@ Shifting by at least the bit width panics in debug builds and masks the count in
 - **Drop order and RAII.** Caching values or extending lifetimes changes when destructors run: when locks release, files flush, guards end. Guards held longer can deadlock.
 - **Laziness.** Iterator adapters run closures only when consumed, element by element; converting between eager loops and lazy chains changes the order and number of side effects.
 - **Panics versus errors:** keep whether the code panics, returns `Err`, or returns `None` in each case.
-- **`unsafe` is not an optimization by default.** `get_unchecked`, `set_len`, raw pointers, or `transmute` for speed need the developer's approval, a written safety argument, and tests under Miri.
+- **`unsafe` is not an optimization by default.** `get_unchecked`, `set_len`, raw pointers, or `transmute` for speed need the developer's approval, a written safety argument, and tests under Miri, because a mistake in them is undefined behavior that no test reliably shows, and it weakens memory safety, a security property. A request to use `unsafe` is a request that weakens a security property, so it follows "When the request itself is risky" in `SKILL.md`: show the safety argument and the cost of the safe version, and apply it once the developer approves that trade-off; Miri still applies.
 - **Parallelism and async.** `rayon` (a dependency), threads, `join_all`, and `select!` change side-effect order, cancellation, errors, and floating-point reduction results.
 
 ## Testing and benchmarking
