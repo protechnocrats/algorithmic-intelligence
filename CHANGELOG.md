@@ -6,6 +6,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-11-13
+
+Rewrites the rules agents follow when deciding whether to change code, ask, or stop, as a few general principles with their reasons, so agents handle situations no rule lists. Agents now pursue the developer's goal within the limits the developer set, build what was asked for with its ordinary trade-off, ask before building a requested technique that will not pay, and no longer stop or ask where the request already decides. Every reference file and the plugin were brought into line with these principles.
+
 ### Changed
 
 - **Agents separate the goal, the limits, and the suggestions in a request (approval change).** The goal (what must be true when done, including a technique the developer names) is the request; limits (code they named, "don't touch the API") bound where agents work; a suggested fix ("add an index") is a candidate checked against the goal. When a suggestion would not reach the goal and a verified fix inside the limits would, agents apply that fix and say why. When a suggestion would reach the goal, agents use it and mention a better approach as an alternative instead of swapping it in. When a technique the developer asked for as the thing to build will not pay at the code's real sizes, agents say so with the evidence and ask before building anything. A fix outside the limits is still a question for the developer.
