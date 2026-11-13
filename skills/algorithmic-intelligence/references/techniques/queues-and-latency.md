@@ -14,7 +14,7 @@ For code that serves requests or moves work between stages (schedulers, network 
 
 ## Techniques
 
-Most techniques here change behavior under load (which requests wait, are rejected, or complete first) even when each request's result is unchanged: rule 5 applies. Existing queue bounds, pool sizes, rate limits, and timeouts are also defenses; raising or removing one for speed removes the defense (`techniques/hostile-inputs.md`).
+Many techniques here change the outcome under load even when each request's result is unchanged: requests now rejected, timed out, or failing fast, or completing in an order callers observe. Rule 5 applies to those. Shorter or redistributed waiting on its own is the performance being improved: measure its percentiles rather than listing it for approval. Existing queue bounds, pool sizes, rate limits, and timeouts are also defenses; raising or removing one for speed removes the defense ("Judge by the worst case" in `techniques/hostile-inputs.md`).
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|

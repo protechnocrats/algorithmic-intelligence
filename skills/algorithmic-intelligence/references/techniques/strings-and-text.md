@@ -31,7 +31,7 @@ Before replacing a string operation, record its unit (bytes, UTF-16 code units, 
 
 ## Automata, lexers, and parsers
 
-A rewrite reproduces accept and reject decisions, match priorities, error positions, and error messages on malformed, truncated, and hostile input as well as valid input. A parser that accepts what the original rejected, or reads it differently (duplicate keys, trailing data, invalid UTF-8, out-of-range numbers), creates a parser differential when another component reads the same input: a security behavior change (`techniques/hostile-inputs.md`). Keep nesting, size, and length limits, and give a recursive rewrite a depth limit on untrusted input; a limit the original lacked is a behavior change (in write mode, chosen with the developer).
+A rewrite reproduces accept and reject decisions, match priorities, error positions, and error messages on malformed, truncated, and hostile input as well as valid input. A parser that accepts what the original rejected, or reads it differently (duplicate keys, trailing data, invalid UTF-8, out-of-range numbers), creates a parser differential when another component reads the same input: a security behavior change (`techniques/hostile-inputs.md`). Keep nesting, size, and length limits. On untrusted input, a recursive rewrite uses an explicit stack or keeps the original's depth limit. A limit the original lacked rejects input it accepted: in existing code it is a behavior change listed for approval, and new code takes its limits from the requirements or sets and states them ("Algorithmic complexity attacks" in `techniques/hostile-inputs.md`).
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|

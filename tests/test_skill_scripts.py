@@ -37,10 +37,9 @@ class CheckSummary(unittest.TestCase):
         out = run(CHECK_SUMMARY, stdin=COMPLETE.replace('Bugs noticed: none\n', ''))
         self.assertEqual((out.returncode, out.stdout.splitlines()[0]), (1, 'missing: "Bugs noticed"'))
 
-    def test_short_path(self):
+    def test_no_exemption_line(self):
+        # Every final summary needs the lines; no opening or closing line exempts a message from them.
         out = run(CHECK_SUMMARY, stdin='algorithmic-intelligence: small, cold change (a rename).\n\nDone.')
-        self.assertEqual((out.returncode, out.stdout.strip()), (0, 'short path: no summary lines required'))
-        out = run(CHECK_SUMMARY, stdin='Done.\n\nThis was a small, cold change.')
         self.assertEqual(out.returncode, 1)
 
     def test_usage(self):

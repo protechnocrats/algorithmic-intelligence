@@ -1,4 +1,5 @@
 """Tests for the guard hooks: python3 -m unittest discover -s plugin/tests"""
+import importlib.util
 import json
 import os
 import subprocess
@@ -9,6 +10,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 GUARD = os.path.join(HERE, '..', 'scripts', 'guard.py')
 SUMMARY = os.path.join(HERE, '..', 'scripts', 'summary_check.py')
+SKILL_CHECK = os.path.join(HERE, '..', '..', 'skills', 'algorithmic-intelligence', 'scripts', 'check_summary.py')
 
 
 def run(script, event):
@@ -157,6 +159,8 @@ class GuardReadEdit(unittest.TestCase):
             git('add', '-A')
             git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init')
             self.assertEqual(decision('Edit', proj, file_path=existing), 'ask')
+            r = run(GUARD, {'tool_name': 'Edit', 'tool_input': {'file_path': existing}, 'cwd': proj})
+            self.assertIn('not evidence that the outcome changed', r['hookSpecificOutput']['permissionDecisionReason'])
             self.assertIsNone(decision('Write', proj, file_path=os.path.join(proj, 'tests', 'test_new.py')))
             self.assertIsNone(decision('Edit', proj, file_path=os.path.join(proj, 'orders.py')))
 
@@ -175,6 +179,14 @@ class GuardReadEdit(unittest.TestCase):
             git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init')
             self.assertIsNone(decision('Edit', proj, file_path=os.path.join(proj, 'orders.rb')))
             self.assertEqual(decision('Edit', proj, file_path=os.path.join(proj, 'spec', 'orders_spec.rb')), 'ask')
+
+    def test_every_reason_says_what_to_do_if_refused(self):
+        for event in ({'tool_name': 'Bash', 'tool_input': {'command': 'sudo ls'}, 'cwd': '/tmp'},
+                      {'tool_name': 'Bash', 'tool_input': {'command': 'git commit -m x'}, 'cwd': '/tmp'},
+                      {'tool_name': 'Read', 'tool_input': {'file_path': '/p/.env'}, 'cwd': '/tmp'}):
+            reason = run(GUARD, event)['hookSpecificOutput']['permissionDecisionReason']
+            self.assertIn('If this is refused, do not reach the same effect another way', reason)
+            self.assertIn('Commands not run', reason)
 
     def test_off_switch(self):
         env = dict(os.environ, ALGORITHMIC_INTELLIGENCE_GUARD='off')
@@ -207,15 +219,44 @@ class Summary(unittest.TestCase):
         self.assertIsNone(self.check('Done.', active=True))
 
     def test_complete_summary_passes(self):
-        msg = ('Complexity: O(n²) → O(n)\nContract changes: none\nBugs noticed: none\nHazards noticed: none\n'
-               'Commands not run: none')
+        msg = ('Complexity: O(n²) → O(n)\n- **Data structures:** `seen` (list): membership, O(n); best: set\n'
+               'Contract changes: none\nBugs noticed: none\n### Hazards noticed\nnone\nCommands not run: none')
         self.assertIsNone(self.check(msg))
 
+    def test_mentions_inside_sentences_do_not_count(self):
+        r = self.check('Reduced the complexity; data structures audited; no contract changes, bugs noticed, '
+                       'hazards noticed, or commands not run.')
+        self.assertEqual(r['decision'], 'block')
+        for label in ('Complexity', 'Data structures', 'Contract changes', 'Bugs noticed', 'Hazards noticed', 'Commands not run'):
+            self.assertIn(f'"{label}"', r['reason'])
+        self.assertIn('stop as it is', r['reason'])
+
+    def test_missing_data_structures_blocks(self):
+        msg = 'Complexity: O(n²) → O(n)\nContract changes: none\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'
+        r = self.check(msg)
+        self.assertEqual(r['decision'], 'block')
+        self.assertIn('Data structures', r['reason'])
+
+    def test_same_labels_and_matching_as_the_skill_script(self):
+        # The plugin is installed on its own, so it keeps a copy of the skill script's check; they must agree.
+        load = lambda path, name: importlib.util.spec_from_file_location(name, path)
+        mods = []
+        for path, name in ((SUMMARY, 'plugin_summary'), (SKILL_CHECK, 'skill_summary')):
+            spec = load(path, name)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mods.append(mod)
+        plugin, skill = mods
+        self.assertEqual(plugin.REQUIRED, skill.REQUIRED)
+        for label in skill.REQUIRED:
+            self.assertEqual(plugin.label_pattern(label).pattern, skill.label_pattern(label).pattern)
+
     def test_missing_contract_changes_blocks(self):
-        msg = 'Complexity: O(n²) → O(n)\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'
+        msg = 'Complexity: O(n²) → O(n)\nData structures: none\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'
         r = self.check(msg)
         self.assertEqual(r['decision'], 'block')
         self.assertIn('Contract changes', r['reason'])
+        self.assertNotIn('"Data structures"', r['reason'])
 
     def test_questions_and_other_sessions_pass(self):
         self.assertIsNone(self.check('Which function should I look at?'))

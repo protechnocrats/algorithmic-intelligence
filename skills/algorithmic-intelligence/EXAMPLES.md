@@ -1,8 +1,8 @@
 # Worked Examples
 
-One short example per mode, and one for the short path, showing the shape of a run: the request, what the agent does, and what it hands back. They illustrate the files that govern each step; where the two differ, the governing file wins. Code, names, and numbers are invented.
+One short example per mode, showing the shape of a run: the request, what the agent does, and what it hands back. They illustrate the files that govern each step; where the two differ, the governing file wins. Code, names, and numbers are invented.
 
-**Contents:** Report mode · Apply mode · Write mode · The short path
+**Contents:** Report mode · Apply mode · Write mode
 
 ## Report mode
 
@@ -47,9 +47,3 @@ One short example per mode, and one for the short path, showing the shape of a r
 5. Tests: a slow reference (a Python loop over generated orders) against the endpoint on edge cases and seeded data, including refunds and a customer with no orders; a round trip against rows the existing writer produced.
 
 **What the developer gets.** The endpoint, its tests, and "Performance decisions": one entry with size, data structures, approach, memory, and "Verified: level 1 against a reference version"; the `Orders.all()` item as a proposed optimization awaiting a decision; and the closing lines.
-
-## The short path
-
-**Request.** "Rename the `status` field on the invoice summary to `state` and update its two call sites."
-
-**What the agent does.** First line: `algorithmic-intelligence: small, cold change. A rename; no loop, collection, query, cache, or I/O is added, and nothing is processed differently.` Makes the change, runs the tests the project documents, and ends its last message with the same line and nothing more. Had one of the call sites turned out to loop over invoices per request, it would have stated a mode and continued.

@@ -6,7 +6,7 @@ A differential test runs the original and the optimized implementation on the sa
 
 ## Which tests to write
 
-**Read the existing tests first.** Before writing any test, read how the tests nearest this code are built: framework, fixtures and builders, fakes, naming, location, and how they start the code. Write yours the same way and reuse what they already have, so the new tests run in the project's normal suite and the team can maintain them. An existing test that drives the entry point is a starting pin once you have shown that it reaches the hot path and fails on a planted difference. Leave existing tests as they are and add new ones beside them.
+**Read the existing tests first.** Before writing any test, read how the tests nearest this code are built: framework, fixtures and builders, fakes, naming, location, and how they start the code. Write yours the same way and reuse what they already have, so the new tests run in the project's normal suite and the team can maintain them. An existing test that drives the entry point is a starting pin once you have shown that it reaches the hot path and fails on a planted difference. Add new tests beside the existing ones, and never change an existing test's inputs, assertions, or expected values: they record what the code did. When the change alters an interface a test calls, the test is a caller like any other: update only its call and list the edit under "Contract changes" (rule 11).
 
 Each hot path gets two kinds of evidence, because each sees what the other cannot:
 
@@ -31,7 +31,7 @@ When the computation sits inside a method that also does I/O or reads shared sta
 
 ### Pin what the change assumes
 
-When a change relies on something established elsewhere (data already sorted, keys unique, values non-null, a size limit), add a test that fails if that stops being true, driving the real code that establishes it. Analysis shows the assumption holds today; only a test protects it when someone changes that code later. If what establishes it cannot run in a test (a database ordering no throwaway local database of the same engine can reproduce, another service), the assumption is unverified (rule 5).
+When a change relies on something established elsewhere (data already sorted, keys unique, values non-null, a size limit), add a test that fails if that stops being true, driving the real code that establishes it. Analysis shows the assumption holds today; only a test protects it when someone changes that code later. If what establishes it cannot run in a test (a database ordering no throwaway local database of the same engine can reproduce, another service), the assumption is unverified (rule 5), unless a version that does not rely on it (keeping the sort, re-checking uniqueness cheaply) keeps most of the gain. Prefer that version: it needs no assumption to verify.
 
 ## Setup
 
@@ -51,8 +51,8 @@ When the change alters how the code calls a collaborator (batching, fetching onc
 1. **Build the fake from the collaborator's documented contract,** not from what the current code happens to use: batch-size limits, handling of missing or invalid items, partial failure (all-or-nothing or per item), ordering, and which errors are raised when. Encode the limits as checks, so a call that breaks one fails the test.
 2. **Compare what callers observe** on that fake: return values, exceptions (type, and which item caused them, such as the first missing record in the original order), state, and effects reaching the collaborator.
 3. **Compare requests as multisets:** the same logical reads and writes, nothing extra or missing, duplicates counted, relative order kept for operations on the same key. Check the expected call count too; it is the point of the change.
-4. **Inject failures** (a missing item, an invalid item, an error) at the first, a middle, and the last position.
-5. **State the assumption** that the collaborator behaves as documented, and list what the change relies on that the documentation does not settle (whether one batch read sees the same snapshot as separate reads, whether timing between calls matters). That part alone is unverified and goes to the developer under rule 5.
+4. **Inject failures** (a missing item, an invalid item, an error) at the first, a middle, and the last position. When injecting failures into a fake, fail the collaborator as a whole, the way it fails in practice, unless its documentation says its operations fail independently: a fake that fails one item while answering the rest tests a failure the real system does not have.
+5. **State the assumption** that the collaborator behaves as documented, and list what the change relies on that the documentation does not settle (whether one batch read sees the same snapshot as separate reads, whether timing between calls matters). Settle what reasoning can: reading shared data once per operation instead of several times keeps behavior under the conditions in "Keep the state a single operation can see" (rule 5 in "Rule details" in `WORKFLOW.md`); state that reasoning in the item. Only what neither the documentation nor that reasoning settles is unverified and goes to the developer under rule 5.
 
 A change verified this way reaches at least level 1.
 
@@ -89,9 +89,13 @@ If the outcome cannot be compared this way (callers outside the project, a store
 - **Laziness and short-circuiting:** where the original stops early, the candidate must not evaluate more elements when evaluation has effects, can throw, is expensive, or the source is unbounded (an infinite iterator, a cursor).
 - **Separation:** when the change adds shared state such as a cache, interleave calls from different users, tenants, or permission sets, and repeat after a permission or data change; each caller must get what it would get alone. Secret-dependent timing cannot be compared this way; list it as unverified.
 
-**Floating point** must match exactly unless the developer approves a tolerance; reordering additions changes bits. Compare by bit pattern or with an equality where NaN equals NaN and `-0.0` differs from `0.0` (`Object.is`, `Double.compare`, `to_bits()`), including inside collections, never with `==`.
+**Floating point** must match exactly unless the developer approves a tolerance, or the request names a technique that ordinarily reorders float operations (a parallel or vectorized reduction), whose bounded trade-off is part of the request (rule 5). Then derive the tolerance from the operation (the number of terms reduced, the precision, the magnitude of the values), state it, and test that every difference stays within it. Reordering additions changes bits. Compare by bit pattern or with an equality where NaN equals NaN and `-0.0` differs from `0.0` (`Object.is`, `Double.compare`, `to_bits()`), including inside collections, never with `==`.
 
-**When old and new disagree, the test is not what changes.** Loosening the comparison, the inputs, the seed, or the reference hides the evidence. The disagreement means the new code is wrong, the harness is wrong (show how), or it is a behavior change ("When equivalence counts as verified").
+**When old and new disagree, the test is not what changes.** Loosening the comparison, the inputs, the seed, or the reference hides the evidence. The disagreement means one of four things:
+- the new code is wrong;
+- the harness is wrong (show how);
+- it is a behavior change ("When equivalence counts as verified");
+- it is the ordinary, bounded trade-off of a technique the developer asked for (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`), such as a requested cache serving a result up to its maximum age. Then test the bound itself: the difference never goes past the stated limit (the maximum age, the error bound, a batch failing as a whole), and old and new compare exactly everywhere outside it. Report the bound tested.
 
 ## Inputs
 
@@ -126,7 +130,7 @@ Aim for the highest cheap level. An experimental or derived algorithm ("Name the
 - **Exhaustive checks.** A pure function of one 32-bit argument can be checked on all 2³² inputs. That is level 4 only for the build, flags (floating-point contraction), and CPU-feature path that ran.
 - **Concurrency.** Concurrency changes that tests cannot verify reach level 3 with a tool that enumerates interleavings.
 
-Verification tools beyond the test framework are dependencies: use the project's, otherwise ask (rule 7). The language files name them. Report what the tool checked, its bounds, and its version; the result is only as strong as the harness and the bounds.
+Verification tools beyond the test framework are dependencies: use the project's; otherwise propose the tool with the level it would reach (rule 7), and meanwhile verify at the highest level reachable without it. The language files name them. Report what the tool checked, its bounds, and its version; the result is only as strong as the harness and the bounds.
 
 ## The contract as executable properties
 
@@ -154,11 +158,11 @@ An optimization is verified (level 1 or higher) only when all of these hold for 
 
 1. Every applicable observable in "What to compare" is covered.
 2. Edge cases and generated inputs pass.
-3. The existing test suite passes on the final code.
+3. The existing test suite gives the start-green results on the final code (rule 12): every test that passed then still passes, and no failure recorded then can reach the changed code.
 4. Every trap in `BEHAVIOR-TRAPS.md` that could apply is covered by a test or ruled out in one stated sentence.
 5. For each observable compared, at least one planted difference was caught, and the A/A run passed.
 
-Anything that cannot be checked at any level (real database ordering, platform rendering, timing, hardware, interleavings without a checker) is unverified: ask the developer under rule 5, and on acceptance add the `NEEDS-TESTING` marker ("Code markers" in `APPLYING.md`). An intended difference in outputs is a behavior change, documented for review and marked `BEHAVIOR-CHANGE` only after approval.
+Anything that cannot be checked at any level (real database ordering, platform rendering, timing, hardware, interleavings without a checker) is unverified: ask the developer under rule 5, and on acceptance add the `NEEDS-TESTING` marker ("Code markers" in `APPLYING.md`). An intended difference in outputs is a behavior change, documented for review and marked `BEHAVIOR-CHANGE` only after approval, unless it is the requested trade-off tested within its bound ("What to compare").
 
 ## Reporting verification
 

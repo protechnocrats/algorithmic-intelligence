@@ -22,17 +22,18 @@ Cover every collection on a hot path: fields, locals, parameters, return values,
    - able to provide what the outcome relies on: iteration order (insertion, sorted, or none), duplicates, which equality it uses, null handling, whether callers modify what they receive, and whether threads share it. Callers can be updated to receive a different structure (rule 11).
 
    Name it even when you will not switch to it.
-4. **Reason for not switching.** One of:
+4. **Reason for not switching.** Usually one of these; any other reason must name a concrete cost or limit:
    - it is already the best;
    - the outcome relies on something no version of the best structure can provide, even with every caller updated (name it);
    - switching changes an interface whose callers are outside the project, and the developer has not approved the change;
    - it exceeds a hard memory budget (give the numbers);
    - sizes are provably small;
    - it needs a dependency the developer declined or has not yet approved, and is too large or subtle to write in the project ("When the best technique is not available" in `ALGORITHM-ARSENAL.md`);
-   - a benchmark showed it is not faster at realistic sizes (give the numbers);
+   - it lies outside the limits the developer set (name the limit: code they named, a part they said not to touch); the switch is listed as a question for them;
+   - it is not faster at production sizes, measured or estimated as in rule 8 (give the numbers); a run on small or warm data in this environment does not show this ("Your environment is not the developer's" in "Rule details" in `WORKFLOW.md`);
    - the chosen approach replaces or removes the collection (name the approach).
 
-   "It works", "it is the one already there", and "it uses more memory" are not reasons.
+   These are never reasons: "it works", "it is the one already there", and "it uses more memory".
 
 ## Which structure suits the operations
 
@@ -67,7 +68,7 @@ Section names are in `CORE-TECHNIQUES.md` unless a file is named. When a languag
 ## Choosing the best structure
 
 - **Look past today's operations.** The table answers for what the code does now. A different algorithm can need a structure the code does not use at all, so also ask what structure would make a better algorithm possible, and take the lowest complexity reachable (rule 6).
-- **Time comes first.** Extra memory that lowers time complexity is worth spending, whatever its size, as long as it fits the memory actually available (rule 1); if it does not, present both costs and ask. The time has to really go away: an index built for a single lookup saves nothing, and at provably small sizes a small array can beat a hash map.
+- **Time comes first** (rule 2). The time has to really go away: an index built for a single lookup saves nothing, and at provably small sizes a small array can beat a hash map.
 - **Check the rest of the workload.** Making the dominant operation cheap can make a rarer one expensive enough to become dominant: multiply each operation's new cost by its count and compare totals, build cost included.
 - **Replacing a structure is where behavior changes hide:** iteration order, duplicates collapsing, a different equality, and rejected nulls. Walk "Ordering", "Equality and keys", "Duplicates and nulls", and "Mutation and aliasing" in `BEHAVIOR-TRAPS.md`. With attacker-chosen keys, see `techniques/hostile-inputs.md`.
 - **Prefer what is already available when it is as good:** the language's own structures (rule 14), then the project's own and those from direct dependencies in its manifest. Availability breaks ties; it does not limit the search. A structure from a package the language file lists, which the project does not declare yet, is still a candidate. When it reaches a lower complexity or a clear gain, follow "When the best technique is not available" in `ALGORITHM-ARSENAL.md`, which proposes it beside writing one. Adding the package needs permission (rule 7); considering it does not.

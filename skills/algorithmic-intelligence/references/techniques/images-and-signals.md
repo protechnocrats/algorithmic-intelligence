@@ -6,7 +6,7 @@ The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply.
 
 N is the number of pixels or samples and k the filter width. Outputs match the original exactly, borders, rounding, clamping, color space, and alpha included (see "Behavior traps").
 
-File headers declare their own sizes, and a small file can declare 100,000 × 100,000 pixels: compute width × height × channels × bytes per sample with overflow checks and compare it with a limit before allocating any buffer, table, or pyramid. Raising or disabling a decoder's limit (such as Pillow's `MAX_IMAGE_PIXELS`) for speed is a security regression ("When the request itself is risky" in `SKILL.md`).
+File headers declare their own sizes, and a small file can declare 100,000 × 100,000 pixels: compute width × height × channels × bytes per sample with overflow checks and compare it with a limit before allocating any buffer, table, or pyramid. Raising or disabling a decoder's limit (such as Pillow's `MAX_IMAGE_PIXELS`) for speed is a security regression ("Judge by the worst case" in `techniques/hostile-inputs.md`).
 
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
