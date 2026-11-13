@@ -232,9 +232,10 @@ def check_edit(path: str, cwd: str) -> None:
         return
     rel = tracked_path(path, cwd)
     if rel and TEST_PATH.search(rel):
-        ask(f'editing the existing test {path}. Existing tests are the evidence that behavior is unchanged; '
-            'a change that needs a test edited to pass is usually wrong. Approve only if you asked for this '
-            'test to change. New test files do not need approval.')
+        ask(f'editing the existing test {path}. Existing tests are the evidence that behavior is unchanged. '
+            'Approve if you asked for this test to change, or if the edit only updates how the test calls an '
+            'interface the change altered (its inputs, assertions, and expected values stay the same; the agent '
+            'lists it under "Contract changes"). Any other edit weakens the evidence. New test files do not need approval.')
 
 
 def main() -> None:
