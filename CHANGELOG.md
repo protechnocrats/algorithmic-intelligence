@@ -6,6 +6,22 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-11-13
+
+Restores concrete checklists that the 0.6.x rewrites had shortened, and tightens three behaviors: commands are checked more strictly before they run, a test is updated like any other caller when an interface changes, and a fix for a function limited by its input is followed through to the function itself.
+
+### Changed
+
+- **When a function is limited by its input, the fix is followed through.** After fixing the caller or producer that gives a function poor input (unsorted, unindexed, rebuilt per call), agents redesign the function for the improved input in the same change, and treat what it now assumes (sorted, indexed, unique) as part of its contract: every other caller must provide it, or the function keeps a path that does not need it.
+
+- **Tests are updated like any other caller when an interface changes.** When an optimization changes a function's interface, a test that calls it gets only its call updated, never its inputs, assertions, or expected values, and the edit is listed under "Contract changes". A test that cannot keep its assertions through such an update means the outcome changed: the change is reverted or listed for approval. The guard hook still asks before an existing test is edited, and its message now says which edits to approve.
+
+- **Commands are checked more strictly before they run.** Agents read the test or build command the README recommends and everything it triggers, and do not run a script that would delete outside the build output when a variable is empty or unset, need root, reach production or shared systems, grow without bound, or walk outside the project, even after reading it; they tell the developer what it does instead.
+- **New code is tested on its edge cases.** In write mode, tests cover empty input, one element, duplicates, ties, boundary values (zero, negative, first and last, limits), and invalid input the code can receive, derived from the request's rules.
+- **New code is hardened against hostile input in concrete ways.** Agents never build a regular expression from input (wildcards match as wildcards, everything else literally), check sizes, sums, and counters for overflow, decide on purpose whether non-ASCII digits are accepted, replace recursion on nested input with an explicit stack or a depth limit, and keep queries parameterized.
+- **Sizes come from the project's configuration.** Agents read configuration, deployment files, and the README for sizes and limits before designing, show the arithmetic that turns business facts into sizes, and report sources that disagree and which one they used.
+- **Hidden costs are spelled out.** Operations that sort, search, copy, slice, convert, or hash a collection or string are counted at their size, along with implicit work such as building one structure from another; no call is treated as constant time because it is short or built in.
+
 ## [0.6.4] - 2026-11-10
 
 Rewrites the skill's densest passages so each instruction stands on its own. No intended change in how agents work: every instruction, condition, example, and heading is still there, only easier to follow.

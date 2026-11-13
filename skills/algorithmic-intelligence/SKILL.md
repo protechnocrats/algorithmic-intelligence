@@ -39,14 +39,14 @@ So:
 
 ### Before running a command
 
-Project scripts, builds, and tests execute code someone else wrote, and the original code you test against runs with its side effects. Read a command and what it triggers (called scripts, build steps, install and version-control hooks, auto-loaded test configuration) before running it. Loading serialized data can run code too.
+Project scripts, builds, and tests execute code someone else wrote, and the original code you test against runs with its side effects. Read every project script, build target, and documented command before running it, including the test or build command the README recommends, and everything it triggers: the scripts it calls, build files that run code (`build.gradle`, `build.rs`, `setup.py`, `Makefile` targets), install and version-control hooks, auto-loaded test configuration (`conftest.py`, test setup files), and build wrappers that download their own tools (`gradlew`, `mvnw`). Loading serialized data can run code too (`pickle`, `torch.load`, Java serialization).
 
-Do not run anything whose effects you cannot bound or undo:
-- deleting or overwriting outside the build output (watch for empty variables in paths);
-- root or system changes, or installing software;
-- production credentials or hosts;
-- anything that sends, uploads, pays, or writes to shared systems;
-- unbounded processes or data.
+Reading a script does not make it safe to run. If it would do any of the following, do not run it, and tell the developer what it does:
+- delete or overwrite files outside the project's build output, including when a variable it uses is empty or unset (`rm -rf "$OUT"/*` with `OUT` unset deletes from `/`);
+- need root or another user (`sudo`, `su`), change system settings, or install software, above all by piping a download into a shell;
+- use production credentials or hosts, or reach outside the machine: email, messages, uploads, payments, writes to shared databases or services, including diagnostics that execute there (`EXPLAIN ANALYZE` runs the statement);
+- start processes, or write files or memory, without a clear bound (a data generator at full production size);
+- walk paths outside the project, such as symbolic links or a default root of `/`.
 
 Get what you need another way: call the compiler or test runner directly, use temporary directories and generated data, and replace outside effects with fakes in tests and benchmarks. Give commands a time limit, and a memory limit when what they run can grow. If something truly needs root or production access, give the developer the command to run themselves.
 
@@ -65,7 +65,7 @@ When nobody can answer (a scheduled or unattended run), nothing that needs appro
 **Translate the request.** People describe symptoms and business needs ("the nightly email arrives late"). Before choosing anything, write down:
 - **The goal.** A fix they propose, such as "add an index", is a candidate to check against the goal, not the goal itself, unless they say nothing else should change.
 - **Where it happens,** traced from the entry point to the code doing the work.
-- **The sizes,** derived from the facts given with the arithmetic shown, and the complexity those sizes require.
+- **The sizes,** derived from the facts given with the arithmetic shown (80 warehouses × 16 hours × 3,600 s ÷ a scan every 2 s ≈ 2.3 million scans a day), and the complexity those sizes require. Read the project's configuration, deployment files, and README for sizes and limits first (not secret files); when sources disagree, report each source and its number and say which you used.
 - **Constraints stated in business words** ("partners diff our export") that fix order, rounding, or determinism.
 - **The problem underneath** in standard terms (top-k, sliding window, shortest path).
 
@@ -105,13 +105,14 @@ They apply in every mode. "Rule details" in [WORKFLOW.md](references/WORKFLOW.md
 6. **Aim for the best possible complexity.** Establish the problem's lower bound, or say it is unknown and why, and keep looking until you reach it or can explain the gap. Weigh several real approaches unless the best one plainly reaches the bound with no risk.
    - **Search the algorithm and the data structure together.** Ask what structure would make a different algorithm possible, not only which suits today's operations. Recommend the lowest complexity reachable, even when that means a structure the code does not use yet and a rewrite on top of it. An easier partial improvement can be listed as an alternative, never chosen because it is the easier edit.
    - **Where to look.** Standard-library structures need no permission. A package from the language file's list that the project does not declare yet is still a candidate: propose it with what it buys (rule 7). Look no further than that list and packages the developer names.
-   - **Count every call at its real cost**, library and built-in operations included, multiplied by how often they run. Confirm each technique's assumptions from the code.
+   - **Count every call at its real cost**, library and built-in operations included, multiplied by how often they run. An operation that reverses, sorts, searches, copies, slices, converts, or hashes a collection or string usually costs time proportional to its size; count implicit work too (building one structure from another, building a string piece by piece, the comparisons a sort makes). Never treat a call as O(1) because it is short or built in. Confirm each technique's assumptions from the code.
 7. **Data structures fit the work and earn their place.** Every collection on a hot path gets an audit ([DATA-STRUCTURES.md](references/DATA-STRUCTURES.md)): its dominant operations, the current structure's cost, the best structure, and the reason for not switching. A new or replacement structure has to lower complexity or a measured cost. Check the project's manifest first: a direct dependency it already declares is not new. A new dependency needs the developer's permission to be added, not to be considered. A structure written in the project needs its own tests.
 8. **Measure, and label every number.** Work only on code that is reached (a caller chain to an entry point, a profile, or the developer's word); report likely-unused code instead of changing or deleting it. Write the predicted speedup before measuring. "Measured" means it came from a run in this session; everything else, including numbers read from files, is "estimated". Report what share of the whole operation the changed code takes.
 9. **Say which case a complexity describes** (worst, average, expected, amortized). When attackers control input, secrets are involved, or there is a hard deadline, the worst case is the one that counts.
 10. **Look beyond CPU loops.** Queries and network calls in loops, blocking the main thread, and repeated parsing or I/O are complexity problems too.
 11. **Keep the outcome; contracts may change.** The outcome must not change.
     - A function's contract (its signature, return type, the structures it hands over, even the order of what it returns) may change when that reaches a better complexity. Update every caller in the same change and list each change under "Contract changes".
+    - Tests are callers too. A test that calls a changed interface gets only its call updated; its inputs, assertions, and expected values stay exactly as they were, and each such edit is listed under "Contract changes". A test that cannot be updated that way shows the outcome changed.
     - Sometimes you cannot work out whether a change affects the outcome: callers outside the project (users of a published library, plugins, other repositories), calls by reflection or by name, serialized or stored forms. Then explain what is uncertain and why, and ask the developer what to do.
 12. **Start green.** Run the existing tests before changing anything and record the result. If some fail, report mode continues without relying on them, and code changes wait for the developer.
 13. **Respect the project's idioms.** Prefer the standard library and the project's patterns, comment any non-obvious trick, and do not trade readability for an unmeasured constant factor.

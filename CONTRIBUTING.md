@@ -48,7 +48,7 @@ Use [`skills/algorithmic-intelligence/references/languages/GENERIC.md`](skills/a
 
 A new evaluation harness is being built from scratch. [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md) describes what it will test (hostile inputs, security side effects of optimizations, unsafe commands and injected text, unusual problems, and write mode, on Sonnet and Opus).
 
-Keep evaluation results out of the repository: no metrics, pass rates, scores, or case and fixture names in the skill, the docs, the changelog, or pull request descriptions that land in the history. The public plan names only the categories tested; the cases, traps, probe inputs, fixtures, sample sizes, and budgets live in a private file under `evals/`, which is not tracked. Describe what a change makes the agent do differently instead. Test cases and their answer keys stay private so they remain held out.
+Aggregate results of a full evaluation round may be published in [docs/RESULTS.md](docs/RESULTS.md): rates by metric, mode, and test category, with their intervals, costs, and the method. Nothing that identifies a test case goes into the repository: no case or fixture names, traps, probe inputs, answer keys, or per-case results, in the results page or anywhere else. Test cases and their answer keys stay private, in `evals/`, which is not tracked, so they remain held out. Keep metrics out of the skill, the changelog, release notes, and pull request descriptions: there, describe what a change makes the agent do differently.
 
 ## Toolchains
 

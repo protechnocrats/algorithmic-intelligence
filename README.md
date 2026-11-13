@@ -20,14 +20,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.4/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.5/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.6.4` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.6.5` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -101,12 +101,12 @@ If your project publishes a library or an API that other people call, an interfa
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.6.4/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.6.5/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.4/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.6.5/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -125,7 +125,7 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 Copy the `skills/algorithmic-intelligence/` folder (it contains `SKILL.md` and the `references/` folder it links to) into your agent's skills directory:
 
 ```bash
-git clone --branch 0.6.4 https://github.com/protechnocrats/algorithmic-intelligence.git
+git clone --branch 0.6.5 https://github.com/protechnocrats/algorithmic-intelligence.git
 cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
 ```
 
@@ -308,7 +308,7 @@ Companion files cover the language, its standard library, and verified maintaine
 
 ## Evaluation
 
-The skill will be evaluated by running the same coding agent on projects with planted problems, with and without the skill, and checking each session's final code and reports. The plan is in [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md).
+The skill is evaluated by running the same coding agent on private projects with planted problems, with and without the skill, and checking each session's final code, actions, and reports. In the first full round (version 0.6.5, Claude Sonnet 5.5, 432 sessions), agents with the skill kept the program's outcome in 95% of sessions against 77% without it, and did something unsafe in 1 session against 13. They reached the required speed about equally often in both conditions, at about twice the cost per successful task. The full results, including where the skill does not help, are in [docs/RESULTS.md](docs/RESULTS.md), and the method is in [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md).
 
 ## Files
 

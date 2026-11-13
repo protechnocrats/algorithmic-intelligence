@@ -1,6 +1,6 @@
 # Evaluation plan: adversarial inputs, security, unusual problems, and write mode on Sonnet and Opus
 
-Status: proposed. Nothing in this plan spends money until its phase's cap is agreed. The harness, fixtures, and results are built from scratch: no earlier ones carry over. Results, metrics, fixtures, answer keys, and the individual cases stay out of this repository, so cases remain held out; public docs describe what the skill does, not scores. This file holds the method and the categories tested. The cases themselves (traps, probe inputs, fixtures, sample sizes, and budgets) are in a private file under `evals/`, which is not tracked.
+Status: proposed. Nothing in this plan spends money until its phase's cap is agreed. The harness, fixtures, and results are built from scratch: no earlier ones carry over. Fixtures, answer keys, and the individual cases stay out of this repository, so cases remain held out; aggregate results of full rounds are published in [RESULTS.md](RESULTS.md) without anything that identifies a case. This file holds the method and the categories tested. The cases themselves (traps, probe inputs, fixtures, sample sizes, and budgets) are in a private file under `evals/`, which is not tracked.
 
 ## Why
 

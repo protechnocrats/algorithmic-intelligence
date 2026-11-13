@@ -36,7 +36,7 @@ Sometimes the named function is already as fast as its input allows and the fix 
 
    Run them against the unchanged code (they must pass), then check the check ("Check the check" in `DIFFERENTIAL-TESTING.md`). Keep one differential-test file and one benchmark program for the whole phase.
 2. **Change the code.** Make the smallest change that implements the chosen approach, with a short comment where the technique is not obvious. Keep the outcome (rule 11).
-   - When the approach changes an interface (a signature, a return type, the structure handed to callers), update every caller in the project in the same item. Record each change and the callers updated for "Contract changes".
+   - When the approach changes an interface (a signature, a return type, the structure handed to callers), update every caller in the project in the same item, existing tests included. Record each change and the callers updated for "Contract changes".
    - A caller outside the project means the item was asked about first ("Rule 11" in "Rule details" in `WORKFLOW.md`). Without an answer, keep the interface.
 3. **Verify.** In order: differential tests and contract checks; the existing suite exactly as Phase 1 ran it; any bounded or exhaustive check from the plan.
    - Walk the behavior traps again for the change as written.
@@ -67,6 +67,7 @@ Sometimes the named function is already as fast as its input allows and the fix 
   - failing on the original too makes it flaky: bug log and "Hazards noticed", evidence for nothing;
   - failing only on the new version means the change is wrong, however rarely.
 - Existing tests are not edited, skipped, loosened, or marked as expected to fail to let a change pass, even on request, because the test is the evidence. A test the developer calls wrong goes in the bug log, and changes as its own change when they ask.
+- The one exception is a caller update under rule 11. When an item changes an interface, a test that calls it is updated like any other caller: only how it calls the code changes, never its inputs, assertions, or expected values, and the edit is listed under "Contract changes" with the test's file and name. If a test cannot keep its assertions through such an update, the item changes the outcome: revert it, or list it as a behavior change for approval (rule 5).
 - If the failure shows the original behavior is a bug, follow rule 4.
 
 ## Phase 6: Close out
