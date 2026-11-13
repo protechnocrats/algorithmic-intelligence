@@ -97,6 +97,8 @@ Unchanged arguments do not make a function pure. Before caching, rule out depend
 - **Eviction.** A bounded cache changes which calls take the slow path; fine only for a pure function.
 - **Keys that collide or never match.** Concatenated keys collide (`"a:" + "b"` equals `"a" + ":b"`), stringified arguments drop `undefined` or depend on property order, and object keys compare by reference so equal arguments never hit. Build keys from a tuple of the arguments.
 - **Cached failures.** Caching an exception or empty result turns a transient failure the original retried into a permanent one; decide and state which is cached.
+- **Masked failures.** A cache hit skips calls that could fail, so an outage the original reported can become a success. Keep the outage visible: keep one cheap call to the same system on every request (the version or change-counter check) and, when it fails, do what the original did on a failure; or cache only work below a call you still make each time. If neither is possible, the hit changes the outcome during an outage: list it (rule 5).
+- **Freshness checks that never pay.** Checking a version on every read pays only when the check is much cheaper than the work and writes are rare compared with reads. Estimate the hit rate from the write rate first: a cache cleared by every write to a busy store saves nothing, and a stated time-to-live the developer accepted may be the right design.
 
 ## Concurrency
 

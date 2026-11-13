@@ -6,6 +6,19 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+### Changed
+
+- **"Make it fast" is a request to change code.** An instruction to fix or speed something up is apply mode even when no code is named: agents trace from the symptom to the code and apply the fix. Report mode is for requests to find, explain, review, or rank, or when the developer asks for no changes.
+- **A requested technique approves its ordinary consequence (approval change).** When the developer explicitly asks for a technique whose usual form changes the outcome in a known, bounded way, such as a cache serving results up to its time-to-live old, the request counts as approval of that consequence: agents implement the usual form, state the bound, and offer an exact variant. The request never approves caching errors or weakening a security property.
+- **Agents fix toward the developer's goal (approval change).** When the developer describes a goal and proposes a fix that would not reach it, agents apply a verified, behavior-preserving fix in the code that causes the problem and explain why the proposed fix was not used. They still ask first when that fix changes the outcome, a schema, configuration, or code outside the project, and when the developer named the code to change and the fix lies elsewhere.
+- **Safe defenses are applied without asking (approval change).** A defense that changes no result for any input the code accepts today, such as a worst-case-safe structure for attacker-chosen keys or overflow-safe arithmetic, is not a behavior change and is applied. Telling the developer about a behavior change no longer stands in for approval: without approval, agents ship the version that keeps the behavior.
+- **Unrelated failing tests no longer block changes.** Failing tests clearly unrelated to the code being changed (another module, or a limit of the environment) are recorded and do not block an item its own differential tests verify. Failures in or near that code still stop code changes until the developer decides.
+- **Requirements are read in full.** Agents read the README and the feature's docs in full instead of their first lines, search them and the code for the feature's terms, record the requirement lines they rely on, and in write mode implement a stub or interface already declared for the feature instead of writing a parallel one.
+- **Hostile-input checks are answered for every untrusted field.** In write mode, agents open the hostile-input guide whenever any input is untrusted and answer each item of the hostile-input list for each untrusted field; overflow checks include a stored value plus the new amount.
+- **Caches keep outages visible.** A cache hit must not turn an outage the original reported into a success: agents keep one cheap call to the same system per request and handle its failure as the original did, or list the change. A freshness check on every read is weighed against the write rate before it is chosen. Errors a skipped call would have returned count as part of the calls changed on purpose, and fakes fail as a whole in failure tests.
+- **Builds and pipelines are in scope.** Agents time each step of a build, CI job, or data pipeline, skip steps whose inputs did not change, and stop copying data nothing reads.
+- **Benchmarks go through the entry point.** The component benchmark calls the changed code with arguments built the way real callers build them, and a gain that depends on how callers construct an argument is removed or stated as the main caveat.
+
 ## [0.6.5] - 2026-11-13
 
 Restores concrete checklists that the 0.6.x rewrites had shortened, and tightens three behaviors: commands are checked more strictly before they run, a test is updated like any other caller when an interface changes, and a fix for a function limited by its input is followed through to the function itself.

@@ -38,7 +38,7 @@ How to measure speed and memory so the numbers can be trusted. Benchmarks are ev
 
 A benchmark of the changed function shows how much faster the function became, not the program. Report both:
 
-1. **Component:** the changed function or path, measured as above.
+1. **Component:** the changed function or path, measured as above. Call it through the entry point, with arguments built the way real callers build them (the same connection factory, the same request objects). If the gain depends on how a caller constructs an argument, remove that dependency or state it as the main caveat.
 2. **End-to-end:** the whole operation the developer cares about (request, page load, frame, batch job, command), before and after, where the project can run it safely against local or faked services. If it cannot run, take the function's share from a profile or estimate it from survey call counts, labeled estimated.
 
 The end-to-end saving cannot exceed the changed code's share of the time (Amdahl's law). State the share next to the component numbers: "`buildIndex` 40 ms → 4 ms (measured); it was about 8% of the 500 ms request (profiled), so the request is about 7% faster (estimated from the profile)." A large component win with a small end-to-end saving is still worth reporting, honestly labeled; it may matter more once other bottlenecks are fixed.
