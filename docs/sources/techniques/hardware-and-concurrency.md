@@ -11,3 +11,5 @@ Where each claim in that file comes from, for maintainers and reviewers. Not par
 - Paul-Virak Khuong and Pat Morin, "Array Layouts for Comparison-Based Searching," *ACM Journal of Experimental Algorithmics* 22, 2017 (Eytzinger and B-tree layouts with prefetching).
 - Shimin Chen, Anastassia Ailamaki, Phillip B. Gibbons, and Todd C. Mowry, "Improving Hash Join Performance through Prefetching," ICDE 2004 (group prefetching).
 - Runtime dispatch by CPU feature (GNU `ifunc`, function multiversioning, the kernel's alternatives patching) is documented in the GCC manual ("Function Multiversioning" at gcc.gnu.org/onlinedocs/gcc/Function-Multiversioning.html, and the `ifunc` entry in "Common Function Attributes") and the Linux kernel source (`arch/x86/kernel/alternative.c`); the row states implementation practice, not a published bound.
+
+GPU and accelerator sources moved with their sections to `docs/sources/techniques/accelerators.md`.

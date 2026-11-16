@@ -2,6 +2,8 @@
 
 The shared rules and table conventions in `ADVANCED-TECHNIQUES.md` apply to every table here.
 
+**Contents:** Memory locality · What the compiler already does · Parallelism and vectorization (Contention and synchronization)
+
 ## Memory locality
 
 Select these when a profile, cache-miss or branch-miss counters, or a benchmark shows memory access or the pipeline is the bottleneck. Apart from sparse representations, complexity does not change; constant factors can change several-fold.
@@ -72,3 +74,5 @@ Threads waiting on the same lock, atomic, or cache line can cost more than the w
 | Single producer and single consumer exchanging items through a locked queue | Lock-free bounded ring buffer with acquire and release memory ordering | Exactly one producer thread and one consumer thread; memory ordering correct on every target architecture; behavior when full (block, drop, or fail) matches the original | No lock per item |
 
 General lock-free and wait-free structures (multi-producer queues, lock-free hash maps) are easy to get wrong: prefer the platform's own concurrent structures, or a reviewed library (rule 7).
+
+GPUs and other accelerators: `techniques/accelerators.md`.

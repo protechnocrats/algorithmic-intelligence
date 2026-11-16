@@ -13,7 +13,7 @@ Algorithmic Intelligence (`algorithmic-intelligence`) is a skill for AI coding a
 
 Sometimes the best engineering decision is to leave the code alone, and the skill says so when it is.
 
-An optional plugin adds guard hooks for Claude Code and Grok Build that ask you before the agent does anything the skill reserves for your decision (see "Optional: guard hooks").
+An optional plugin adds guard hooks for Claude Code and Grok Build that ask you before the agent does anything the skill reserves for your decision (see "Optional: guard hooks"), and an MCP server, usable from any agent that supports MCP, that makes benchmark statistics, growth-rate fits, and the "can this test fail?" check exact without running your code (see "Optional: MCP tools").
 
 ## Quick start
 
@@ -151,6 +151,8 @@ The skill's rules are instructions, and an agent can still slip, especially late
 - reading a file that looks like a secret (`.env`, key and certificate files, credentials, `*.tfvars`, `*-secrets.yaml`), by the Read tool or a shell command; `.example` and `.template` variants are not asked about;
 - editing a test file already tracked in the repository; new test files are not asked about.
 
+**The edit gate.** While the skill is in use, the plugin also enforces its central rule, "differential tests come before the edit". An edit to code already committed in git is refused, with instructions, until in this session a difference planted in that file (or in another file of the same change) was caught by the tests, using the MCP tools below, or the file was declared to need no differential test (new code such as a declared stub, a behavior change you approved, no runtime effect, or you telling the agent to go ahead without one), with the reason listed in the final summary. It refuses instead of asking you because the agent can meet the condition itself: in an unattended run a question nobody answers reaches the agent only as a bare refusal, while a refusal carries its instructions. Agents also change files through the shell, which the gate cannot see, so when the agent finishes, every committed file that changed is checked the same way, and the agent is sent back once to cover or declare any file without evidence, or to list it as unverified. New files, tests, documentation, and sessions that do not use the skill are not gated; set `ALGORITHMIC_INTELLIGENCE_GATE=off` to turn off only the gate and this check.
+
 When the agent finishes a task that used the skill, the plugin also checks that its final message has the required lines ("Complexity", "Data structures", "Contract changes", "Bugs noticed", "Hazards noticed", "Commands not run"), each at the start of a line, and asks it once to add any that are missing. A message that ends in a question, where the agent is waiting for you, is left alone, and the agent is told to stop as it is when its reply does not end a piece of work done with the skill.
 
 The guards ask rather than refuse, so you stay in charge: approve what you intended, decline the rest. In an unattended run nobody can approve, so the action is refused and the agent sees why, along with what to do next: not reach the same effect another way, list the action, and continue with the rest of the work. A guard that fails for any reason lets the action through rather than blocking your work. Install it in Claude Code with:
@@ -161,6 +163,36 @@ The guards ask rather than refuse, so you stay in charge: approve what you inten
 ```
 
 Grok Build reads Claude Code plugins, so it picks the plugin up as well. The hooks need `python3` on your PATH and run for the whole session once installed, not only while the skill is in use; set `ALGORITHMIC_INTELLIGENCE_GUARD=off` in the environment to turn them off for a session, or uninstall the plugin. The scripts are standard-library Python 3, with tests in `plugin/tests/` that the repository's checks run; read [`plugin/scripts/`](plugin/scripts/) before installing, as with any hook. Other agents have their own hook formats; the skill's rules still apply there as instructions.
+
+### Optional: MCP tools (any agent that supports MCP)
+
+A few steps of the skill are easy to get subtly wrong by hand. The MCP server in [`plugin/mcp/`](plugin/mcp/) does them exactly:
+
+| Tool | What it does |
+|---|---|
+| `benchmark_compare` | From per-run times of the original, the changed code, and an A/A run (the original against an identical copy): medians, spread, a 95% bootstrap interval for the time ratio, the noise floor, and a verdict of faster, slower, or no measurable difference. |
+| `doubling_fit` | From times at increasing input sizes: the growth exponent for each pair, labeled (linear, n log n, quadratic, …), and a prediction for the next size to check against. |
+| `plant_difference` / `restore_difference` | Show that a test can fail: plant a deliberately wrong snippet in one source file, run the tests, then restore the file byte for byte and record whether the tests caught it. Paths must be inside the project; the records live under `.git/`, so they never show up as changes. |
+| `planted_status` | Lists any difference still planted, so none is left behind. |
+| `declare_no_differential_test` | Records why an edit to existing code needs no differential test (new code, an approved behavior change, no runtime effect, or you waiving it), for the edit gate and the final summary. |
+| `check_summary` | Checks a final summary for the lines the skill requires. |
+
+**It never runs your project's code.** An MCP server runs outside your agent's sandbox and permission checks, so this one only computes and checks: the agent runs builds, tests, and benchmarks in its own shell, where the sandbox and the guard hooks apply, and passes the results to the tools. The only files it changes are the ones you ask it to plant a difference in, and it puts them back.
+
+**Claude Code:** the guard plugin above includes the server, so installing the plugin is all it takes (`/mcp` lists it as `algorithmic-intelligence`). Claude Code asks before the agent uses a tool, unless you allow it. Allowing the server's tools is reasonable, since they run nothing and put back anything they change: add `mcp__plugin_algorithmic-intelligence-guard_algorithmic-intelligence` to `permissions.allow` in your settings. In an unattended run, allow them or the edit gate's way forward is refused too.
+
+**Other agents** (Codex CLI, Gemini CLI, Muse Code, Cursor, and others that support MCP servers over stdio): clone the repository at a release tag and add a server entry in your agent's MCP configuration. Most use this shape, under a key such as `mcpServers`:
+
+```json
+{
+  "algorithmic-intelligence": {
+    "command": "python3",
+    "args": ["/path/to/algorithmic-intelligence/plugin/mcp/server.py"]
+  }
+}
+```
+
+See your agent's MCP documentation for where that entry goes and its exact field names. The server treats the directory the agent starts it in as the project root; set `ALGORITHMIC_INTELLIGENCE_ROOT` to override it. It needs only `python3` (3.9 or later), standard library only, with tests in `plugin/tests/test_mcp.py`. The skill works the same without the server; the tools only make some of its checks exact.
 
 ### Make sure it loads
 
@@ -332,7 +364,7 @@ The skill lives in `skills/algorithmic-intelligence/`. Its knowledge base is mod
 | `REPORTING.md` | Report mode's formats: where reports go, report header (request as understood, test baseline, scope, text addressed to AI assistants, hazards, language profile), item format, tried and rejected, bug log, behavior changes for review, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions (structures and their costs, verified maintained packages, hidden costs, traps, and tooling), and `languages/GENERIC.md` for building and saving a profile for any other language |
 
-Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the file's path relative to `references/` (`docs/sources/languages/KOTLIN.md` for `references/languages/KOTLIN.md`), for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, the hook registration in `hooks/hooks.json`, and their tests in `tests/`), listed for installation in `.claude-plugin/marketplace.json`.
+Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the file's path relative to `references/` (`docs/sources/languages/KOTLIN.md` for `references/languages/KOTLIN.md`), for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, `scripts/edit_gate.py`, `scripts/coverage_check.py`, the hook registration in `hooks/hooks.json`), the MCP server (`mcp/server.py`, registered for Claude Code in `.mcp.json`), and their tests in `tests/`, listed for installation in `.claude-plugin/marketplace.json`.
 
 ## Releases and security
 
