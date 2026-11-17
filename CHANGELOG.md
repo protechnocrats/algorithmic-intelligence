@@ -6,6 +6,14 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-17
+
+Documentation only: the skill's files and the plugin's behavior are the same as in 0.7.0.
+
+### Changed
+
+- **The evaluation results page is one table.** `docs/RESULTS.md` now compares the agent with no skill against the current release only, on the full set of private cases, with intervals, definitions, and limits, instead of a history of earlier rounds. The README's evaluation paragraph matches it.
+
 ## [0.7.0] - 2026-11-17
 
 Adds an optional MCP server with exact helpers for benchmarking, growth fits, and planted differences, and an edit gate in the guard plugin that holds edits to existing code until differential tests have shown they can catch a difference. Adds technique files for build systems, GPUs and other accelerators, and databases. Final summaries are now written as a brief a principal engineer can act on, the outage rule for requested caches is narrowed, and a suggestion in the request no longer counts as approval of a security trade-off.
