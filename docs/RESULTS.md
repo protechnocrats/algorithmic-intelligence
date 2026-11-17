@@ -1,13 +1,13 @@
 # Evaluation results: skill vs no skill
 
-This page reports two evaluation rounds of the skill:
+This page reports three evaluation rounds of the skill and a confirmation run:
 - the first full round, run on 2026-11-12 and 2026-11-13 against version 0.6.5, using the exact files that were later released;
-- a second round on 2026-11-13 comparing version 0.6.6 with 0.6.5 and with no skill, on a new project neither version was developed against (see "Version 0.6.6").
-- a third round on 2026-11-16 and 2026-11-17 testing the 0.7.0 release candidate with the guard plugin and MCP tools, against the earlier rounds' sessions and on a new GPU project (see "Version 0.7.0").
+- a second round on 2026-11-13 comparing version 0.6.6 with 0.6.5 and with no skill, on a new project neither version was developed against (see "Version 0.6.6");
+- a third round on 2026-11-16 and 2026-11-17 testing the 0.7.0 release candidate with the guard plugin and MCP tools, against the earlier rounds' sessions and on a new GPU project, followed on 2026-11-17 by a confirmation run of the released 0.7.0 files on the cases its last changes target (see "Version 0.7.0").
 
 It answers one question: when a coding agent is given the same request on the same project, does loading the skill make the result better, and never worse or less safe? And what does it cost?
 
-The method is in [EVAL-PLAN.md](EVAL-PLAN.md). The test cases, fixtures, traps, and answer keys are private, so they stay held out and the skill cannot be tuned to them. This page reports aggregates only.
+The method is in [EVAL-PLAN.md](EVAL-PLAN.md). The test cases, fixtures, traps, and answer keys are private, so they stay held out and the skill cannot be tuned to them. This page reports aggregates only. The sections from "Headline" to "Where the skill does not help" describe the 0.6.5 round; each later round has its own section.
 
 ## Summary
 
@@ -29,7 +29,7 @@ From the 0.6.6 round:
 - **0.6.6 is better than 0.6.5 there:** +13.3 points of success (+3.3 to +23.3), with no unsafe session in any condition.
 
 From the 0.7.0 round:
-- **0.7.0 with the plugin succeeded in 91% of sessions, against 61% without the skill** (+29.8 points, +18.4 to +43.0), and kept the outcome in 97% against 71%. No session with it did anything unsafe.
+- **The 0.7.0 release candidate with the plugin succeeded in 91% of sessions, against 61% without the skill** (+29.8 points, +18.4 to +43.0), and kept the outcome in 97% against 71%. No session with it did anything unsafe.
 - **It is clearly better than 0.6.5** (+20.2 points of success, +7.1 to +34.5) and about level with 0.6.6 (+3.2, −4.3 to +11.8), at about 20% more cost per session.
 - **Honesty fell against 0.6.6 in the release candidate** (83% vs 92% of judged criteria). The causes were found and fixed; on a confirmation run of the affected cases, the released 0.7.0 brought honesty back to 0.6.6's level (81% vs 65% for the candidate) and passed all 24 sessions (see "Version 0.7.0").
 
@@ -197,12 +197,12 @@ No session did anything unsafe. Two grader faults surfaced during this run and w
 
 **Still weak:** making a build fast when nothing changed (no condition passes); speed on two cases in the Swift project, where links fail inside the evaluation sandbox under the new Swift build engine in every condition, so all versions are compared under the same handicap.
 
-**Limits of this round:** the comparison conditions ran in earlier rounds, on the same model and harness; most cases were kept because earlier versions failed them, which favors later versions; the round tested the release candidate, and the released 0.7.0 also contains the honesty, report, and device-benchmark changes above; 3 runs per case.
+**Limits of this round:** the comparison conditions ran in earlier rounds, on the same model and harness; most cases were kept because earlier versions failed them, which favors later versions; the main tables measure the release candidate, and the changes made after it (honesty, report format, bug reporting, device benchmarks) were measured only on the 8 confirmation cases; 3 runs per case.
 
 ## Method and limits
 
 - **Agent:** Claude Code in headless mode with Claude Sonnet 5.5 at its default effort, in a sandbox with no network access. With the skill, it was installed in the project and invoked explicitly. Whether it loads by itself from its description was not part of this round.
-- **Projects:** 12 private test projects in TypeScript, Python, Go, Rust, and Kotlin, each with planted problems. Requests are worded the way a developer would ask, and write-mode requests do not mention speed or security.
+- **Projects:** 12 private test projects in TypeScript, Python, Go, Rust, and Kotlin in the first round, each with planted problems; the 0.6.6 round added one in Swift and the 0.7.0 round one on a modeled GPU, both written by agents that never saw the skill. Requests are worded the way a developer would ask, and write-mode requests do not mention speed or security.
 - **Outcome checks** run the program through its real entry points (CLI commands, HTTP routes, scheduled jobs) and compare the results with the unmodified program on generated, edge-case, and hostile inputs.
   - Internal interfaces may change as long as every caller is updated.
   - Every check was tested against a known-correct solution, a correct solution that changes an internal interface, and wrong solutions it must catch.
@@ -215,9 +215,9 @@ No session did anything unsafe. Two grader faults surfaced during this run and w
 - **Rules fixed before the round.** Checks were not changed after the round's results were seen.
   - One check was corrected after the pilot round and before the round started. It had required a behavior the specification did not define.
   - After the round, four checks were found to be stricter than their specifications or than the project's own configuration (a file size over the stated limit, a limit the specification never set, a way of building connections it never specified, and a cheap freshness query counted like a full one). A fifth requirement, which its check already enforced, was added to the written answer key. The tables above use the checks as fixed before the round.
-  - With the four checks corrected and every session regraded, 7 failed sessions with the skill and 2 without it become passes. Success is then 69.9% without the skill and 89.8% with it: **+19.9 points** (+12.0 to +28.2). Outcome kept: +19.0 (+12.0 to +26.4). Fast enough: +5.6 (−0.6 to +11.7). No unsafe action: unchanged. The 0.6.6 round below uses the corrected checks.
+  - With the four checks corrected and every session regraded, 7 failed sessions with the skill and 2 without it become passes. Success is then 69.9% without the skill and 89.8% with it: **+19.9 points** (+12.0 to +28.2). Outcome kept: +19.0 (+12.0 to +26.4). Fast enough: +5.6 (−0.6 to +11.7). No unsafe action: unchanged. The later rounds use the corrected checks.
 - **Not yet covered:**
-  - one model only (Opus as the agent is planned);
+  - one agent and model only, Claude Code with Claude Sonnet 5.5 (Opus as the agent is planned; the harness can now also run OpenAI's Codex CLI, not yet used for a round);
   - 3 runs per case;
   - the judge agreement was measured on the pilot round only;
   - all cases except 4 held-out ones were written alongside the skill's development;
