@@ -3,6 +3,7 @@
 This page reports two evaluation rounds of the skill:
 - the first full round, run on 2026-11-12 and 2026-11-13 against version 0.6.5, using the exact files that were later released;
 - a second round on 2026-11-13 comparing version 0.6.6 with 0.6.5 and with no skill, on a new project neither version was developed against (see "Version 0.6.6").
+- a third round on 2026-11-16 and 2026-11-17 testing the 0.7.0 release candidate with the guard plugin and MCP tools, against the earlier rounds' sessions and on a new GPU project (see "Version 0.7.0").
 
 It answers one question: when a coding agent is given the same request on the same project, does loading the skill make the result better, and never worse or less safe? And what does it cost?
 
@@ -26,6 +27,11 @@ From the 0.6.5 round:
 From the 0.6.6 round:
 - **The benefit carries over to a project the skill was never developed against.** On a new project written by agents that never saw the skill, 0.6.6 succeeded in 87% of sessions, 0.6.5 in 73%, and the agent without the skill in 63%.
 - **0.6.6 is better than 0.6.5 there:** +13.3 points of success (+3.3 to +23.3), with no unsafe session in any condition.
+
+From the 0.7.0 round:
+- **0.7.0 with the plugin succeeded in 91% of sessions, against 61% without the skill** (+29.8 points, +18.4 to +43.0), and kept the outcome in 97% against 71%. No session with it did anything unsafe.
+- **It is clearly better than 0.6.5** (+20.2 points of success, +7.1 to +34.5) and about level with 0.6.6 (+3.2, −4.3 to +11.8), at about 20% more cost per session.
+- **Honesty fell against 0.6.6** (83% vs 92% of judged criteria). The causes were found and changed in the released 0.7.0 but not measured again (see "Version 0.7.0").
 
 ## Headline
 
@@ -160,6 +166,26 @@ This gain is inflated: 10 of the 18 cases were chosen because 0.6.5 failed them 
 **Still weak in 0.6.6:** making a build fast when nothing changed, and one of the hardest cases on the new project. In a few sessions the agent also made a correct cache opt-in, which left the requested path slow.
 
 **Limits of this round:** the same single model and 3 runs per case as before; one new project; the comparison on earlier cases reuses sessions from the first round.
+
+## Version 0.7.0
+
+Version 0.7.0 adds the MCP tools and the edit gate to the optional plugin, technique files for build systems, accelerators, and databases, a narrower outage rule for requested caches, and a guard check inside the project scripts a command runs. This round tested the release candidate (all of that, with the plugin installed) on the cases from the earlier rounds that still separate versions, and compared it with those rounds' sessions without the skill, with 0.6.5, and with 0.6.6 as tested in its round. Only the release candidate ran again; the other conditions are the sessions already recorded, graded by the same checks.
+
+| Release candidate against | Cases × 3 runs | Success before → with 0.7.0 rc | Difference (95% interval) | Outcome kept | Fast enough at production size |
+|---|---|---|---|---|---|
+| No skill | 38 | 61.4% → 91.2% | **+29.8** (+18.4 to +43.0) | +26.3 (+14.9 to +39.5) | +11.5 (+3.1 to +20.8) |
+| 0.6.5 | 28 | 67.9% → 88.1% | **+20.2** (+7.1 to +34.5) | +8.3 (−1.2 to +19.0) | +16.7 (+3.0 to +31.8) |
+| 0.6.6 | 31 | 86.0% → 89.2% | +3.2 (−4.3 to +11.8) | +2.2 (−4.3 to +10.8) | 0 (−5.3 to +5.3) |
+
+- **Safety:** no unsafe action in any session with the release candidate; 2 of 114 without the skill. On the three cases with code planted to delete data or copy secrets, the release candidate passed all 9 sessions, 0.6.6 passed 8, and no skill 3.
+- **Gaps closed:** a cache case that no earlier version passed in any session now passes in all 3, and the two cases broken by the outage rule in 0.6.6 pass in all 3.
+- **New GPU project.** An agent that never saw the skill wrote a new project, a seismic pipeline on a modeled GPU that charges for copies, launches, synchronization, and contended atomics, with 7 cases and checks tested against 3 correct and 15 wrong solutions. Without the skill agents passed 20 of 21 sessions, with the release candidate 21 of 21, so the project shows what agents already know rather than what the skill adds. One gap appeared in both conditions: on one case, no session in either condition (6 in total) corrected a benchmark that left out the device copies. The released 0.7.0 tells agents to check what a device benchmark times and to report the corrected figure.
+- **Honesty and evidence** (judged as above): against no skill, honesty 78.0% → 84.6% and evidence 33.3% → 67.9%. Against 0.6.6, honesty fell from 92.1% to 83.4% and evidence from 70.1% to 63.8%. Reading the judged sessions showed three causes: agents treated a developer's passing suggestion of a weaker security check as approval and wrote that it was approved; agents wrote "none" for bugs they had read, where code contradicted its documentation; and agents listed planted malicious code among other hazards without calling it suspicious. The released 0.7.0 addresses all three: a suggestion made before the risk was named is not approval, "Bugs noticed" includes code that contradicts its documentation, and the new final summary puts decisions and suspicious code first. These changes were made after the round and are not measured here.
+- **Cost:** $0.38 per session against $0.31 for 0.6.6 and $0.13 without the skill; per successful session $0.42 against $0.36 and $0.21.
+
+**Still weak:** making a build fast when nothing changed (no condition passes); speed on two cases in the Swift project, where links fail inside the evaluation sandbox under the new Swift build engine in every condition, so all versions are compared under the same handicap.
+
+**Limits of this round:** the comparison conditions ran in earlier rounds, on the same model and harness; most cases were kept because earlier versions failed them, which favors later versions; the round tested the release candidate, and the released 0.7.0 also contains the honesty, report, and device-benchmark changes above; 3 runs per case.
 
 ## Method and limits
 

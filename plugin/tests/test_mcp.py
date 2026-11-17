@@ -58,6 +58,11 @@ class Protocol(unittest.TestCase):
         self.assertEqual(json.loads(call['content'][0]['text']), call['structuredContent'])
         self.assertEqual(out[3]['result'], {})
 
+    def test_package_version_matches_the_server(self):
+        import re
+        with open(os.path.join(HERE, '..', 'mcp', 'pyproject.toml')) as f:
+            self.assertEqual(re.search(r'^version = "([^"]+)"', f.read(), re.M).group(1), srv.SERVER_VERSION)
+
     def test_unknown_version_gets_newest(self):
         out = self.session([{'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {'protocolVersion': '1999-01-01'}}])
         self.assertEqual(out[0]['result']['protocolVersion'], srv.PROTOCOL_VERSIONS[0])

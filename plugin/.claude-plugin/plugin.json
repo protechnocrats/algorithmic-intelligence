@@ -1,6 +1,6 @@
 {
   "name": "algorithmic-intelligence-guard",
-  "version": "0.6.6",
+  "version": "0.7.0",
   "description": "Optional companion for the algorithmic-intelligence skill. Guard hooks ask before commits, git commands that discard uncommitted work, root, risky permission changes, piped installs, installs outside the project, deletes outside the project or of .git, secret files, and edits to existing tests, and check the final summary lines. An MCP server adds exact helpers that never run project code: benchmark statistics with a noise floor, doubling-experiment fits, plant-and-restore of a known difference to show a test can fail, and the summary check.",
   "author": {
     "name": "Protechnocrats"

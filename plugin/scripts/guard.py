@@ -4,7 +4,8 @@
 Asks the developer before a tool call does something the skill says needs their say:
 committing or pushing, discarding uncommitted work, running as root, changing ownership or
 risky permissions, piping a download into an interpreter, deleting outside the project or a
-temporary directory (or the repository's own `.git`), installing software outside the project,
+temporary directory (or the repository's own `.git`), running a project script whose own text
+deletes recursively through a variable nothing sets, installing software outside the project,
 reading a secret file, or editing an existing test. It never blocks outright: the developer can
 approve, and in an unattended run (nobody to answer) the call is refused with the reason, which
 also tells the agent what to do next.
@@ -171,8 +172,61 @@ def expand_git_aliases(code: str, cwd: str) -> str:
     return code
 
 
+SCRIPT_RUN = re.compile(AT_START + r'(?:(?:ba|z|da)?sh\s+(?:-\S+\s+)*)?((?:\.{1,2}/|[\w.-]+/)[\w./-]*[\w-])(?=$|[\s;&|)])', re.M)
+SCRIPT_RM = re.compile(r'(?:^|[;&|(`]|\$\(|\bthen|\bdo|\belse)\s*(?:sudo\s+)?rm\s+([^;&|)\n#]*)', re.M)
+ALWAYS_SET = {'HOME', 'PWD', 'USER', 'PATH', 'SHELL', 'LOGNAME'}
+
+
+def unset_variable_deletes(script: str, assigned_by_command: set) -> list:
+    """Recursive deletes in a shell script whose path uses a variable nothing sets: not the script (an
+    assignment, read, for loop, or ${VAR:=...}), not the command that runs it, not the environment.
+    ${VAR:?} and ${VAR:-default} guard themselves; positional and special parameters are not judged."""
+    body = '\n'.join(l for l in script.splitlines() if not l.lstrip().startswith('#'))
+    found = []
+    for m in SCRIPT_RM.finditer(body):
+        args = m.group(1).split()
+        if not any(a.startswith('-') and ('r' in a or 'R' in a) or a == '--recursive' for a in args):
+            continue
+        for target in (a for a in args if not a.startswith('-')):
+            for name, op in re.findall(r'\$\{?([A-Za-z_]\w*)(:?[?\-=+])?', target):
+                if op or name in ALWAYS_SET or name in assigned_by_command or os.environ.get(name):
+                    continue
+                if re.search(rf'(?:^|[\s;&(]|\bexport\s+|\blocal\s+|\breadonly\s+|\bdeclare\s+(?:-\w+\s+)*){name}\+?='
+                             rf'|\bread\s+(?:-\w+\s+)*(?:\w+\s+)*{name}\b|\bfor\s+{name}\s+in\b|\$\{{{name}:?=',
+                             body, re.M):
+                    continue
+                found.append((target, name))
+    return found
+
+
+def check_scripts(cmd: str, code: str, cwd: str) -> None:
+    """A command can run a project script whose own text deletes what the command line does not show.
+    Looks one level into each script the command runs."""
+    assigned = set(re.findall(r'(?:^|[\s;&(])(?:export\s+)?([A-Za-z_]\w*)=', cmd))
+    for m in SCRIPT_RUN.finditer(code):
+        path = os.path.normpath(os.path.join(cwd, m.group(1)))
+        try:
+            if not os.path.isfile(path) or os.path.getsize(path) > 200_000:
+                continue
+            with open(path, errors='replace') as f:
+                text = f.read()
+        except OSError:
+            continue
+        first = text.split('\n', 1)[0]
+        if not (path.endswith(('.sh', '.bash', '.zsh')) or (first.startswith('#!') and re.search(r'\b(ba|z|da)?sh\b', first))):
+            continue
+        bad = unset_variable_deletes(text, assigned)
+        if bad:
+            target, name = bad[0]
+            ask(f'{m.group(1)} runs a recursive delete of {target}, and nothing sets {name}: not the script, this '
+                f'command, or the environment. If {name} is empty, the delete starts at the parent directory or /. '
+                f'Read the script, then either set {name} to a scratch directory in the command '
+                f'({name}=<scratch dir> {m.group(1)}) or run the steps you need by hand.')
+
+
 def check_bash(cmd: str, cwd: str) -> None:
     code = expand_git_aliases(shell_code(cmd), cwd)
+    check_scripts(cmd, code, cwd)
     if re.search(GIT + r'(commit|push)\b', code, re.M):
         ask('a commit or push. Commits are opt-in: the developer authorizes them in this conversation, or the '
             'project\'s agent-instruction files may authorize them, but this hook cannot see those files, so it asks '

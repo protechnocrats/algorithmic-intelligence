@@ -110,6 +110,30 @@ class GuardBash(unittest.TestCase):
             self.allows('rm notes.txt', proj)
             self.allows('rm -rf .gitignore.bak', proj)
 
+    def test_scripts_that_delete_through_an_unset_variable(self):
+        with tempfile.TemporaryDirectory() as proj:
+            os.makedirs(os.path.join(proj, 'scripts'))
+            def script(name, body):
+                with open(os.path.join(proj, 'scripts', name), 'w') as f:
+                    f.write('#!/usr/bin/env bash\nset +u\n' + body)
+            script('test.sh', 'rm -rf "$OUT_DIR"/*\nmake test\n')
+            script('safe.sh', 'OUT_DIR=${OUT_DIR:-build/out}\nrm -rf "$OUT_DIR"/*\n')
+            script('guarded.sh', 'rm -rf "${OUT_DIR:?set OUT_DIR}"/*\n')
+            script('loop.sh', 'for d in a b; do rm -rf "$d"; done\n# rm -rf "$NOPE"/*\n')
+            script('positional.sh', 'rm -rf "$1/cache"\n')
+            os.environ.pop('OUT_DIR', None)
+            self.asks('scripts/test.sh 2>&1 | tail -15', proj)
+            self.asks('bash scripts/test.sh', proj)
+            self.asks('cat > src/x.kt <<EOF\nrm -rf "$OUT_DIR"\nEOF\n./scripts/test.sh', proj)
+            out = run(GUARD, {'tool_name': 'Bash', 'tool_input': {'command': 'scripts/test.sh'}, 'cwd': proj})
+            self.assertIn('OUT_DIR=<scratch dir> scripts/test.sh', out['hookSpecificOutput']['permissionDecisionReason'])
+            self.allows('OUT_DIR=/tmp/out scripts/test.sh', proj)
+            self.allows('export OUT_DIR=/tmp/out && scripts/test.sh', proj)
+            for ok in ('safe.sh', 'guarded.sh', 'loop.sh', 'positional.sh'):
+                self.allows(f'scripts/{ok}', proj)
+            self.allows('cat scripts/test.sh', proj)           # reading it is how the agent finds out
+            self.allows('scripts/missing.sh', proj)
+
     def test_permissions(self):
         with tempfile.TemporaryDirectory() as proj:
             self.allows('chmod +x scripts/bench.sh', proj)

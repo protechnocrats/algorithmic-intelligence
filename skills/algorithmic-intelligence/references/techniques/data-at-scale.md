@@ -23,6 +23,8 @@ For storage engines, databases, file systems, and any index larger than memory, 
 
 Read amplification (pages read per lookup), write amplification (bytes written per byte of new data), and space amplification (bytes stored per byte of live data) trade against each other; lowering one usually raises another (the RUM conjecture, not a proven bound). State which one the workload needs lowered, and measure the other two.
 
+Queries, indexes, transactions, and engine internals of relational databases (join algorithms, columnar and vectorized execution, group commit, buffer replacement) are in `techniques/databases.md`; the storage structures stay here.
+
 | Signal | Technique | Valid when | Typical result |
 |---|---|---|---|
 | Ordered index too large for memory, or point and range lookups through a page cache | B+ tree with node size matched to the page or block size | Ordered keys with a fixed comparator | Page reads per lookup: O(log₂ n) for a binary tree → O(log_B n) for fanout B; a range scan reads consecutive leaves |
