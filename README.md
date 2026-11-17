@@ -342,7 +342,7 @@ Companion files cover the language, its standard library, and verified maintaine
 
 ## Evaluation
 
-The skill is evaluated by running the same coding agent on private projects with planted problems, with and without the skill, and checking each session's final code, actions, and reports. In the first full round (version 0.6.5, Claude Sonnet 5.5, 432 sessions), agents with the skill kept the program's outcome in 95% of sessions against 77% without it, and did something unsafe in 1 session against 13. They reached the required speed about equally often in both conditions, at about twice the cost per successful task. In the 0.7.0 round (the release candidate with the plugin, against the recorded sessions of earlier rounds), agents succeeded in 91% of sessions against 61% without the skill, and were clearly ahead of 0.6.5 and about level with 0.6.6. The full results, including where the skill does not help, are in [docs/RESULTS.md](docs/RESULTS.md), and the method is in [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md).
+The skill is evaluated by running the same coding agent on private projects with planted problems, with and without the skill, and checking each session's final code, actions, and reports. On 46 cases from 13 private projects, run 3 times each (Claude Sonnet 5.5), agents with 0.7.0 succeeded in 95% of sessions against 69% without the skill, kept the program's outcome in 98% against 78%, and did nothing unsafe, at about twice the cost per successful task. The results table, with intervals and limits, is in [docs/RESULTS.md](docs/RESULTS.md), and the method is in [docs/EVAL-PLAN.md](docs/EVAL-PLAN.md).
 
 ## Files
 
