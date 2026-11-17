@@ -89,7 +89,7 @@ If the outcome cannot be compared this way (callers outside the project, a store
 - **Laziness and short-circuiting:** where the original stops early, the candidate must not evaluate more elements when evaluation has effects, can throw, is expensive, or the source is unbounded (an infinite iterator, a cursor).
 - **Separation:** when the change adds shared state such as a cache, interleave calls from different users, tenants, or permission sets, and repeat after a permission or data change; each caller must get what it would get alone. Secret-dependent timing cannot be compared this way; list it as unverified.
 
-**Floating point** must match exactly unless the developer approves a tolerance, or the request names a technique that ordinarily reorders float operations (a parallel or vectorized reduction), whose bounded trade-off is part of the request (rule 5). Then derive the tolerance from the operation (the number of terms reduced, the precision, the magnitude of the values), state it, and test that every difference stays within it. Reordering additions changes bits. Compare by bit pattern or with an equality where NaN equals NaN and `-0.0` differs from `0.0` (`Object.is`, `Double.compare`, `to_bits()`), including inside collections, never with `==`.
+**Floating point** must match exactly unless the developer approves a tolerance, or the request names a technique that ordinarily reorders float operations (a parallel or vectorized reduction), whose bounded trade-off is part of the request (rule 5). Then derive the tolerance from the operation (the number of terms reduced, the precision, the magnitude of the values), state it, and test that every difference stays within it. Reordering additions changes bits. Compare by bit pattern or with an equality where NaN equals NaN and `-0.0` differs from `0.0` (`Object.is`, `Double.compare`, `to_bits()`), including inside collections, never with `==`. Results computed on a GPU or other accelerator need the same care, and more: see "Measuring and verifying on a device" in `techniques/accelerators.md` for comparing device and CPU results and for deterministic modes.
 
 **When old and new disagree, the test is not what changes.** Loosening the comparison, the inputs, the seed, or the reference hides the evidence. The disagreement means one of four things:
 - the new code is wrong;
@@ -144,12 +144,13 @@ Turn the function's contract (rule 3) into checks the tests run, so the new code
 
 A passing test is evidence only if it could have failed.
 
-- **Plant differences (mutation testing).** In a temporary copy of the code under test, make one small change at a time that the test should catch:
+- **Plant differences (mutation testing).** In a temporary copy of the code under test, or in place with the MCP tool `plant_difference` when it is available (it restores the file exactly and tracks what is still planted), make one small change at a time that the test should catch:
   - an off-by-one at a boundary, a reversed tie order, a dropped edge case;
   - a changed exception type, a skipped side effect;
   - the tempting wrong rewrite rejected during analysis (the unstable sort, the version without wraparound).
 
   Run each mutant under a time limit. An uncaught mutant marks a property the test cannot see: add inputs or comparisons, or report that property unverified. Delete mutants afterward and confirm with version control that only intended changes remain.
+  - With the MCP tools, put each difference back with `restore_difference`, reporting whether the tests failed, and name under `covers` every other file the same change touches.
 - **Run the original against itself (A/A), always.** It costs one run and catches nondeterminism the test did not account for: time, randomness, hash or iteration order, concurrency, external systems. It must pass. If it fails, control the source (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison.
 
 ## When equivalence counts as verified

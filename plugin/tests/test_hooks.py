@@ -110,6 +110,30 @@ class GuardBash(unittest.TestCase):
             self.allows('rm notes.txt', proj)
             self.allows('rm -rf .gitignore.bak', proj)
 
+    def test_scripts_that_delete_through_an_unset_variable(self):
+        with tempfile.TemporaryDirectory() as proj:
+            os.makedirs(os.path.join(proj, 'scripts'))
+            def script(name, body):
+                with open(os.path.join(proj, 'scripts', name), 'w') as f:
+                    f.write('#!/usr/bin/env bash\nset +u\n' + body)
+            script('test.sh', 'rm -rf "$OUT_DIR"/*\nmake test\n')
+            script('safe.sh', 'OUT_DIR=${OUT_DIR:-build/out}\nrm -rf "$OUT_DIR"/*\n')
+            script('guarded.sh', 'rm -rf "${OUT_DIR:?set OUT_DIR}"/*\n')
+            script('loop.sh', 'for d in a b; do rm -rf "$d"; done\n# rm -rf "$NOPE"/*\n')
+            script('positional.sh', 'rm -rf "$1/cache"\n')
+            os.environ.pop('OUT_DIR', None)
+            self.asks('scripts/test.sh 2>&1 | tail -15', proj)
+            self.asks('bash scripts/test.sh', proj)
+            self.asks('cat > src/x.kt <<EOF\nrm -rf "$OUT_DIR"\nEOF\n./scripts/test.sh', proj)
+            out = run(GUARD, {'tool_name': 'Bash', 'tool_input': {'command': 'scripts/test.sh'}, 'cwd': proj})
+            self.assertIn('OUT_DIR=<scratch dir> scripts/test.sh', out['hookSpecificOutput']['permissionDecisionReason'])
+            self.allows('OUT_DIR=/tmp/out scripts/test.sh', proj)
+            self.allows('export OUT_DIR=/tmp/out && scripts/test.sh', proj)
+            for ok in ('safe.sh', 'guarded.sh', 'loop.sh', 'positional.sh'):
+                self.allows(f'scripts/{ok}', proj)
+            self.allows('cat scripts/test.sh', proj)           # reading it is how the agent finds out
+            self.allows('scripts/missing.sh', proj)
+
     def test_permissions(self):
         with tempfile.TemporaryDirectory() as proj:
             self.allows('chmod +x scripts/bench.sh', proj)
@@ -230,6 +254,25 @@ class Summary(unittest.TestCase):
         for label in ('Complexity', 'Data structures', 'Contract changes', 'Bugs noticed', 'Hazards noticed', 'Commands not run'):
             self.assertIn(f'"{label}"', r['reason'])
         self.assertIn('stop as it is', r['reason'])
+
+    def test_only_real_use_of_the_skill_counts(self):
+        def used(*entries):
+            with tempfile.NamedTemporaryFile('w', suffix='.jsonl', delete=False) as t:
+                t.write(''.join(json.dumps(e) + '\n' for e in entries))
+            try:
+                return run(SUMMARY, {'last_assistant_message': 'Done.', 'transcript_path': t.name}) is not None
+            finally:
+                os.unlink(t.name)
+        listing = {'type': 'user', 'message': {'content': [{'type': 'text', 'text': (
+            '<system-reminder>Tools: "Skill", mcp__plugin_algorithmic-intelligence-guard_algorithmic-intelligence__check_summary. '
+            'Skills: algorithmic-intelligence: Performance engineering ... SKILL.md</system-reminder>')}]}}
+        mcp_call = {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'input': {'text': 'x'},
+                    'name': 'mcp__plugin_algorithmic-intelligence-guard_algorithmic-intelligence__check_summary'}]}}
+        self.assertFalse(used(listing, mcp_call))  # the MCP server's tools alone do not mean the skill was used
+        self.assertTrue(used(listing, {'type': 'assistant', 'message': {'content': [{'type': 'tool_use', 'name': 'Read',
+                        'input': {'file_path': '/p/.claude/skills/algorithmic-intelligence/SKILL.md'}}]}}))
+        self.assertTrue(used({'type': 'user', 'message': {'content': '<command-name>/algorithmic-intelligence</command-name>'}}))
+        self.assertTrue(used({'type': 'user', 'message': {'content': '/algorithmic-intelligence make the export fast'}}))
 
     def test_missing_data_structures_blocks(self):
         msg = 'Complexity: O(n²) → O(n)\nContract changes: none\nBugs noticed: none\nHazards noticed: none\nCommands not run: none'

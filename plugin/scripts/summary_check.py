@@ -29,13 +29,44 @@ def label_pattern(label: str) -> re.Pattern:
                       r'(?:\*\*|__|`)?\s*(?::|$)', re.I | re.M)
 
 
+SKILL = 'algorithmic-intelligence'
+
+
+def _used_in(entry) -> bool:
+    """One transcript entry shows the skill in use: the Skill tool invoked on it, its SKILL.md read, or the
+    slash command typed. A line that merely lists the skill or tools named after it (the MCP server's) does not."""
+    message = entry.get('message') if isinstance(entry, dict) else None
+    content = message.get('content') if isinstance(message, dict) else None
+    if isinstance(content, str):
+        content = [{'type': 'text', 'text': content}]
+    for item in content if isinstance(content, list) else []:
+        if not isinstance(item, dict):
+            continue
+        if item.get('type') == 'tool_use':
+            inp = item.get('input') if isinstance(item.get('input'), dict) else {}
+            if item.get('name') == 'Skill' and SKILL in str(inp.get('skill', '')):
+                return True
+            if str(inp.get('file_path', '')).replace('\\', '/').endswith(f'{SKILL}/SKILL.md'):
+                return True
+        elif item.get('type') == 'text' and entry.get('type') == 'user':
+            text = str(item.get('text', ''))
+            if f'<command-name>/{SKILL}' in text or text.lstrip().startswith(f'/{SKILL}'):
+                return True
+    return False
+
+
 def skill_used(transcript_path: str) -> bool:
     if not transcript_path or not os.path.isfile(transcript_path):
         return False
     with open(transcript_path, errors='replace') as f:
         for line in f:
-            if 'algorithmic-intelligence' in line and ('"Skill"' in line or 'SKILL.md' in line):
-                return True
+            if SKILL not in line:
+                continue
+            try:
+                if _used_in(json.loads(line)):
+                    return True
+            except ValueError:
+                continue
     return False
 
 

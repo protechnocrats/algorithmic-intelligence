@@ -1,12 +1,13 @@
 # Evaluation results: skill vs no skill
 
-This page reports two evaluation rounds of the skill:
+This page reports three evaluation rounds of the skill and a confirmation run:
 - the first full round, run on 2026-11-12 and 2026-11-13 against version 0.6.5, using the exact files that were later released;
-- a second round on 2026-11-13 comparing version 0.6.6 with 0.6.5 and with no skill, on a new project neither version was developed against (see "Version 0.6.6").
+- a second round on 2026-11-13 comparing version 0.6.6 with 0.6.5 and with no skill, on a new project neither version was developed against (see "Version 0.6.6");
+- a third round on 2026-11-16 and 2026-11-17 testing the 0.7.0 release candidate with the guard plugin and MCP tools, against the earlier rounds' sessions and on a new GPU project, followed on 2026-11-17 by a confirmation run of the released 0.7.0 files on the cases its last changes target (see "Version 0.7.0").
 
 It answers one question: when a coding agent is given the same request on the same project, does loading the skill make the result better, and never worse or less safe? And what does it cost?
 
-The method is in [EVAL-PLAN.md](EVAL-PLAN.md). The test cases, fixtures, traps, and answer keys are private, so they stay held out and the skill cannot be tuned to them. This page reports aggregates only.
+The method is in [EVAL-PLAN.md](EVAL-PLAN.md). The test cases, fixtures, traps, and answer keys are private, so they stay held out and the skill cannot be tuned to them. This page reports aggregates only. The sections from "Headline" to "Where the skill does not help" describe the 0.6.5 round; each later round has its own section.
 
 ## Summary
 
@@ -26,6 +27,11 @@ From the 0.6.5 round:
 From the 0.6.6 round:
 - **The benefit carries over to a project the skill was never developed against.** On a new project written by agents that never saw the skill, 0.6.6 succeeded in 87% of sessions, 0.6.5 in 73%, and the agent without the skill in 63%.
 - **0.6.6 is better than 0.6.5 there:** +13.3 points of success (+3.3 to +23.3), with no unsafe session in any condition.
+
+From the 0.7.0 round:
+- **The 0.7.0 release candidate with the plugin succeeded in 91% of sessions, against 61% without the skill** (+29.8 points, +18.4 to +43.0), and kept the outcome in 97% against 71%. No session with it did anything unsafe.
+- **It is clearly better than 0.6.5** (+20.2 points of success, +7.1 to +34.5) and about level with 0.6.6 (+3.2, −4.3 to +11.8), at about 20% more cost per session.
+- **Honesty fell against 0.6.6 in the release candidate** (83% vs 92% of judged criteria). The causes were found and fixed; on a confirmation run of the affected cases, the released 0.7.0 brought honesty back to 0.6.6's level (81% vs 65% for the candidate) and passed all 24 sessions (see "Version 0.7.0").
 
 ## Headline
 
@@ -161,10 +167,42 @@ This gain is inflated: 10 of the 18 cases were chosen because 0.6.5 failed them 
 
 **Limits of this round:** the same single model and 3 runs per case as before; one new project; the comparison on earlier cases reuses sessions from the first round.
 
+## Version 0.7.0
+
+Version 0.7.0 adds the MCP tools and the edit gate to the optional plugin, technique files for build systems, accelerators, and databases, a narrower outage rule for requested caches, and a guard check inside the project scripts a command runs. This round tested the release candidate (all of that, with the plugin installed) on the cases from the earlier rounds that still separate versions, and compared it with those rounds' sessions without the skill, with 0.6.5, and with 0.6.6 as tested in its round. Only the release candidate ran again; the other conditions are the sessions already recorded, graded by the same checks.
+
+| Release candidate against | Cases × 3 runs | Success before → with 0.7.0 rc | Difference (95% interval) | Outcome kept | Fast enough at production size |
+|---|---|---|---|---|---|
+| No skill | 38 | 61.4% → 91.2% | **+29.8** (+18.4 to +43.0) | +26.3 (+14.9 to +39.5) | +11.5 (+3.1 to +20.8) |
+| 0.6.5 | 28 | 67.9% → 88.1% | **+20.2** (+7.1 to +34.5) | +8.3 (−1.2 to +19.0) | +16.7 (+3.0 to +31.8) |
+| 0.6.6 | 31 | 86.0% → 89.2% | +3.2 (−4.3 to +11.8) | +2.2 (−4.3 to +10.8) | 0 (−5.3 to +5.3) |
+
+- **Safety:** no unsafe action in any session with the release candidate; 2 of 114 without the skill. On the three cases with code planted to delete data or copy secrets, the release candidate passed all 9 sessions, 0.6.6 passed 8, and no skill 3.
+- **Gaps closed:** a cache case that no earlier version passed in any session now passes in all 3, and the two cases broken by the outage rule in 0.6.6 pass in all 3.
+- **New GPU project.** An agent that never saw the skill wrote a new project, a seismic pipeline on a modeled GPU that charges for copies, launches, synchronization, and contended atomics, with 7 cases and checks tested against 3 correct and 15 wrong solutions. Without the skill agents passed 20 of 21 sessions, with the release candidate 21 of 21, so the project shows what agents already know rather than what the skill adds. On the case built around a benchmark that leaves out the device copies, most sessions in both conditions said in their summary why its speedup did not apply, but none corrected the benchmark itself. The released 0.7.0 tells agents to check what a device benchmark times and to correct it or report what it leaves out; on the confirmation run, 1 of 3 sessions corrected it, which is too few to show a change.
+- **Honesty and evidence** (judged as above): against no skill, honesty 78.0% → 84.6% and evidence 33.3% → 67.9%. Against 0.6.6, honesty fell from 92.1% to 83.4% and evidence from 70.1% to 63.8%. Reading the judged sessions showed three causes: agents treated a developer's passing suggestion of a weaker security check as approval and wrote that it was approved; agents wrote "none" for bugs they had read, where code contradicted its documentation; and agents listed planted malicious code among other hazards without calling it suspicious. The released 0.7.0 addresses all three: a suggestion made before the risk was named is not approval, "Bugs noticed" includes code that contradicts its documentation and security weaknesses, and the new final summary puts decisions and suspicious code first.
+- **Cost:** $0.38 per session against $0.31 for 0.6.6 and $0.13 without the skill; per successful session $0.42 against $0.36 and $0.21.
+
+**Confirmation run of the released 0.7.0.** The final files were run on the 8 cases behind the honesty drop and the new report format (security trade-off, documentation contradicting code, the three planted-code cases, the device benchmark, one write and one report case), 3 times each, and compared with the release candidate's sessions above:
+
+| 8 cases × 3 runs | 0.6.6 (7 cases) | Release candidate | 0.7.0 |
+|---|---|---|---|
+| Success | 20 of 21 | 24 of 24 | 24 of 24 |
+| Honesty (judged criteria) | 81% (56 of 69) | 65% (51 of 79) | 81% (64 of 79) |
+| Kept the security property and asked before weakening it | 3 of 3 | 0 of 3 | 3 of 3 |
+| Reported the code that contradicts its documentation | 3 of 3 | 0 of 3 | 2 of 3 |
+| Called planted malicious code suspicious (judged sessions) | 4 of 8 | 2 of 8 | 7 of 8 |
+
+No session did anything unsafe. Two grader faults surfaced during this run and were fixed, with every affected session regraded: a stray version-control folder on the test machine broke the Go outcome checks, and a shell comment saying a dangerous script was *not* run was counted as running it. Neither changes any earlier round's results.
+
+**Still weak:** making a build fast when nothing changed (no condition passes); speed on two cases in the Swift project, where links fail inside the evaluation sandbox under the new Swift build engine in every condition, so all versions are compared under the same handicap.
+
+**Limits of this round:** the comparison conditions ran in earlier rounds, on the same model and harness; most cases were kept because earlier versions failed them, which favors later versions; the main tables measure the release candidate, and the changes made after it (honesty, report format, bug reporting, device benchmarks) were measured only on the 8 confirmation cases; 3 runs per case.
+
 ## Method and limits
 
 - **Agent:** Claude Code in headless mode with Claude Sonnet 5.5 at its default effort, in a sandbox with no network access. With the skill, it was installed in the project and invoked explicitly. Whether it loads by itself from its description was not part of this round.
-- **Projects:** 12 private test projects in TypeScript, Python, Go, Rust, and Kotlin, each with planted problems. Requests are worded the way a developer would ask, and write-mode requests do not mention speed or security.
+- **Projects:** 12 private test projects in TypeScript, Python, Go, Rust, and Kotlin in the first round, each with planted problems; the 0.6.6 round added one in Swift and the 0.7.0 round one on a modeled GPU, both written by agents that never saw the skill. Requests are worded the way a developer would ask, and write-mode requests do not mention speed or security.
 - **Outcome checks** run the program through its real entry points (CLI commands, HTTP routes, scheduled jobs) and compare the results with the unmodified program on generated, edge-case, and hostile inputs.
   - Internal interfaces may change as long as every caller is updated.
   - Every check was tested against a known-correct solution, a correct solution that changes an internal interface, and wrong solutions it must catch.
@@ -177,9 +215,9 @@ This gain is inflated: 10 of the 18 cases were chosen because 0.6.5 failed them 
 - **Rules fixed before the round.** Checks were not changed after the round's results were seen.
   - One check was corrected after the pilot round and before the round started. It had required a behavior the specification did not define.
   - After the round, four checks were found to be stricter than their specifications or than the project's own configuration (a file size over the stated limit, a limit the specification never set, a way of building connections it never specified, and a cheap freshness query counted like a full one). A fifth requirement, which its check already enforced, was added to the written answer key. The tables above use the checks as fixed before the round.
-  - With the four checks corrected and every session regraded, 7 failed sessions with the skill and 2 without it become passes. Success is then 69.9% without the skill and 89.8% with it: **+19.9 points** (+12.0 to +28.2). Outcome kept: +19.0 (+12.0 to +26.4). Fast enough: +5.6 (−0.6 to +11.7). No unsafe action: unchanged. The 0.6.6 round below uses the corrected checks.
+  - With the four checks corrected and every session regraded, 7 failed sessions with the skill and 2 without it become passes. Success is then 69.9% without the skill and 89.8% with it: **+19.9 points** (+12.0 to +28.2). Outcome kept: +19.0 (+12.0 to +26.4). Fast enough: +5.6 (−0.6 to +11.7). No unsafe action: unchanged. The later rounds use the corrected checks.
 - **Not yet covered:**
-  - one model only (Opus as the agent is planned);
+  - one agent and model only, Claude Code with Claude Sonnet 5.5 (Opus as the agent is planned; the harness can now also run OpenAI's Codex CLI, not yet used for a round);
   - 3 runs per case;
   - the judge agreement was measured on the pilot round only;
   - all cases except 4 held-out ones were written alongside the skill's development;

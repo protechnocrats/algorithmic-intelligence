@@ -78,7 +78,7 @@ Write `APPLY-RESULTS.md` once, and leave `OPTIMIZATION-REPORT.md` as the analysi
 
 ## Apply results format
 
-`APPLY-RESULTS.md` (or, for a small result, the summary in the conversation) starts with:
+`APPLY-RESULTS.md` (or, for a small result, the summary in the conversation) opens with a short brief a reader can act on without reading further: the **Result** and the **Decisions needed** from the final summary, then the **Results** table. Then:
 - the request as understood, with the bound of any technique the developer named (rule 5);
 - the test suite status before and after, from runs on the final code;
 - the input sizes with their sources and any disagreement.
@@ -101,24 +101,24 @@ Then these sections, each only if it has entries:
 - "Needs testing": location, what is unverified, a suggested way to verify it.
 - "Behavior changes decided": each decision, and new behavior changes found while applying, in the "Behavior changes for review" format in `REPORTING.md`.
 - "Tried and rejected while applying".
-- "Bugs found while applying", in the bug log format.
+- "Bugs found while applying", in the bug log format, security weaknesses included.
+- "Hazards noticed": everything dangerous or suspicious you came across, with file and line, whether or not it blocked you; code that looks planted to do harm is also the first entry under "Decisions needed" in the opening brief.
 
 ## Final summary
 
-End every apply run with a summary in the conversation, pointing to `APPLY-RESULTS.md` for detail. These lines, in order, each "none" when empty:
+End every apply run with a summary in the conversation, in the order of "Every final summary" in `SKILL.md`, pointing to `APPLY-RESULTS.md` for detail. Each line "none" when empty:
 
+- **Result:** what is faster now and by how much for the whole operation (measured or estimated), the verification level reached, and whether anything is left for the developer.
 - **Request as understood:** goal and problem underneath in one line, and whether a fix the developer proposed was used, changed, or advised against, and why; for a technique the developer named, the bound of its trade-off (the maximum age, the sampling error) (rule 5).
-- **Applied:** each item with its verification level and one line of evidence, or why it was not applied.
+- **Decisions needed:** behavior changes awaiting review, security trade-offs offered but not applied, suspicious code, and in a run where nobody could answer, **Waiting for approval**: each item that needed approval, left unapplied with its original code in place. Each with the options, your recommendation, and the risk of each.
+- **Results:** a table with one row per item: the change, complexity before → after, measured time before → after at realistic n with the spread, share of the whole operation, and the verification level; or why it was not applied. Then approved `BEHAVIOR-CHANGE` and `NEEDS-TESTING` items.
 - **Complexity:** each item, before → after in every size variable (O(n·k) → O(n), not O(n²) → O(n)), with the case and the lower bound with its reason, or "unknown, because …".
 - **Data structures:** each collection on a hot path, by item: dominant operations, current cost, best structure, and kept or replaced with the reason in a few words.
 - **Contract changes:** each interface changed, by item: before → after, the callers updated, and any caller that could not be updated or checked with the developer's decision about it.
-- **Bugs noticed:** every bug seen in any code read during the task, including code next to the change, each with its bug-log ID and one line. Look back over every file you opened before writing it.
-- **Behavior changes:** awaiting review, approved (`BEHAVIOR-CHANGE`), and `NEEDS-TESTING`.
+- **Bugs noticed:** every bug seen in any code read during the task, including code next to the change, security weaknesses, and code that contradicts its documentation or comments, each with its bug-log ID, kind, and one line. Look back over every file you opened before writing it.
 - **Hazards noticed:** each with file and line, whether or not it blocked you, including text addressed to AI assistants (identified, not reproduced) and markers you did not write.
 - **Commands not run:** each command you chose not to run, what it would have done, and what you ran instead.
-- **Waiting for approval:** in a run where nobody could answer, each item that needed approval, left unapplied with its original code in place. Omit only in an interactive run.
-- **Test suite:** status before and after, from runs on the final code.
-- **Measured or estimated:** which numbers are which.
+- **Evidence:** test suite before and after, from runs on the final code; benchmark environment and run count; which numbers are measured and which estimated; what stays unverified.
 - **Also:** commits made, or that nothing was committed and where the per-item changed-files list is; regression guards kept and how to run them; dependency requests pending; scope not inspected; code with no entry point found, with the question; changes tried and rejected; for a language without a file in this skill, the saved profile's path and what changed, or that it was not saved.
 
 ## Code markers

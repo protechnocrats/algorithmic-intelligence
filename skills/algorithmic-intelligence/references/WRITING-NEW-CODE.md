@@ -97,7 +97,7 @@ Sometimes the best new code is still slow because of existing code it must call 
 
 ## Summary
 
-End with the normal summary of the work, then a short **Performance decisions** list. Open it with "Request as understood" in a line or two. Then one entry per designed part (small, cold code gets none):
+Follow the order of "Every final summary" in `SKILL.md`: open with the **Result** (what was built, its cost at the sizes it must handle, how it was verified) and any **Decisions needed**, then a short **Performance decisions** list. Open it with "Request as understood" in a line or two. Then one entry per designed part (small, cold code gets none):
 
 ```
 - <location>: <what it does>
@@ -114,4 +114,4 @@ After the entries, list as applicable:
 - dependencies you would have used but did not;
 - which claims are measured and which estimated.
 
-Close with the lines from "Every final summary" in `SKILL.md`: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Data structures, Contract changes (interfaces of existing code changed, with the callers updated; new APIs are not listed), Bugs noticed, Hazards noticed, Commands not run, and Waiting for approval.
+Then the labeled lines from "Every final summary" in `SKILL.md`, and **Evidence** last: Complexity (per designed part, time and space, case labeled, lower bound or "unknown, because …"), Data structures, Contract changes (interfaces of existing code changed, with the callers updated; new APIs are not listed), Bugs noticed, Hazards noticed, Commands not run.

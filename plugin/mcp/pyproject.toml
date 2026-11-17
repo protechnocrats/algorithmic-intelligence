@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algorithmic-intelligence-mcp"
+version = "0.1.0"
+description = "MCP server for the algorithmic-intelligence skill: benchmark statistics, growth fits, and planted-difference checks. Never runs project code."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/protechnocrats/algorithmic-intelligence"
+
+[project.scripts]
+algorithmic-intelligence-mcp = "algorithmic_intelligence_mcp.server:main"
+
+[tool.setuptools]
+package-dir = { "algorithmic_intelligence_mcp" = "." }
+packages = ["algorithmic_intelligence_mcp"]

@@ -166,6 +166,8 @@ Base any index or query change on the actual plan (`EXPLAIN`, `EXPLAIN ANALYZE`,
 | A plan regresses or picks a poor join order although indexes exist | Refresh planner statistics (`ANALYZE` or equivalent), add extended statistics for correlated columns, re-check the plan; hints only as a last resort | Statistics change other queries' plans too: compare them before and after | Estimates match the data, so the planner can choose the plan the indexes allow |
 | Counting rows only to check existence | `EXISTS` or `LIMIT 1` | The count is used for nothing else (not returned, logged, or compared with a number) | Low; behavior change if the count was used |
 
+Beyond these basics (query rewrites, index design and its write cost, bulk writes and transactions, schema layout, connections, engine internals, and database behavior traps): `techniques/databases.md`.
+
 ## Bit manipulation
 
 Bits help when they reduce complexity or replace a heavier structure. Expressions use C-style operators; the language files give exact syntax (Kotlin uses `and`, `or`, `xor`, `shl`, `inv()`).
