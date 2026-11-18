@@ -6,6 +6,21 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+### Added
+
+- Pull request review: new findings are also posted as review comments on the changed lines they concern (`inline-comments`, `max-inline-comments`).
+- Pull request review: the comment opens with what changed since the last review (new, still present, resolved), and the reviewer is told the earlier findings so it can say which are fixed.
+- Pull request review: step outputs `status`, `findings`, `high`, `medium`, `low`, `clean`, and `resolved`, for labels or an opt-in gate in your own workflow.
+- Pull request review: fork pull requests can be reviewed through a `pull_request_target` workflow with `allow-forks`, limited to `fork-authors` or pull requests a maintainer labels with `fork-label`.
+- Pull request review: the reviewer reads the pull request's title and description (as claims to check) and is given the repository's README and documentation files by name.
+
+### Changed
+
+- Pull request review: a review that finds nothing posts no comment unless `comment-on-clean` is `true`; an earlier comment is updated to say its findings are gone.
+- Pull request review: a push that leaves the pull request's code unchanged since the last review (documentation, a clean rebase, a re-run) is not reviewed again.
+- Pull request review: the diff is taken from the merge base (`base...HEAD`), so it is right whether the checkout is the merge commit or the pull request's head.
+- Pull request review: the action refuses to run when the checkout kept the GitHub token in `.git/config`, where the agent could read it.
+
 ## [0.7.3] - 2026-11-17
 
 The pull request review comment now says it was written by an AI model and links to a place to report a wrong review, and the CI documentation says what data the action sends and where to get support. The skill's files and the plugin's behavior are the same as in 0.7.2.

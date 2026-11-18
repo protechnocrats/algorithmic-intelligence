@@ -36,10 +36,34 @@ inputs:
     description: Post (and update) a pull request comment. When false, the report goes only to the job summary.
     required: false
     default: 'true'
+  comment-on-clean:
+    description: Post a comment when the review finds nothing. When false, a clean review goes only to the job summary (an earlier comment is updated to say its findings are gone).
+    required: false
+    default: 'false'
+  inline-comments:
+    description: Also post new findings as review comments on the changed lines they concern.
+    required: false
+    default: 'true'
+  max-inline-comments:
+    description: At most this many review comments on changed lines per push, highest severity first.
+    required: false
+    default: '10'
   review-drafts:
     description: Review draft pull requests too.
     required: false
     default: 'false'
+  allow-forks:
+    description: Review pull requests from forks. Needs a pull_request_target workflow (see docs/CI.md); reviews only authors in fork-authors, or pull requests carrying fork-label.
+    required: false
+    default: 'false'
+  fork-authors:
+    description: Author associations whose fork pull requests are reviewed when allow-forks is true.
+    required: false
+    default: OWNER,MEMBER,COLLABORATOR
+  fork-label:
+    description: A label a maintainer adds to have any fork pull request reviewed when allow-forks is true (empty disables).
+    required: false
+    default: ''
   claude-code-version:
     description: Claude Code version to install from npm. Pinned; change it deliberately.
     required: false
@@ -49,18 +73,45 @@ inputs:
     required: false
     default: ${{ github.token }}
 
+outputs:
+  status:
+    description: reviewed, failed, skipped, or unchanged (the code is the same as at the last review, whose findings the counts repeat).
+    value: ${{ steps.post.outputs.status || steps.prepare.outputs.status }}
+  findings:
+    description: Number of findings (empty when the review gave no machine-readable findings).
+    value: ${{ steps.post.outputs.findings || steps.prepare.outputs.findings }}
+  high:
+    description: Number of high-severity findings.
+    value: ${{ steps.post.outputs.high || steps.prepare.outputs.high }}
+  medium:
+    description: Number of medium-severity findings.
+    value: ${{ steps.post.outputs.medium || steps.prepare.outputs.medium }}
+  low:
+    description: Number of low-severity findings.
+    value: ${{ steps.post.outputs.low || steps.prepare.outputs.low }}
+  clean:
+    description: true when the review finished and found nothing.
+    value: ${{ steps.post.outputs.clean || steps.prepare.outputs.clean }}
+  resolved:
+    description: Number of findings from the previous review that this push resolved.
+    value: ${{ steps.post.outputs.resolved }}
+
 runs:
   using: composite
   steps:
-    - name: Prepare the review
+    - name: Prepare the review (no model credentials)
       id: prepare
       shell: bash
       env:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
         AI_HAS_CREDENTIALS: ${{ (inputs.anthropic-api-key != '' || inputs.claude-code-oauth-token != '') && 'true' || 'false' }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_MAX_DIFF_KB: ${{ inputs.max-diff-kb }}
         INPUT_INSTRUCTIONS: ${{ inputs.instructions }}
         INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
+        INPUT_ALLOW_FORKS: ${{ inputs.allow-forks }}
+        INPUT_FORK_AUTHORS: ${{ inputs.fork-authors }}
+        INPUT_FORK_LABEL: ${{ inputs.fork-label }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" prepare
 
     - name: Install Claude Code
@@ -87,6 +138,7 @@ runs:
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" run
 
     - name: Post the report (no model credentials)
+      id: post
       if: steps.prepare.outputs.skip == 'false'
       shell: bash
       env:
@@ -94,4 +146,7 @@ runs:
         AI_NUMBER: ${{ steps.prepare.outputs.number }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
+        INPUT_INLINE_COMMENTS: ${{ inputs.inline-comments }}
+        INPUT_MAX_INLINE_COMMENTS: ${{ inputs.max-inline-comments }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
