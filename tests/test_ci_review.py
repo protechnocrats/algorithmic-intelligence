@@ -73,6 +73,19 @@ class Prompt(unittest.TestCase):
         for needle in ('/w/pr-description.md', 'README.md, docs/sizes.md', '/w/previous-findings.json', 'resolved', 'not in the file',
                        review.FINDINGS_TAG, 'severity', 'claims to check'):
             self.assertIn(needle, p)
+        self.assertIn('afresh', p)
+        with tempfile.TemporaryDirectory() as d:
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                Path('README.md').write_text('Production: 2M orders.\n~~~~ fence\n')
+                readme = review.readme_excerpt(['README.md', 'docs/x.md'])
+                self.assertEqual(review.readme_excerpt(['docs/x.md']), (None, ''))
+            finally:
+                os.chdir(cwd)
+        q = review.build_prompt(7, Path('/w'), False, '', ['README.md'], readme=readme)
+        self.assertIn('Production: 2M orders.', q)
+        self.assertEqual(q.count('~~~~'), 2)
         bare = review.build_prompt(7, Path('/w'), False, '')
         self.assertNotIn('pr-description', bare)
         self.assertNotIn('previous-findings', bare)
@@ -151,6 +164,10 @@ class Inline(unittest.TestCase):
         findings = [f(), f(line=40), f(file='other.py'), f(previous='P1'), f(line=None), f(severity='high', line=4)]
         out = review.inline_comments(findings, {'commit': 'c', 'lines': {'a.py': [1, 2, 3, 4]}}, [], 10)
         self.assertEqual([(c['path'], c['line']) for c in out], [('a.py', 4), ('a.py', 2)])
+        low = [f(severity='low', line=1), f(severity='high', line=4)]
+        self.assertEqual([c['line'] for c in review.inline_comments(low, {'lines': {'a.py': [1, 4]}}, [], 10)], [4])
+        self.assertEqual(len(review.inline_comments(low, {'lines': {'a.py': [1, 4]}}, [], 10, 'low')), 2)
+        self.assertEqual(review.inline_comments(findings, {'lines': {'a.py': [1, 2, 3, 4]}}, [], 10, 'high')[0]['line'], 4)
         self.assertTrue(all(review.INLINE_MARKER in c['body'] and '@bob' not in c['body'] for c in out))
         self.assertEqual(len(review.inline_comments(findings, {'lines': {'a.py': [1, 2, 3, 4]}}, [], 1)), 1)
         posted = [{'path': 'a.py', 'line': 3}]

@@ -48,6 +48,10 @@ inputs:
     description: At most this many review comments on changed lines per push, highest severity first.
     required: false
     default: '10'
+  inline-min-severity:
+    description: Lowest severity posted on the changed lines (high, medium, or low); lower findings stay in the comment.
+    required: false
+    default: medium
   review-drafts:
     description: Review draft pull requests too.
     required: false
@@ -149,4 +153,5 @@ runs:
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_INLINE_COMMENTS: ${{ inputs.inline-comments }}
         INPUT_MAX_INLINE_COMMENTS: ${{ inputs.max-inline-comments }}
+        INPUT_INLINE_MIN_SEVERITY: ${{ inputs.inline-min-severity }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post

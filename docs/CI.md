@@ -59,6 +59,7 @@ The `instructions` are the most useful input: production input sizes and latency
 | `comment-on-clean` | `false` | Post a comment when the review finds nothing. When `false`, a clean review goes only to the job summary, and an earlier comment is updated to say its findings are gone. |
 | `inline-comments` | `true` | Also post new findings as review comments on the changed lines they concern. |
 | `max-inline-comments` | `10` | At most this many review comments on changed lines per push, highest severity first. |
+| `inline-min-severity` | `medium` | Lowest severity posted on the changed lines (`high`, `medium`, or `low`); lower findings stay in the comment. |
 | `review-drafts` | `false` | Review draft pull requests too. |
 | `allow-forks` | `false` | Review pull requests from forks (see "Pull requests from forks"). |
 | `fork-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose fork pull requests are reviewed when `allow-forks` is `true`. |
@@ -69,7 +70,7 @@ The `instructions` are the most useful input: production input sizes and latency
 ## What a review gives you
 
 - **One comment, updated on each push.** The report, with a line at the top comparing it with the previous review: how many findings are new, still present, and resolved, and which were resolved.
-- **Review comments on the changed lines.** Each new finding that points at a line the pull request changes is also posted on that line, highest severity first, up to `max-inline-comments`. Findings repeated from an earlier review are not posted again.
+- **Review comments on the changed lines.** Each new finding of at least `inline-min-severity` (medium by default) that points at a line the pull request changes is also posted on that line, highest severity first, up to `max-inline-comments`. Findings repeated from an earlier review are not posted again.
 - **Quiet when there is nothing to say.** A review that finds nothing posts no comment unless `comment-on-clean` is `true`; the job summary still has it. If an earlier comment listed findings, it is updated to say they are gone.
 - **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, and `resolved`. The counts are empty when the review gave no machine-readable findings. For example, to fail the check on a high-severity finding (the action itself never fails it):
 
@@ -84,7 +85,7 @@ The `instructions` are the most useful input: production input sizes and latency
 
 Every finding is an estimate read from the code, so a gate like this is a judgment call: it stops merges on a reviewer's opinion, not on a measurement.
 
-The reviewer is given the pull request's title and description (as the author's claims, checked against the code), the repository's README and documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
+The reviewer is given the pull request's title and description (as the author's claims, checked against the code), the start of the top-level README and the repository's documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
 
 ## What it skips
 

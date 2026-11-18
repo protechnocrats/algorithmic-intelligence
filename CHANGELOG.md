@@ -8,11 +8,11 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Added
 
-- Pull request review: new findings are also posted as review comments on the changed lines they concern (`inline-comments`, `max-inline-comments`).
+- Pull request review: new findings are also posted as review comments on the changed lines they concern (`inline-comments`, `max-inline-comments`, `inline-min-severity`, medium by default).
 - Pull request review: the comment opens with what changed since the last review (new, still present, resolved), and the reviewer is told the earlier findings so it can say which are fixed.
 - Pull request review: step outputs `status`, `findings`, `high`, `medium`, `low`, `clean`, and `resolved`, for labels or an opt-in gate in your own workflow.
 - Pull request review: fork pull requests can be reviewed through a `pull_request_target` workflow with `allow-forks`, limited to `fork-authors` or pull requests a maintainer labels with `fork-label`.
-- Pull request review: the reviewer reads the pull request's title and description (as claims to check) and is given the repository's README and documentation files by name.
+- Pull request review: the reviewer reads the pull request's title and description (as claims to check) and is given the start of the top-level README and the repository's documentation files by name.
 
 ### Changed
 
