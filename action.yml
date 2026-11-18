@@ -1,0 +1,97 @@
+name: Algorithmic Intelligence review
+description: Reviews each pull request for performance problems in the code it changes, in report mode, and posts one comment.
+author: protechnocrats
+branding:
+  icon: activity
+  color: purple
+
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key. Give this or claude-code-oauth-token, from a repository secret.
+    required: false
+  claude-code-oauth-token:
+    description: Claude Code OAuth token from `claude setup-token`, for a Claude subscription instead of an API key.
+    required: false
+  model:
+    description: Model alias or full name (empty uses Claude Code's default).
+    required: false
+    default: sonnet
+  max-budget-usd:
+    description: Stop the review once it has spent this many dollars of API usage.
+    required: false
+    default: '2'
+  timeout-minutes:
+    description: Stop the review after this many minutes.
+    required: false
+    default: '20'
+  max-diff-kb:
+    description: Diff size given to the agent; larger diffs are cut at a file boundary and the agent reads the files.
+    required: false
+    default: '200'
+  instructions:
+    description: Extra context for the reviewer, such as production input sizes and latency targets.
+    required: false
+    default: ''
+  comment:
+    description: Post (and update) a pull request comment. When false, the report goes only to the job summary.
+    required: false
+    default: 'true'
+  review-drafts:
+    description: Review draft pull requests too.
+    required: false
+    default: 'false'
+  claude-code-version:
+    description: Claude Code version to install from npm. Pinned; change it deliberately.
+    required: false
+    default: '2.1.327'
+  github-token:
+    description: Token used to post the comment.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare the review
+      id: prepare
+      shell: bash
+      env:
+        AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        AI_HAS_CREDENTIALS: ${{ (inputs.anthropic-api-key != '' || inputs.claude-code-oauth-token != '') && 'true' || 'false' }}
+        INPUT_MAX_DIFF_KB: ${{ inputs.max-diff-kb }}
+        INPUT_INSTRUCTIONS: ${{ inputs.instructions }}
+        INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
+      run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" prepare
+
+    - name: Install Claude Code
+      if: steps.prepare.outputs.skip == 'false'
+      shell: bash
+      env:
+        VERSION: ${{ inputs.claude-code-version }}
+      run: npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${VERSION}"
+
+    - name: Review (read-only tools, no GitHub token)
+      if: steps.prepare.outputs.skip == 'false'
+      shell: bash
+      env:
+        AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
+        GITHUB_TOKEN: ''
+        GH_TOKEN: ''
+        ACTIONS_RUNTIME_TOKEN: ''
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ''
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_MAX_BUDGET_USD: ${{ inputs.max-budget-usd }}
+        INPUT_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+      run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" run
+
+    - name: Post the report (no model credentials)
+      if: steps.prepare.outputs.skip == 'false'
+      shell: bash
+      env:
+        AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        AI_NUMBER: ${{ steps.prepare.outputs.number }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+      run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
