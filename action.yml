@@ -1,4 +1,4 @@
-name: Algorithmic Intelligence review
+name: Algorithmic Intelligence
 description: Reviews each pull request for performance problems in the code it changes, in report mode, and posts one comment.
 author: protechnocrats
 branding:
