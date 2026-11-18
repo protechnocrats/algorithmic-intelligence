@@ -6,6 +6,15 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-17
+
+The pull request review comment now says it was written by an AI model and links to a place to report a wrong review, and the CI documentation says what data the action sends and where to get support. The skill's files and the plugin's behavior are the same as in 0.7.2.
+
+### Changed
+
+- **The review comment says it was written by AI and how to report a problem.** Its footer now names Claude, through Claude Code, as the author, says it can be wrong, and links to a new issue on this repository and to the CI documentation.
+- **The CI documentation covers data and support.** `docs/CI.md` now says what the action sends (the prompt, the diff, and the files the agent reads, to Anthropic's API under the user's own key), that the maintainers receive nothing and the action has no telemetry, what is kept, and how to report a wrong review, a security problem, or anything else.
+
 ## [0.7.2] - 2026-11-17
 
 Adds pull request review in CI: the repository is now a GitHub Action that reviews the code each pull request changes, in report mode, and posts one comment. The skill's files and the plugin's behavior are the same as in 0.7.1.

@@ -1,8 +1,8 @@
 # Pull request review in CI
 
-The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so.
+The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2.
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3.
 
 ## Setup
 
@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0               # the review diffs against the base commit
           persist-credentials: false   # keeps the GitHub token out of .git/config, which the agent can read
-      - uses: protechnocrats/algorithmic-intelligence@0.7.2
+      - uses: protechnocrats/algorithmic-intelligence@0.7.3
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -78,6 +78,21 @@ The pull request under review is untrusted: its code, comments, and documentatio
 - **What remains.** A pull request can change the repository's `CLAUDE.md`, skills, or code comments to steer what the review says, for example to hide a finding. Treat the comment as advice from a reviewer who read the pull request, not as a security control.
 
 The action itself is pinned by its release tag, and release tags in this repository cannot be moved (see [RELEASING.md](../RELEASING.md)). For the strongest guarantee, pin it by commit SHA instead.
+
+## Data
+
+- **What is sent, and to whom.** The review runs on your GitHub runner. Claude Code sends the prompt, the pull request's diff, and the files the agent reads in your repository to Anthropic's API, under the API key or subscription you provide and Anthropic's terms for it. Nothing else leaves the runner, apart from the comment posted to your pull request through GitHub's API.
+- **What the maintainers receive.** Nothing. The action has no telemetry and sends nothing to the maintainers of this project or to any service other than Anthropic's API and GitHub's.
+- **What is kept.** The action keeps no session history on the runner (`--no-session-persistence`), and the runner's work directory is discarded when the job ends. The comment and the job summary stay on GitHub like any other comment. Retention of what Anthropic receives is set by your agreement with Anthropic.
+- **Personal data.** The action does not look for personal data, but code, comments, and test fixtures can contain some (names, email addresses). If your repository holds data that must not go to a third-party model, do not enable the action on it.
+
+## Support and feedback
+
+- **A wrong, misleading, or harmful review:** open an issue at [github.com/protechnocrats/algorithmic-intelligence/issues](https://github.com/protechnocrats/algorithmic-intelligence/issues); every comment links there ("Report a problem"). Include the run link from the comment, and leave out code you cannot share.
+- **A security problem in the action:** report it privately, as described in [SECURITY.md](../SECURITY.md); do not open a public issue.
+- **Anything else:** contactus@protechnocrats.com.
+
+The action is provided under the [MIT License](../LICENSE), without warranty.
 
 ## Cost
 

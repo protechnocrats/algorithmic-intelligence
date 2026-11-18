@@ -31,6 +31,9 @@ INVOKE = f'/{PLUGIN}:{SKILL}'
 COMMENT_LIMIT = 60000          # GitHub rejects comments over 65,536 characters
 TOOLS = 'Read,Grep,Glob,Skill'
 ACTION_ROOT = Path(__file__).resolve().parent.parent
+PROJECT = 'https://github.com/protechnocrats/algorithmic-intelligence'
+REPORT_PROBLEM = f'{PROJECT}/issues/new'
+DOCS = f'{PROJECT}/blob/main/docs/CI.md'
 
 # Files whose changes cannot affect performance; a pull request that changes only these is skipped.
 NON_CODE = re.compile(r'(?i)(\.(md|markdown|rst|txt|adoc|png|jpe?g|gif|svg|ico|webp|pdf|lock)$|(^|/)(LICENSE|CHANGELOG|AUTHORS|CODEOWNERS)[^/]*$|(^|/)docs?/)')
@@ -212,8 +215,10 @@ def comment_body(result, run_url):
     else:
         body = f'The review did not finish ({sanitize(result["error"])[:500]}). Nothing in this pull request was judged.'
     cost = f' · cost ${result["cost"]:.2f}' if isinstance(result.get('cost'), (int, float)) else ''
-    foot = ('\n\n---\n<sub>Report only: read from the code, with nothing run, so every number is an estimate to '
-            f'confirm with the test it names. Updated on each push. [Run]({run_url}){cost}</sub>')
+    foot = ('\n\n---\n<sub>Written by Claude, an AI model, through Claude Code; it can be wrong. Report only: read '
+            'from the code, with nothing run, so every number is an estimate to confirm with the test it names. '
+            f'Updated on each push. [Run]({run_url}){cost} · [Report a problem]({REPORT_PROBLEM}) · '
+            f'[How it works and what it sends]({DOCS})</sub>')
     return head + body + foot
 
 
