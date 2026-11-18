@@ -111,6 +111,8 @@ class Post(unittest.TestCase):
         body = review.comment_body({'ok': True, 'text': 'report ' + review.MARKER, 'cost': 0.5}, 'https://run')
         self.assertEqual(body.count(review.MARKER), 1)
         self.assertIn('estimate', body)
+        self.assertIn('AI model', body)                 # Marketplace terms 3.4: say the content is AI-generated
+        self.assertIn(review.REPORT_PROBLEM, body)      # and give a way to report bad output
         self.assertIn('$0.50', body)
         failed = review.comment_body({'ok': False, 'text': '', 'cost': None, 'error': 'timed out'}, 'u')
         self.assertIn('did not finish (timed out)', failed)
