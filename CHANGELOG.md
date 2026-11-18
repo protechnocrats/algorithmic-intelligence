@@ -6,6 +6,10 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-17
+
+Adds pull request review in CI: the repository is now a GitHub Action that reviews the code each pull request changes, in report mode, and posts one comment. The skill's files and the plugin's behavior are the same as in 0.7.1.
+
 ### Added
 
 - **Pull request review in CI.** The repository is now a GitHub Action (`action.yml`) that runs the skill in report mode on the code each pull request changes and posts one comment, updated on each push, in the skill's final-summary order. The agent runs Claude Code in restricted mode with read-only tools (no shell, edits, network, or MCP servers), so it cannot run the pull request's code; the model credentials and the GitHub token are given to separate steps; the comment is cleaned of mentions before posting. Every number in the comment is labeled an estimate, since nothing is run. Pull requests from forks, drafts, and documentation-only changes are skipped. Setup, inputs, and the security model are in `docs/CI.md`.

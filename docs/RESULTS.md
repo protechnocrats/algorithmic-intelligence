@@ -1,6 +1,6 @@
 # Evaluation results
 
-The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 changes no skill or plugin files), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
+The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 and 0.7.2 change no skill files or plugin behavior), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
 
 | Metric | No skill | 0.7.0 | Difference (95% interval) |
 |---|---|---|---|
