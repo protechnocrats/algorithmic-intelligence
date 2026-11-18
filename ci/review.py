@@ -4,7 +4,7 @@
 Three steps, each run as its own action step so the GitHub token and the model credentials are never in the
 same process:
 
-  review.py prepare  reads the pull request event, writes the diff, the changed-file list, the pull request's
+  review.py prepare  reads the pull request event, writes the diff, the changed-file list, the commit list, the pull request's
                      description, the previous review's findings, the prompt, and a one-skill plugin into a work
                      directory outside the checkout. Decides whether to skip (drafts, forks, documentation-only
                      changes, code unchanged since the last review). Has the GitHub token (to read the previous
@@ -325,6 +325,12 @@ def build_prompt(number, work, cut, extra, docs=(), has_description=False, previ
         'Read the surrounding code to find callers and entry points, and look for production sizes in the '
         'maintainers\' notes below, the README, docs, configuration, and tests before assuming any. Report a problem that was '
         'already there only when this change makes it worse or puts it on a new path.',
+        '- Review the net change from the base branch to the pull request\'s head. The commits in '
+        f'{work}/commits.txt are steps toward it; their intermediate versions will never ship and are not in the diff. '
+        'A code comment that compares the code with an earlier version ("as the old loop did") usually refers to one of '
+        'those steps: judge the code as it is, say nothing about the comment\'s history, and never write that you '
+        'could not check it. Only when the comparison is with code on the base branch and the claimed behavior matters '
+        'to the outcome, check it there.',
     ]
     if has_description:
         lines.append(f'- The pull request\'s title and description are in {work}/pr-description.md: the author\'s account '
@@ -431,6 +437,7 @@ def prepare():
     diff, cut = truncate_diff(git('diff', f'{base}...HEAD'), int(env('INPUT_MAX_DIFF_KB', '200')) * 1024)
     (work / 'pr.diff').write_text(diff)
     (work / 'changed-files.txt').write_text('\n'.join(changed) + '\n')
+    (work / 'commits.txt').write_text(git('log', '--format=%h %s', '--max-count=100', f'{base}..HEAD', '--no-merges'))
     title, body = str(pr.get('title') or '').strip(), str(pr.get('body') or '').strip()
     if title or body:
         (work / 'pr-description.md').write_text((f'# {title}\n\n' if title else '') + body[:DESCRIPTION_LIMIT] + '\n')

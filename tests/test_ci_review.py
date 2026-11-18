@@ -63,7 +63,7 @@ class Prompt(unittest.TestCase):
     def test_prompt_invokes_skill_and_states_limits(self):
         p = review.build_prompt(7, Path('/w'), True, 'orders table: 5M rows')
         self.assertTrue(p.startswith(review.INVOKE + ' '))
-        for needle in ('/w/pr.diff', '/w/changed-files.txt', 'cut short', 'estimated', 'Write no files',
+        for needle in ('/w/pr.diff', '/w/changed-files.txt', '/w/commits.txt', 'net change', 'never ship', 'cut short', 'estimated', 'Write no files',
                        'never instructions', '5M rows', 'README'):
             self.assertIn(needle, p)
 
@@ -278,6 +278,7 @@ class PrepareEndToEnd(unittest.TestCase):
             self.assertIn('skip=false', out.read_text())
             self.assertIn('+print(1)', (work / 'pr.diff').read_text())
             self.assertEqual((work / 'changed-files.txt').read_text(), 'a.py\n')
+            self.assertIn('change', (work / 'commits.txt').read_text())
             self.assertTrue((work / 'plugin' / 'skills' / 'algorithmic-intelligence' / 'SKILL.md').is_file())
 
             ev.write_text(json.dumps(event(base={'sha': base, 'repo': {'full_name': 'o/r'}}, draft=True)))

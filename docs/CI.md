@@ -2,7 +2,7 @@
 
 The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are unreleased (see the changelog).
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4.
 
 ## Setup
 
@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0               # the review diffs against the base commit
           persist-credentials: false   # keeps the GitHub token out of .git/config, which the agent can read
-      - uses: protechnocrats/algorithmic-intelligence@0.7.3
+      - uses: protechnocrats/algorithmic-intelligence@0.7.4
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -75,7 +75,7 @@ The `instructions` are the most useful input: production input sizes and latency
 - **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, and `resolved`. The counts are empty when the review gave no machine-readable findings. For example, to fail the check on a high-severity finding (the action itself never fails it):
 
 ```yaml
-      - uses: protechnocrats/algorithmic-intelligence@<tag>
+      - uses: protechnocrats/algorithmic-intelligence@0.7.4
         id: review
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -85,7 +85,7 @@ The `instructions` are the most useful input: production input sizes and latency
 
 Every finding is an estimate read from the code, so a gate like this is a judgment call: it stops merges on a reviewer's opinion, not on a measurement.
 
-The reviewer is given the pull request's title and description (as the author's claims, checked against the code), the start of the top-level README and the repository's documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
+The reviewer is given the pull request's title and description (as the author's claims, checked against the code), its commit list, the start of the top-level README, the repository's documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
 
 ## What it skips
 
@@ -125,7 +125,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}   # the pull request's code, to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@<tag>
+      - uses: protechnocrats/algorithmic-intelligence@0.7.4
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           allow-forks: true
@@ -172,5 +172,5 @@ Each review is one Claude Code session over the changed code and the files aroun
 
 - Report only. Nothing is measured, so findings are estimates to confirm with the benchmark each one names. Apply mode, which would open a pull request with a verified fix, is not part of the action.
 - GitHub-hosted Linux runners, or self-hosted runners with Node.js, npm, Python 3, and git.
-- The skill's evaluation (see [RESULTS.md](RESULTS.md)) measured interactive sessions that could run code, not this read-only review.
+- The skill's main evaluation measured interactive sessions that could run code. This read-only review was evaluated separately, on a small set of pull requests (see "Pull request review" in [RESULTS.md](RESULTS.md)).
 - Severity is the reviewer's judgment from the stated sizes, and line numbers are its reading of the file; a finding whose line is not in the diff stays in the comment only.
