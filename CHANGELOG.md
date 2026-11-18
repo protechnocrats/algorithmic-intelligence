@@ -6,6 +6,27 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-11-18
+
+The pull request review becomes part of the review on GitHub: new findings go on the changed lines they concern, the comment says what changed since the last review, a clean pull request gets no comment, unchanged code is not reviewed twice, and the outputs give finding counts to the rest of your workflow. Fork pull requests can be reviewed when you opt in. The skill's files and the plugin's behavior are the same as in 0.7.3.
+
+### Added
+
+- Pull request review: new findings are also posted as review comments on the changed lines they concern (`inline-comments`, `max-inline-comments`, `inline-min-severity`, medium by default).
+- Pull request review: the comment opens with what changed since the last review (new, still present, resolved), and the reviewer is told the earlier findings so it can say which are fixed. A finding keeps its id (P1, P2, ...) across reviews.
+- Pull request review: step outputs `status`, `findings`, `high`, `medium`, `low`, `clean`, and `resolved`, for labels or an opt-in gate in your own workflow.
+- Pull request review: fork pull requests can be reviewed through a `pull_request_target` workflow with `allow-forks`, limited to `fork-authors` or pull requests a maintainer labels with `fork-label`.
+- Pull request review: the reviewer reads the pull request's title and description (as claims to check), its commit list, and the start of the top-level README, and is given the repository's documentation files by name.
+
+### Changed
+
+- Pull request review: a review that finds nothing posts no comment unless `comment-on-clean` is `true`; an earlier comment is updated to say its findings are gone.
+- Pull request review: a push that leaves the pull request's code unchanged since the last review (documentation, a clean rebase, a re-run) is not reviewed again.
+- Pull request review: the diff is taken from the merge base (`base...HEAD`), so it is right whether the checkout is the merge commit or the pull request's head.
+- Pull request review: the reviewer judges the pull request's net change, and no longer reports that it could not verify a code comment comparing the code with an intermediate version from the same pull request.
+- Pull request review: line numbers are taken from the file, not from the diff, and checked against the line of code each finding quotes before a comment is placed.
+- Pull request review: the action refuses to run when the checkout kept the GitHub token in `.git/config`, where the agent could read it.
+
 ## [0.7.3] - 2026-11-17
 
 The pull request review comment now says it was written by an AI model and links to a place to report a wrong review, and the CI documentation says what data the action sends and where to get support. The skill's files and the plugin's behavior are the same as in 0.7.2.
