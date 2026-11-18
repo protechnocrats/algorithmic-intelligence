@@ -151,6 +151,17 @@ class FixLines(unittest.TestCase):
             self.assertEqual(near[0]['line'], 3)
 
 
+class Ids(unittest.TestCase):
+    def test_repeated_findings_keep_their_id_and_new_ones_never_reuse(self):
+        prev = [{'id': 'P2', 'title': 'memory'}]
+        findings = [{'previous': None}, {'previous': 'P2'}, {'previous': 'P2'}, {'previous': 'P9'}]
+        n = review.assign_ids(findings, prev, next_id=3)
+        self.assertEqual([f['id'] for f in findings], ['P3', 'P2', 'P4', 'P5'])
+        self.assertEqual(n, 6)
+        first = [{'previous': None}, {'previous': None}]
+        self.assertEqual((review.assign_ids(first, []), [f['id'] for f in first]), (3, ['P1', 'P2']))
+
+
 class Inline(unittest.TestCase):
     DIFF = ('diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1,3 +1,4 @@\n x\n+y\n z\n-w\n+v\n'
             'diff --git a/gone.py b/gone.py\n--- a/gone.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-q\n')

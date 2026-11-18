@@ -438,7 +438,9 @@ def prepare():
         (work / 'previous-findings.json').write_text(json.dumps(
             [{k: f.get(k) for k in ('id', 'severity', 'kind', 'file', 'line', 'title')} for f in previous], indent=1) + '\n')
     (work / 'inline.json').write_text(json.dumps(inline_map(base, head_sha, changed)))
-    (work / 'context.json').write_text(json.dumps({'fingerprint': fingerprint, 'sha': head_sha, 'previous': previous}))
+    next_id = (state or {}).get('next')
+    (work / 'context.json').write_text(json.dumps({'fingerprint': fingerprint, 'sha': head_sha, 'previous': previous,
+                                                   'next': next_id if isinstance(next_id, int) else None}))
     docs = doc_files()
     (work / 'prompt.txt').write_text(build_prompt(number, work, cut, instructions, docs, bool(title or body), bool(previous),
                                                   readme_excerpt(docs)))
@@ -566,6 +568,23 @@ def fix_lines(findings, root='.'):
     return findings
 
 
+def assign_ids(findings, previous, next_id=None):
+    """Stable ids across reviews: a finding repeating an earlier one keeps its id; new ones get ids never used on this
+    pull request. Returns the next unused number."""
+    known = {f.get('id') for f in previous}
+    used = [int(i[1:]) for i in known if isinstance(i, str) and re.fullmatch(r'P\d{1,3}', i)]
+    n = max([next_id or 1] + [u + 1 for u in used])
+    taken = set()
+    for f in findings:
+        if f['previous'] in known and f['previous'] not in taken:
+            f['id'] = f['previous']
+            taken.add(f['id'])
+    for f in findings:
+        if 'id' not in f:
+            f['id'], n = f'P{n}', n + 1
+    return n
+
+
 def inline_comments(findings, imap, existing, limit, min_severity='medium'):
     """Review comments for new findings at or above min_severity on lines GitHub accepts, highest severity first,
     skipping any already posted."""
@@ -616,11 +635,10 @@ def post():
         if data is None:
             notice('warning', 'The review gave no machine-readable findings; the comment has the report, the outputs do not.')
     findings = fix_lines(data['findings']) if data else []
-    for i, f in enumerate(findings, 1):
-        f['id'] = f'P{i}'
+    next_id = assign_ids(findings, previous, context.get('next'))
     clean = bool(result['ok'] and data is not None and not findings)
     state = {'fingerprint': context.get('fingerprint'), 'sha': context.get('sha'), 'ok': bool(result['ok'] and data is not None),
-             'findings': [{k: f[k] for k in ('id', 'severity', 'kind', 'file', 'line', 'title')} for f in findings]}
+             'next': next_id, 'findings': [{k: f[k] for k in ('id', 'severity', 'kind', 'file', 'line', 'title')} for f in findings]}
     set_output('status', 'reviewed' if result['ok'] else 'failed')
     for k, v in counts(findings).items():
         set_output(k, v if data is not None else '')
