@@ -1,6 +1,6 @@
 # Evaluation results
 
-The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 to 0.7.4 change no skill files or plugin behavior), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
+The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 to 0.7.5 change no skill files or plugin behavior), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
 
 | Metric | No skill | 0.7.0 | Difference (95% interval) |
 |---|---|---|---|
@@ -38,20 +38,24 @@ The same coding agent with and without the current release (0.7.0, with its plug
 
 ## Pull request review (CI)
 
-The GitHub Action's read-only review (see [CI.md](CI.md)), evaluated separately: 12 private pull request cases in six languages, 7 that introduce a performance problem and 5 that add none, 3 runs each (36 reviews), Claude Code with Claude Sonnet 5.5, run exactly as the action runs it.
+The GitHub Action's read-only review (see [CI.md](CI.md)), evaluated separately on private pull request cases, 3 runs each, Claude Code with Claude Sonnet 5.5, run exactly as the action runs it:
 
-| Metric | 0.7.4 |
-|---|---|
-| Problem found, on the right line | 21/21 |
-| At the expected severity | 21/21 |
-| Clean pull requests with a medium or high finding | 0/15 |
-| Clean pull requests with no finding at all | 13/15 |
-| Cost per review | $0.09 |
-| Time per review | 19 s |
+- **Basic set:** 12 cases in six languages, 7 that introduce a well-known performance problem and 5 that add none; one or two files and 20 to 40 changed lines each.
+- **Hard set:** 13 cases: a problem in a helper called from another file, sizes stated only in an operations document, an existing function moved onto a per-request path, one problem buried in a 400-line refactor, lazy-loading N+1 queries, a set rebuilt per row, sequential awaits, a query on an unindexed column, and a catastrophic-backtracking regex; and 4 that add none, three of them built to look slow (a loop bounded by the 7 weekdays, a call served from an existing cache, a two-pointer merge) and one that edits a file holding an existing quadratic function it does not touch.
+
+| Metric | Basic set | Hard set |
+|---|---|---|
+| Problem found, on the right line | 21/21 | 27/27 |
+| At the expected severity | 21/21 | 27/27 |
+| Pull requests adding no problem with a medium or high finding | 0/15 | 0/12 |
+| Existing problem the pull request does not touch reported | | 0/3 |
+| Pull requests adding no problem that get a comment (default settings) | 0/15 | 0/12 |
+| Cost per review | $0.09 | $0.10 |
+| Time per review | 19 s | 24 s |
 
 Limits:
 
-- The cases are small (one or two files, 20 to 40 changed lines) and the problems are well known, so both results sit at the ceiling: they show the review catches common problems without false alarms, not how it does on subtle ones.
-- An earlier run of the same cases found that the reviewer gave line numbers from the diff file instead of the source file; 0.7.4 fixes this before release, and the table is from the fixed version. Some fixes made after this run, from a live test on a real pull request, were not measured here.
-- Unlike the skill's evaluation above, there is no comparison condition: this measures the review itself.
-
+- The hard set was measured with 0.7.5's instructions. The basic set was measured during 0.7.4's development, before the last changes to the instructions; it was not rerun.
+- With 0.7.4's instructions, 3 of the 12 hard-set reviews of pull requests adding no problem had a medium finding, all on one case: a cost paid once a day. 0.7.5 weighs how often a cost is paid, and the table is from that version.
+- Most reviews of pull requests adding no problem still list a low note (3 of 12 hard-set reviews had no finding at all); with `comment-min-severity` at its default, those notes go to the job summary instead of a comment.
+- Both sets are at or near the ceiling, and they were written by the maintainers with knowledge of the answers: they show what the review catches, not how often it misses problems in the wild. There is no comparison condition: this measures the review itself.

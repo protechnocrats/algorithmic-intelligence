@@ -6,6 +6,19 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-11-18
+
+The pull request review is quieter: a review whose findings are all low severity no longer posts a comment, and severity now weighs how often a cost is paid. The action is listed on the GitHub Marketplace under its new name, "Algorithmic Intelligence". The skill's files and the plugin's behavior are the same as in 0.7.4.
+
+### Added
+
+- Pull request review: `comment-min-severity` (medium by default). A review whose findings are all below it posts no new comment, as if it were clean; its findings stay in the job summary and the outputs, and an existing comment is still updated. Set it to `low` to get a comment for every finding, as in 0.7.4.
+
+### Changed
+
+- The GitHub Action is listed on the GitHub Marketplace as "Algorithmic Intelligence" (was "Algorithmic Intelligence review"). Workflows refer to it by repository path, so none need changing.
+- Pull request review: severity weighs how often a cost is paid, so a cost paid once per process, per cache refresh, or per deploy is rated low unless that one occurrence breaks a stated target.
+
 ## [0.7.4] - 2026-11-18
 
 The pull request review becomes part of the review on GitHub: new findings go on the changed lines they concern, the comment says what changed since the last review, a clean pull request gets no comment, unchanged code is not reviewed twice, and the outputs give finding counts to the rest of your workflow. Fork pull requests can be reviewed when you opt in. The skill's files and the plugin's behavior are the same as in 0.7.3.

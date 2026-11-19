@@ -2,7 +2,7 @@
 
 The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4.
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5.
 
 ## Setup
 
@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0               # the review diffs against the base commit
           persist-credentials: false   # keeps the GitHub token out of .git/config, which the agent can read
-      - uses: protechnocrats/algorithmic-intelligence@0.7.4
+      - uses: protechnocrats/algorithmic-intelligence@0.7.5
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -57,6 +57,7 @@ The `instructions` are the most useful input: production input sizes and latency
 | `instructions` | | Production sizes, latency targets, and constraints, passed to the reviewer. |
 | `comment` | `true` | When `false`, the report goes only to the job summary. |
 | `comment-on-clean` | `false` | Post a comment when the review finds nothing. When `false`, a clean review goes only to the job summary, and an earlier comment is updated to say its findings are gone. |
+| `comment-min-severity` | `medium` | A review whose findings are all below this severity (`high`, `medium`, or `low`) posts no new comment, as if clean. Set `low` for a comment on every finding. |
 | `inline-comments` | `true` | Also post new findings as review comments on the changed lines they concern. |
 | `max-inline-comments` | `10` | At most this many review comments on changed lines per push, highest severity first. |
 | `inline-min-severity` | `medium` | Lowest severity posted on the changed lines (`high`, `medium`, or `low`); lower findings stay in the comment. |
@@ -71,11 +72,11 @@ The `instructions` are the most useful input: production input sizes and latency
 
 - **One comment, updated on each push.** The report, with a line at the top comparing it with the previous review: how many findings are new, still present, and resolved, and which were resolved.
 - **Review comments on the changed lines.** Each new finding of at least `inline-min-severity` (medium by default) that points at a line the pull request changes is also posted on that line, highest severity first, up to `max-inline-comments`. Findings repeated from an earlier review are not posted again.
-- **Quiet when there is nothing to say.** A review that finds nothing posts no comment unless `comment-on-clean` is `true`; the job summary still has it. If an earlier comment listed findings, it is updated to say they are gone.
+- **Quiet when there is nothing to say.** A review that finds nothing, or only findings below `comment-min-severity` (medium by default), posts no new comment unless `comment-on-clean` is `true`; the job summary and the outputs still have its findings. If an earlier comment exists, it is updated: to say its findings are gone, or with the new report.
 - **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, and `resolved`. The counts are empty when the review gave no machine-readable findings. For example, to fail the check on a high-severity finding (the action itself never fails it):
 
 ```yaml
-      - uses: protechnocrats/algorithmic-intelligence@0.7.4
+      - uses: protechnocrats/algorithmic-intelligence@0.7.5
         id: review
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -125,7 +126,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}   # the pull request's code, to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@0.7.4
+      - uses: protechnocrats/algorithmic-intelligence@0.7.5
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           allow-forks: true
