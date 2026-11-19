@@ -40,6 +40,10 @@ inputs:
     description: Post a comment when the review finds nothing. When false, a clean review goes only to the job summary (an earlier comment is updated to say its findings are gone).
     required: false
     default: 'false'
+  comment-min-severity:
+    description: A review whose findings are all below this severity (high, medium, or low) posts no new comment, as if clean; its findings stay in the job summary and the outputs. An existing comment is still updated.
+    required: false
+    default: medium
   inline-comments:
     description: Also post new findings as review comments on the changed lines they concern.
     required: false
@@ -151,6 +155,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
+        INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
         INPUT_INLINE_COMMENTS: ${{ inputs.inline-comments }}
         INPUT_MAX_INLINE_COMMENTS: ${{ inputs.max-inline-comments }}
         INPUT_INLINE_MIN_SEVERITY: ${{ inputs.inline-min-severity }}

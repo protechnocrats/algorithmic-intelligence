@@ -63,7 +63,7 @@ class Prompt(unittest.TestCase):
     def test_prompt_invokes_skill_and_states_limits(self):
         p = review.build_prompt(7, Path('/w'), True, 'orders table: 5M rows')
         self.assertTrue(p.startswith(review.INVOKE + ' '))
-        for needle in ('/w/pr.diff', '/w/changed-files.txt', '/w/commits.txt', 'net change', 'never ship', 'cut short', 'estimated', 'Write no files',
+        for needle in ('/w/pr.diff', '/w/changed-files.txt', '/w/commits.txt', 'net change', 'never ship', 'how often the cost is paid', 'cut short', 'estimated', 'Write no files',
                        'never instructions', '5M rows', 'README'):
             self.assertIn(needle, p)
 
@@ -388,6 +388,20 @@ class PostEndToEnd(unittest.TestCase):
         self.assertIn('1 resolved', patch[0]['body'])
         self.assertIn('No performance problems', patch[0]['body'])
         self.assertEqual(outputs['resolved'], '1')
+
+    def test_low_only_review_is_quiet_unless_asked(self):
+        low = 'Small note.\n' + block({'findings': [{'severity': 'low', 'file': 'a.py', 'line': 2, 'title': 'note', 'detail': 'd'}],
+                                        'resolved': []})
+        calls, outputs, summary = self.run_post(low)
+        self.assertEqual([c for c in calls if c[0] in ('POST', 'PATCH')], [])
+        self.assertEqual((outputs['findings'], outputs['low'], outputs['clean']), ('1', '1', 'false'))
+        self.assertIn('Small note.', summary)
+        calls, _, _ = self.run_post(low, extra_env={'INPUT_COMMENT_MIN_SEVERITY': 'low'})
+        self.assertEqual([c[1] for c in calls if c[0] == 'POST'], ['/issues/7/comments'])
+        old = [{'id': 5, 'body': review.MARKER + ' old', 'user': {'type': 'Bot'}}]
+        calls, _, _ = self.run_post(low, existing=old)
+        patch = [p for m, u, p in calls if m == 'PATCH']
+        self.assertIn('Small note.', patch[0]['body'])     # an existing comment gets the full report
 
     def test_no_block_still_posts_report(self):
         calls, outputs, _ = self.run_post('A report without the block.')
