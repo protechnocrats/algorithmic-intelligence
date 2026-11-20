@@ -19,6 +19,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Changed
 
+- Pull request review: a review that does not finish now fails the job (it passed with a warning before), so a broken setup shows as a red check; the comment still says why. `fail-on-error: false` restores the old behavior.
 - Pull request review: a review that does not finish keeps the last report that did in the comment, with a note on top, instead of replacing it; its comparison with the last review survives too.
 - Pull request review: a quiet review (no comment posted) keeps its fingerprint in the Actions cache, so a push of the same code is not reviewed and paid for again.
 - Pull request review: Claude Code is installed with `npm ci` from a lockfile holding the integrity hash of every package, with install scripts disabled except Claude Code's own (which puts its native binary in place), and the install checks that the binary runs.

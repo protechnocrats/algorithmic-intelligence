@@ -20,7 +20,8 @@ process:
                        pushes, review comments on the changed lines, the job summary, step outputs, and SARIF when
                        asked; resolves the review threads of findings the push fixed. Has the GitHub token, not the
                        model credentials.
-  review.py gate       fails the job when fail-on-severity asks for it. Has neither.
+  review.py gate       fails the job when the review did not finish (fail-on-error) or when fail-on-severity
+                       asks for it. Has neither.
 
 The agent ends its report with a fenced `ai-review-findings` block of JSON; everything taken from it is
 validated, because the repository under review can steer what the agent writes.
@@ -1171,15 +1172,23 @@ def post():
 
 
 def gate():
-    """fail-on-severity: fail the job when the review has a finding at or above it. A review that did not finish,
-    or was skipped, never fails the job."""
+    """The last step: fail the job when the review did not finish (fail-on-error, on by default), or when it has a
+    finding at or above fail-on-severity (off by default). A skipped review never fails it."""
+    status = env('AI_STATUS')
+    if status == 'failed':
+        error = read_json(Path(env('AI_WORK') or '.') / 'result.json', {}).get('error') or 'unknown error'
+        if (env('INPUT_FAIL_ON_ERROR') or 'true').lower() != 'false':
+            notice('error', f'The review did not finish ({error[:300]}); nothing in this pull request was judged. Re-run '
+                            'the job; set fail-on-error: false to let a review that does not finish pass.')
+            return 1
+        notice('warning', f'The review did not finish ({error[:300]}); passing because fail-on-error is false.')
+        return 0
     wanted = env('INPUT_FAIL_ON_SEVERITY').lower()
     if not wanted:
         return 0
     if wanted not in SEVERITIES:
         notice('error', f'fail-on-severity is "{wanted}"; it must be high, medium, low, or empty.')
         return 1
-    status = env('AI_STATUS')
     if status not in ('reviewed', 'unchanged') or env('AI_HIGH') == '':
         notice('notice', f'fail-on-severity not applied: the review {status or "did not run"}'
                          f'{" without machine-readable findings" if status in ("reviewed", "unchanged") else ""}.')

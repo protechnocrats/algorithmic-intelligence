@@ -725,9 +725,19 @@ class Gate(unittest.TestCase):
         self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_MEDIUM=4), 0)
         self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='medium', AI_MEDIUM=1), 1)
         self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_STATUS='unchanged', AI_HIGH=1), 1)
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_STATUS='failed', AI_HIGH=''), 0)
+        self.assertEqual(self.gate(AI_STATUS='skipped', AI_HIGH=''), 0)
         self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_HIGH=''), 0)    # no machine-readable findings
         self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='bogus'), 1)
+
+    def test_a_review_that_did_not_finish_fails_unless_turned_off(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'result.json').write_text(json.dumps({'ok': False, 'error': 'could not start Claude Code'}))
+            with mock.patch.dict(os.environ, {'AI_WORK': d, 'AI_STATUS': 'failed', 'AI_HIGH': '', 'INPUT_FAIL_ON_SEVERITY': '',
+                                              'INPUT_FAIL_ON_ERROR': ''}), mock.patch('builtins.print') as p:
+                self.assertEqual(review.gate(), 1)                                   # on by default
+                self.assertIn('could not start Claude Code', p.call_args[0][0])
+                with mock.patch.dict(os.environ, {'INPUT_FAIL_ON_ERROR': 'false'}):
+                    self.assertEqual(review.gate(), 0)
 
 
 class PrepareMore(unittest.TestCase):

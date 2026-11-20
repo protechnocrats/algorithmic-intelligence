@@ -69,9 +69,13 @@ inputs:
     required: false
     default: 'true'
   fail-on-severity:
-    description: Fail the job when the review has a finding at or above this severity (high, medium, or low). Empty never fails it. A review that does not finish never fails it.
+    description: Fail the job when the review has a finding at or above this severity (high, medium, or low). Empty never fails it on findings.
     required: false
     default: ''
+  fail-on-error:
+    description: Fail the job when the review does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached). The comment still says why. false lets such a run pass, as before 0.7.6.
+    required: false
+    default: 'true'
   sarif:
     description: Also write the findings as SARIF, for github/codeql-action/upload-sarif (the sarif-file output gives its path).
     required: false
@@ -272,10 +276,11 @@ runs:
         path: ${{ runner.temp }}/algorithmic-intelligence-quiet
         key: ${{ steps.prepare.outputs.cache-key }}
 
-    - name: Fail on findings at or above fail-on-severity
-      if: inputs.fail-on-severity != ''
+    - name: Check the result (fail-on-error, fail-on-severity)
       shell: bash
       env:
+        AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
         INPUT_FAIL_ON_SEVERITY: ${{ inputs.fail-on-severity }}
         AI_STATUS: ${{ steps.post.outputs.status || steps.unchanged.outputs.status || steps.prepare.outputs.status }}
         AI_HIGH: ${{ steps.post.outputs.high || steps.unchanged.outputs.high || steps.prepare.outputs.high }}

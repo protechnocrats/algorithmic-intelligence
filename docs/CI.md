@@ -71,7 +71,8 @@ The file is read from the base commit, never from the pull request, so a pull re
 | `require-label` | | Review only pull requests carrying this label. Add `labeled` to the workflow's `pull_request` types. |
 | `command-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose `/perf-review` comments are obeyed. |
 | `resolve-threads` | `true` | Resolve this action's review threads when their finding is fixed or dismissed. |
-| `fail-on-severity` | | Fail the job when the review has a finding at or above this severity. Empty never fails it. |
+| `fail-on-error` | `true` | Fail the job when the review does not finish. `false` lets such a run pass. |
+| `fail-on-severity` | | Fail the job when the review has a finding at or above this severity. Empty never fails it on findings. |
 | `sarif` | `false` | Also write the findings as SARIF for code scanning (see "Code scanning"). |
 | `comment` | `true` | When `false`, the report goes only to the job summary. |
 | `comment-on-clean` | `false` | Post a comment when the review finds nothing. When `false`, a clean review goes only to the job summary, and an earlier comment is updated to say its findings are gone. |
@@ -94,7 +95,7 @@ The file is read from the base commit, never from the pull request, so a pull re
 - **Threads that close themselves.** When a push fixes a finding, the review comment on its line gets a short reply and is resolved (`resolve-threads`). A dismissed finding's thread is resolved the same way.
 - **A failed run keeps the last report.** When a review does not finish (budget, timeout, an API error), the comment keeps the last report that did, with a note on top saying the latest run failed, so a transient error never wipes useful findings.
 - **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, `resolved`, and `sarif-file`. The counts are empty when the review gave no machine-readable findings.
-- **An opt-in gate.** `fail-on-severity: high` fails the job when the review has a high-severity finding (`medium` or `low` include those too); dismissed findings do not count. A review that did not finish, or was skipped, never fails the job, and a push of unchanged code fails it again if the last review did.
+- **An opt-in gate.** `fail-on-severity: high` fails the job when the review has a high-severity finding (`medium` or `low` include those too); dismissed findings do not count. A skipped review never fails it on findings, and a push of unchanged code fails it again if the last review did.
 
 Every finding is an estimate read from the code, so a gate is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Pair it with dismissals, so a maintainer can overrule a finding they disagree with.
 
@@ -150,7 +151,7 @@ A dismissal needs no model and is recorded without a review. A comment from anyo
 - Pushes that leave the code unchanged since the last review: documentation edits, a clean rebase, or a re-run. The comment records a fingerprint of the pull request's code changes, the `instructions` and configuration file, and the action version, and a push with the same fingerprint is not reviewed again (the `status` output is `unchanged`, and the counts repeat the last review's). A quiet review, which posts no comment, keeps its fingerprint in the Actions cache instead, so a clean pull request is not paid for again either; where the cache is unavailable, its next push is reviewed again.
 - Pull requests from forks, unless you set them up as described below. GitHub does not give workflows triggered by a fork's pull request (`pull_request`) the repository's secrets, so there are no model credentials; the run says so and passes.
 
-A review that fails (budget reached, timeout, authentication error) says so in the comment, above the last report that finished if there is one, and does not fail the check, so it never blocks a merge. Network errors while posting are warnings, not failures. The action fails the job only for a broken setup (the checks in "Pull requests from forks", an unknown `provider`) or when you ask it to with `fail-on-severity`.
+A review that does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached) says so in the comment, above the last report that finished if there is one, and fails the job, so a broken setup shows as a red check instead of hiding behind a green one; re-run the job once the cause is fixed. If you make the check required, an API outage then blocks merges until a re-run succeeds; set `fail-on-error: false` to let such a run pass, as it did before. Network errors while posting are warnings, not failures. The action also fails the job for a broken setup (the checks in "Pull requests from forks", an unknown `provider`), and when you ask it to with `fail-on-severity`.
 
 ## Pull requests from forks
 
