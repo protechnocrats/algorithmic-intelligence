@@ -19,6 +19,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Changed
 
+- Pull request review: a cost that grows faster than linearly in an input whose size nothing states or bounds is rated at least medium, with the unknown size said, and new code is not rated lower because nothing calls it yet. A quadratic helper was rated low, and so posted no comment, when the reviewer assumed a small input.
 - Pull request review: the example workflows no longer run on draft pull requests (a job-level `if:`), so a draft shows the check as skipped instead of a green pass that reviewed nothing; marking it ready for review reviews it.
 - Pull request review: a review that does not finish now fails the job (it passed with a warning before), so a broken setup shows as a red check; the comment still says why. `fail-on-error: false` restores the old behavior.
 - Pull request review: a review that does not finish keeps the last report that did in the comment, with a note on top, instead of replacing it; its comparison with the last review survives too.

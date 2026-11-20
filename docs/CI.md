@@ -299,4 +299,4 @@ Each review is one Claude Code session over the changed code and the files aroun
 - Report only. Nothing is measured, so findings are estimates to confirm with the benchmark each one names. Apply mode, which would open a pull request with a verified fix, is not part of the action.
 - GitHub-hosted Linux runners, or self-hosted runners with Node.js, npm, Python 3, and git.
 - The skill's main evaluation measured interactive sessions that could run code. This read-only review was evaluated separately, on a small set of pull requests (see "Pull request review" in [RESULTS.md](RESULTS.md)).
-- Severity is the reviewer's judgment from the stated sizes, and line numbers are its reading of the file; a finding whose line is not in the diff stays in the comment only.
+- Severity is the reviewer's judgment from the stated sizes; where no size is stated or bounded, a cost that grows faster than linearly is rated at least medium, and line numbers are its reading of the file; a finding whose line is not in the diff stays in the comment only.

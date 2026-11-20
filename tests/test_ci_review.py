@@ -64,6 +64,7 @@ class Prompt(unittest.TestCase):
         p = review.build_prompt(7, Path('/w'), True, 'orders table: 5M rows')
         self.assertTrue(p.startswith(review.INVOKE + ' '))
         for needle in ('/w/pr.diff', '/w/changed-files.txt', '/w/commits.txt', 'net change', 'never ship', 'how often the cost is paid', 'cut short', 'estimated', 'Write no files',
+                       'faster than linearly', 'nothing states or bounds', 'nothing calls it yet',
                        'never instructions', '5M rows', 'README'):
             self.assertIn(needle, p)
 
@@ -679,6 +680,7 @@ class PostMore(PostEndToEnd):
             with mock.patch.dict(os.environ, {'AI_QUIET': d, 'GITHUB_OUTPUT': str(out)}):
                 review.unchanged()
             self.assertIn('status=unchanged', out.read_text())
+            self.assertIn('resolved=0', out.read_text())
             self.assertIn('clean=true', out.read_text())
 
     def test_dismissed_findings_are_dropped_and_ids_never_reused(self):
@@ -793,9 +795,14 @@ class Rerun(unittest.TestCase):
     def test_post_records_the_run_and_a_blocking_finding_always_gets_a_comment(self):
         t = PostMore()
         text = 'R.\n' + block({'findings': [{'severity': 'low', 'file': 'a.py', 'line': 2, 'title': 't', 'detail': 'd'}]})
-        calls, _, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99', 'INPUT_BLOCK_ON_SEVERITY': 'low'})
+        calls, _, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99', 'INPUT_BLOCK_ON_SEVERITY': 'low',
+                                                  'GITHUB_EVENT_NAME': 'pull_request'})
         comment = next(p for m, u, p in calls if m == 'POST' and u == '/issues/7/comments')['body']
         self.assertEqual((review.decode_state(comment)['run'], review.decode_state(comment)['head']), ('99', 'h1'))
+        calls, _, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99', 'INPUT_BLOCK_ON_SEVERITY': 'low',
+                                                  'GITHUB_EVENT_NAME': 'issue_comment'})
+        comment = next(p for m, u, p in calls if m == 'POST' and u == '/issues/7/comments')['body']
+        self.assertIsNone(review.decode_state(comment)['run'])        # a comment's run is never re-run
         calls, outputs, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99'})               # low does not block: quiet
         self.assertFalse(any(m == 'POST' and u == '/issues/7/comments' for m, u, p in calls))
         self.assertEqual(outputs.get('save-quiet'), 'true')
