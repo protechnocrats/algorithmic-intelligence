@@ -181,6 +181,9 @@ class Inline(unittest.TestCase):
         self.assertEqual(len(review.inline_comments(low, {'lines': {'a.py': [1, 4]}}, [], 10, 'low')), 2)
         self.assertEqual(review.inline_comments(findings, {'lines': {'a.py': [1, 2, 3, 4]}}, [], 10, 'high')[0]['line'], 4)
         self.assertTrue(all(review.INLINE_MARKER in c['body'] and '@bob' not in c['body'] for c in out))
+        self.assertIn('> [!CAUTION]\n> **High · performance:**', out[0]['body'])     # high: GitHub's red callout
+        self.assertIn('> [!WARNING]\n> **Medium · performance:**', out[1]['body'])   # medium: orange
+        self.assertIn('> [!NOTE]', review.inline_comments([f(severity='low', line=1)], {'lines': {'a.py': [1]}}, [], 10, 'low')[0]['body'])
         self.assertEqual(len(review.inline_comments(findings, {'lines': {'a.py': [1, 2, 3, 4]}}, [], 1)), 1)
         posted = [{'path': 'a.py', 'line': 3, 'title': 't @bob'}]           # the same problem near the same line
         self.assertEqual(review.inline_comments(findings, {'lines': {'a.py': [1, 2, 3, 4]}}, posted, 10), [])
@@ -383,6 +386,7 @@ class PostEndToEnd(unittest.TestCase):
         comment = next(p for m, u, p in posts if u == '/issues/7/comments')['body']
         self.assertIn('Report.', comment)
         self.assertNotIn(review.FINDINGS_TAG, comment)
+        self.assertIn('🔴 1 high · 🟠 0 medium · 🔵 1 low', comment)
         state = review.decode_state(comment)
         self.assertEqual((state['fingerprint'], state['ok'], [f['id'] for f in state['findings']]), ('f1', True, ['P1', 'P2']))
         reviews = [p for m, u, p in posts if u == '/pulls/7/reviews']

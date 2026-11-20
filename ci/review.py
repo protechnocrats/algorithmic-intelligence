@@ -972,11 +972,23 @@ def since_last(previous, data):
     return '\n'.join(rows) + '\n\n'
 
 
+ALERT = {'high': 'CAUTION', 'medium': 'WARNING', 'low': 'NOTE'}     # GitHub's red, orange, and blue callouts
+DOT = {'high': '🔴', 'medium': '🟠', 'low': '🔵'}
+
+
+def severity_line(findings):
+    """'🔴 1 high · 🟠 0 medium · 🔵 2 low', or '' when there are no findings."""
+    if not findings:
+        return ''
+    n = counts(findings)
+    return ' · '.join(f'{DOT[s]} {n[s]} {s}' for s in SEVERITIES) + '\n\n'
+
+
 def comment_body(result, run_url, data=None, previous=None, state=None):
     head = f'{MARKER}\n{HEADING}'
     if result['ok']:
         report = result.get('report', result['text'])
-        body = since_last(previous, data) + sanitize(report)
+        body = severity_line((data or {}).get('findings')) + since_last(previous, data) + sanitize(report)
     else:
         body = f'The review did not finish ({sanitize(result["error"])[:500]}). Nothing in this pull request was judged.'
     body += dismissed_section((state or {}).get('dismissed'))
@@ -1061,7 +1073,8 @@ def inline_comments(findings, imap, existing, limit, min_severity='medium'):
                                                           'title': c.get('title')}, f) for c in existing):
             continue
         tag = f'<!-- ai-finding:{f["id"]} -->\n' if f.get('id') else ''
-        body = (f'{INLINE_MARKER}\n{tag}**{f["severity"]} · {f["kind"]}:** {sanitize(f["title"])}\n\n{sanitize(f["detail"])}\n\n'
+        body = (f'{INLINE_MARKER}\n{tag}> [!{ALERT[f["severity"]]}]\n'
+                f'> **{f["severity"].capitalize()} · {f["kind"]}:** {one_line(f["title"], 200)}\n\n{sanitize(f["detail"])}\n\n'
                 f'<sub>Algorithmic Intelligence review, written by an AI model; an estimate from reading the code. '
                 f'Reply `{COMMAND} dismiss` to stop it being reported on this pull request. '
                 f'[Report a problem]({REPORT_PROBLEM})</sub>')

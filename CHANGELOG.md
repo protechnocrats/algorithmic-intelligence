@@ -19,6 +19,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Changed
 
+- Pull request review: severity is shown in color. Review comments on changed lines open with GitHub's callout for their severity (red Caution for high, orange Warning for medium, blue Note for low), and the main comment opens with a count per severity (🔴 high · 🟠 medium · 🔵 low).
 - Pull request review: a cost that grows faster than linearly in an input whose size nothing states or bounds is rated at least medium, with the unknown size said, and new code is not rated lower because nothing calls it yet. A quadratic helper was rated low, and so posted no comment, when the reviewer assumed a small input.
 - Pull request review: the example workflows no longer run on draft pull requests (a job-level `if:`), so a draft shows the check as skipped instead of a green pass that reviewed nothing; marking it ready for review reviews it.
 - Pull request review: a review that does not finish now fails the job (it passed with a warning before), so a broken setup shows as a red check; the comment still says why. `fail-on-error: false` restores the old behavior.
