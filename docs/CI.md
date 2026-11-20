@@ -2,7 +2,7 @@
 
 The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/perf-review` commands and dismissals, resolved review threads, `fail-on-severity`, SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are unreleased (in the development version).
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/perf-review` commands and dismissals, replies on review threads, the blocking commit status (`block-on-severity`), SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are unreleased (in the development version).
 
 ## Setup
 
@@ -19,6 +19,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write        # the "Algorithmic Intelligence" commit status
 
 concurrency:
   group: performance-review-${{ github.event.pull_request.number }}
@@ -72,7 +73,7 @@ The file is read from the base commit, never from the pull request, so a pull re
 | `command-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose `/perf-review` comments are obeyed. |
 | `reply-to-threads` | `true` | Reply on this action's review threads when their finding is fixed or dismissed; the developer resolves them. |
 | `fail-on-error` | `true` | Fail the job when the review does not finish. `false` lets such a run pass. |
-| `fail-on-severity` | | Fail the job when the review has a finding at or above this severity. Empty never fails it on findings. |
+| `block-on-severity` | `high` | A finding at or above this severity (`high`, `medium`, or `low`) sets the "Algorithmic Intelligence" commit status to failure until it is fixed or dismissed. Empty never blocks. See "Blocking merges". |
 | `sarif` | `false` | Also write the findings as SARIF for code scanning (see "Code scanning"). |
 | `comment` | `true` | When `false`, the report goes only to the job summary. |
 | `comment-on-clean` | `false` | Post a comment when the review finds nothing. When `false`, a clean review goes only to the job summary, and an earlier comment is updated to say its findings are gone. |
@@ -94,10 +95,21 @@ The file is read from the base commit, never from the pull request, so a pull re
 - **Quiet when there is nothing to say.** A review that finds nothing, or only findings below `comment-min-severity` (medium by default), posts no new comment unless `comment-on-clean` is `true`; the job summary and the outputs still have its findings. If an earlier comment exists, it is updated: to say its findings are gone, or with the new report.
 - **Threads that say when they are done.** When a push fixes a finding, its review comment gets a reply saying so, and a dismissed finding's comment gets one naming who dismissed it (`reply-to-threads`). The action leaves the conversation open for the developer to resolve, so resolving it records that a person read the outcome; it needs no more than `pull-requests: write`.
 - **A failed run keeps the last report.** When a review does not finish (budget, timeout, an API error), the comment keeps the last report that did, with a note on top saying the latest run failed, so a transient error never wipes useful findings.
-- **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, `resolved`, and `sarif-file`. The counts are empty when the review gave no machine-readable findings.
-- **An opt-in gate.** `fail-on-severity: high` fails the job when the review has a high-severity finding (`medium` or `low` include those too); dismissed findings do not count. A skipped review never fails it on findings, and a push of unchanged code fails it again if the last review did.
+- **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, `resolved`, `blocked`, and `sarif-file`. The counts are empty when the review gave no machine-readable findings.
+- **A commit status that shows in the merge box.** See "Blocking merges".
 
-Every finding is an estimate read from the code, so a gate is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Pair it with dismissals, so a maintainer can overrule a finding they disagree with.
+## Blocking merges
+
+Besides its job, the action sets a commit status named **Algorithmic Intelligence** on the pull request's latest commit. The merge box shows it live, without reloading the page:
+
+- **failure** while the review has a finding at or above `block-on-severity` (`high` by default): its description names the findings and how to dismiss one.
+- **success** when nothing reaches that severity, or after the blocking findings are fixed or dismissed. A dismissal updates it at once: the action recomputes it without a new review.
+- **pending** while a review runs, and **error** when it does not finish (success instead with `fail-on-error: false`).
+- **success** with the reason when a pull request is not reviewed (documentation only, a draft, excluded files).
+
+Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it.
+
+Setting a status needs `statuses: write` in the workflow's permissions, as in the examples here. Without it the action says so in the log and fails the job on a blocking finding instead, so a block is never silently lost; that job does not turn green on a dismissal until it is re-run. Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
 
 The reviewer is given the pull request's title and description (as the author's claims, checked against the code), its commit list, the start of the top-level README, the repository's documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
 
@@ -106,7 +118,7 @@ The reviewer is given the pull request's title and description (as the author's 
 Maintainers (authors whose association is in `command-authors`) can steer the review from the pull request:
 
 - **`/perf-review`** as a comment reviews the pull request now, including a draft, one without the `require-label` label, or code already reviewed.
-- **`/perf-review dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads get a reply saying so (left open for you to resolve), later reviews are told not to report them, and they no longer count in the outputs or the gate. Replying **`/perf-review dismiss`** on one of the action's review comments dismisses that comment's finding.
+- **`/perf-review dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads get a reply saying so (left open for you to resolve), later reviews are told not to report them, they no longer count in the outputs, and the commit status turns green if nothing else blocks. Replying **`/perf-review dismiss`** on one of the action's review comments dismisses that comment's finding.
 
 Dismissals are read from the pull request's comments at the start of every review, so they work with the workflow above, taking effect on the next push. To have commands act at once, add a second workflow for comments; it runs from your default branch with your secrets, like `pull_request_target`, so it follows the same rules (read the pull request's code, never run it):
 
@@ -122,6 +134,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write        # the "Algorithmic Intelligence" commit status
 
 jobs:
   review:
@@ -151,7 +164,7 @@ A dismissal needs no model and is recorded without a review. A comment from anyo
 - Pushes that leave the code unchanged since the last review: documentation edits, a clean rebase, or a re-run. The comment records a fingerprint of the pull request's code changes, the `instructions` and configuration file, and the action version, and a push with the same fingerprint is not reviewed again (the `status` output is `unchanged`, and the counts repeat the last review's). A quiet review, which posts no comment, keeps its fingerprint in the Actions cache instead, so a clean pull request is not paid for again either; where the cache is unavailable, its next push is reviewed again.
 - Pull requests from forks, unless you set them up as described below. GitHub does not give workflows triggered by a fork's pull request (`pull_request`) the repository's secrets, so there are no model credentials; the run says so and passes.
 
-A review that does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached) says so in the comment, above the last report that finished if there is one, and fails the job, so a broken setup shows as a red check instead of hiding behind a green one; re-run the job once the cause is fixed. If you make the check required, an API outage then blocks merges until a re-run succeeds; set `fail-on-error: false` to let such a run pass, as it did before. Network errors while posting are warnings, not failures. The action also fails the job for a broken setup (the checks in "Pull requests from forks", an unknown `provider`), and when you ask it to with `fail-on-severity`.
+A review that does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached) says so in the comment, above the last report that finished if there is one, and fails the job, so a broken setup shows as a red check instead of hiding behind a green one; re-run the job once the cause is fixed. If you make the check required, an API outage then blocks merges until a re-run succeeds; set `fail-on-error: false` to let such a run pass, as it did before. Network errors while posting are warnings, not failures. The action also fails the job for a broken setup (the checks in "Pull requests from forks", an unknown `provider`), and on a blocking finding when it cannot set the commit status (see "Blocking merges").
 
 ## Pull requests from forks
 
@@ -167,6 +180,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write        # the "Algorithmic Intelligence" commit status
 
 concurrency:
   group: performance-review-${{ github.event.pull_request.number }}
@@ -205,6 +219,7 @@ Amazon Bedrock:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write        # the "Algorithmic Intelligence" commit status
   id-token: write
 ...
       - uses: aws-actions/configure-aws-credentials@<pinned SHA>

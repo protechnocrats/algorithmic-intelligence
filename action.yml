@@ -68,10 +68,10 @@ inputs:
     description: Reply on this action's review threads on the changed lines when the finding is fixed or dismissed. The threads stay open for the developer to resolve.
     required: false
     default: 'true'
-  fail-on-severity:
-    description: Fail the job when the review has a finding at or above this severity (high, medium, or low). Empty never fails it on findings.
+  block-on-severity:
+    description: A finding at or above this severity (high, medium, or low) sets the "Algorithmic Intelligence" commit status to failure until it is fixed or dismissed; require that status in a branch rule to block merging. Empty never blocks. Needs statuses write permission; without it, a blocking finding fails the job instead.
     required: false
-    default: ''
+    default: high
   fail-on-error:
     description: Fail the job when the review does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached). The comment still says why. false lets such a run pass, as before 0.7.6.
     required: false
@@ -154,6 +154,9 @@ outputs:
   sarif-file:
     description: Path of the SARIF file when sarif is true and the review gave machine-readable findings; empty otherwise.
     value: ${{ steps.post.outputs.sarif-file }}
+  blocked:
+    description: true when the review has a finding at or above block-on-severity.
+    value: ${{ steps.check.outputs.blocked }}
 
 runs:
   using: composite
@@ -174,6 +177,7 @@ runs:
         INPUT_REQUIRE_LABEL: ${{ inputs.require-label }}
         INPUT_COMMAND_AUTHORS: ${{ inputs.command-authors }}
         INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
         INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
@@ -198,6 +202,9 @@ runs:
       shell: bash
       env:
         AI_QUIET: ${{ runner.temp }}/algorithmic-intelligence-quiet
+        AI_HEAD: ${{ steps.prepare.outputs.head }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" unchanged
 
     - name: Install Claude Code (lockfile with integrity hashes)
@@ -266,6 +273,8 @@ runs:
         INPUT_INLINE_MIN_SEVERITY: ${{ inputs.inline-min-severity }}
         INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
         INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
 
     - name: Remember a quiet review of this code
@@ -276,12 +285,14 @@ runs:
         path: ${{ runner.temp }}/algorithmic-intelligence-quiet
         key: ${{ steps.prepare.outputs.cache-key }}
 
-    - name: Check the result (fail-on-error, fail-on-severity)
+    - name: Check the result (fail-on-error, block-on-severity)
+      id: check
       shell: bash
       env:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
         INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
-        INPUT_FAIL_ON_SEVERITY: ${{ inputs.fail-on-severity }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
+        AI_STATUS_SET: ${{ steps.post.outputs.status-set || steps.unchanged.outputs.status-set || steps.prepare.outputs.status-set }}
         AI_STATUS: ${{ steps.post.outputs.status || steps.unchanged.outputs.status || steps.prepare.outputs.status }}
         AI_HIGH: ${{ steps.post.outputs.high || steps.unchanged.outputs.high || steps.prepare.outputs.high }}
         AI_MEDIUM: ${{ steps.post.outputs.medium || steps.unchanged.outputs.medium || steps.prepare.outputs.medium }}

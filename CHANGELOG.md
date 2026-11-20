@@ -12,7 +12,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 - Pull request review: `exclude-paths`, glob patterns of files not to review, such as generated or vendored code.
 - Pull request review: `/perf-review` comments. A maintainer (`command-authors`) can review a pull request on demand, and dismiss findings with `/perf-review dismiss P3`, or by replying `/perf-review dismiss` on a review comment; dismissed findings are listed in the comment, not reported again, and not counted. `require-label` reviews only pull requests carrying a label.
 - Pull request review: when a push fixes a finding, or a maintainer dismisses it, its review thread gets a reply saying so (`reply-to-threads`). The conversation is left open for the developer to resolve.
-- Pull request review: `fail-on-severity`, an opt-in gate that fails the job on a finding at or above a severity.
+- Pull request review: an "Algorithmic Intelligence" commit status, failing while the review has a finding at or above `block-on-severity` (`high` by default; empty never blocks) and turning green as soon as such findings are fixed or dismissed. Require it in a branch rule to block merging. Needs `statuses: write`; without it, a blocking finding fails the job instead.
 - Pull request review: `sarif` writes the findings as SARIF for code scanning (`sarif-file` output).
 - Pull request review: Amazon Bedrock and Google Vertex AI (`provider`, `aws-region`, `vertex-project-id`, `vertex-region`). A cloud credentials file inside the checkout is moved out of the agent's reach while it runs.
 - Pull request review: when the reviewer had to assume production sizes, the findings say so and the comment says where to state them.

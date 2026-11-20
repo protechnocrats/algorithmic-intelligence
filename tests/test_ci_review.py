@@ -339,8 +339,12 @@ class PostEndToEnd(unittest.TestCase):
     def run_post(self, text, previous=None, existing=None, extra_env=None, inline=None, result=None, context=None,
                  fail_with=None, threads=None, keep=None):
         calls = []
+        self.status_calls = []
 
         def fake_api(method, url, token, payload=None):
+            if '/statuses/' in url:          # the commit status, checked separately
+                self.status_calls.append((url.split('/repos/o/r')[-1], payload['state']))
+                return {}
             calls.append((method, url.split('/repos/o/r')[-1], payload))
             if fail_with and method != 'GET':
                 raise fail_with
@@ -719,30 +723,95 @@ class PostMore(PostEndToEnd):
 
 class Gate(unittest.TestCase):
     def gate(self, **kw):
-        environ = {'INPUT_FAIL_ON_SEVERITY': '', 'AI_STATUS': 'reviewed', 'AI_HIGH': '0', 'AI_MEDIUM': '0', 'AI_LOW': '0'}
+        environ = {'AI_STATUS': 'reviewed', 'AI_HIGH': '0', 'AI_MEDIUM': '0', 'AI_LOW': '0', 'AI_STATUS_SET': 'false'}
         environ.update({k: str(v) for k, v in kw.items()})
-        with mock.patch.dict(os.environ, environ), mock.patch('builtins.print'):
-            return review.gate()
+        with mock.patch.dict(os.environ, environ), mock.patch('builtins.print'), \
+                mock.patch.object(review, 'set_output') as out:
+            os.environ.pop('INPUT_BLOCK_ON_SEVERITY', None) if 'INPUT_BLOCK_ON_SEVERITY' not in kw else None
+            code = review.gate()
+        return code, dict(c.args for c in out.call_args_list).get('blocked')
 
-    def test_gate(self):
-        self.assertEqual(self.gate(AI_HIGH=3), 0)                                   # off by default
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_HIGH=1), 1)
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_MEDIUM=4), 0)
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='medium', AI_MEDIUM=1), 1)
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_STATUS='unchanged', AI_HIGH=1), 1)
-        self.assertEqual(self.gate(AI_STATUS='skipped', AI_HIGH=''), 0)
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='high', AI_HIGH=''), 0)    # no machine-readable findings
-        self.assertEqual(self.gate(INPUT_FAIL_ON_SEVERITY='bogus'), 1)
+    def test_blocking_fails_the_job_only_without_a_status(self):
+        self.assertEqual(self.gate(AI_HIGH=1), (1, 'true'))                                   # high by default
+        self.assertEqual(self.gate(AI_HIGH=1, AI_STATUS_SET='true'), (0, 'true'))             # the status blocks
+        self.assertEqual(self.gate(AI_MEDIUM=4), (0, 'false'))
+        self.assertEqual(self.gate(INPUT_BLOCK_ON_SEVERITY='medium', AI_MEDIUM=1), (1, 'true'))
+        self.assertEqual(self.gate(INPUT_BLOCK_ON_SEVERITY='', AI_HIGH=3), (0, 'false'))      # empty never blocks
+        self.assertEqual(self.gate(AI_STATUS='unchanged', AI_HIGH=1), (1, 'true'))
+        self.assertEqual(self.gate(AI_STATUS='skipped', AI_HIGH=''), (0, 'false'))
+        self.assertEqual(self.gate(AI_HIGH=''), (0, 'false'))                                 # no machine-readable findings
 
     def test_a_review_that_did_not_finish_fails_unless_turned_off(self):
         with tempfile.TemporaryDirectory() as d:
             (Path(d) / 'result.json').write_text(json.dumps({'ok': False, 'error': 'could not start Claude Code'}))
-            with mock.patch.dict(os.environ, {'AI_WORK': d, 'AI_STATUS': 'failed', 'AI_HIGH': '', 'INPUT_FAIL_ON_SEVERITY': '',
+            with mock.patch.dict(os.environ, {'AI_WORK': d, 'AI_STATUS': 'failed', 'AI_HIGH': '',
                                               'INPUT_FAIL_ON_ERROR': ''}), mock.patch('builtins.print') as p:
                 self.assertEqual(review.gate(), 1)                                   # on by default
                 self.assertIn('could not start Claude Code', p.call_args[0][0])
                 with mock.patch.dict(os.environ, {'INPUT_FAIL_ON_ERROR': 'false'}):
                     self.assertEqual(review.gate(), 0)
+
+
+class Status(unittest.TestCase):
+    def statuses(self, fn, **environ):
+        calls = []
+        fake = lambda method, url, token, payload=None: calls.append((url.rsplit('/', 1)[-1], payload)) or {}
+        with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r', 'GITHUB_API_URL': 'https://api', **environ}), \
+                mock.patch.object(review, 'api', fake):
+            result = fn()
+        return result, [(sha, p['state'], p['description']) for sha, p in calls]
+
+    def test_threshold_and_descriptions(self):
+        f = [{'id': 'P1', 'severity': 'high'}, {'id': 'P2', 'severity': 'medium'}, {'id': 'P3', 'severity': 'low'}]
+        ok, calls = self.statuses(lambda: review.report_status('abc', f, 't'))
+        self.assertTrue(ok)
+        self.assertEqual(calls[0][:2], ('abc', 'failure'))
+        self.assertIn('dismiss P1', calls[0][2])
+        _, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='medium')
+        self.assertIn('2 finding(s)', calls[0][2])
+        _, calls = self.statuses(lambda: review.report_status('abc', f[1:], 't'))
+        self.assertEqual(calls[0][1], 'success')
+        _, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='')
+        self.assertEqual(calls[0][1], 'success')
+        _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False))
+        self.assertEqual(calls[0][1], 'error')
+        _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False), INPUT_FAIL_ON_ERROR='false')
+        self.assertEqual(calls[0][1], 'success')
+        self.assertTrue(all(len(c[2]) <= 140 for c in calls))
+
+    def test_missing_permission_is_reported_not_raised(self):
+        import urllib.error
+        def refuse(*a, **k):
+            raise urllib.error.HTTPError('u', 403, 'Resource not accessible by integration', {}, None)
+        with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r'}), mock.patch.object(review, 'api', refuse), \
+                mock.patch('builtins.print') as p:
+            self.assertFalse(review.set_status('abc', 'failure', 'x', 't'))
+            self.assertIn('statuses: write', p.call_args[0][0])
+
+    def test_post_sets_the_status_on_the_reviewed_commit(self):
+        text = 'R.\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 't', 'detail': 'd'}]})
+        _, outputs, _ = PostEndToEnd.run_post(self, text)
+        self.assertEqual((self.status_calls, outputs['status-set']), ([('/statuses/h1', 'failure')], 'true'))
+        PostEndToEnd.run_post(self, text, result={'ok': False, 'text': '', 'cost': None, 'error': 'timed out'})
+        self.assertEqual(self.status_calls, [('/statuses/h1', 'error')])
+
+    def test_dismissal_turns_the_status_green(self):
+        t = CommandEvent()
+        t.setUp()
+        original = t.fake_api
+
+        def fake(method, url, token, payload=None):
+            if method == 'GET' and url.endswith('/pulls/7'):
+                t.calls.append((method, url, payload))
+                return {'number': 7, 'head': {'sha': 'h1'}}
+            return original(method, url, token, payload)
+        t.comment['body'] = review.replace_state(t.comment['body'], {
+            'sha': 'h1', 'next': 2, 'findings': [{'id': 'P1', 'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 'join'}]})
+        t.fake_api = fake
+        with mock.patch('builtins.print'), mock.patch.object(review, 'set_output'):
+            t.run_command('/perf-review dismiss P1')
+        status = [(u.rsplit('/', 1)[-1], p['state']) for m, u, p in t.calls if '/statuses/' in u]
+        self.assertEqual(status, [('h1', 'success')])
 
 
 class PrepareMore(unittest.TestCase):

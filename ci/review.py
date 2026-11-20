@@ -20,8 +20,8 @@ process:
                        pushes, review comments on the changed lines, the job summary, step outputs, and SARIF when
                        asked; replies on the review threads of findings the push fixed, for the developer to
                        resolve. Has the GitHub token, not the model credentials.
-  review.py gate       fails the job when the review did not finish (fail-on-error) or when fail-on-severity
-                       asks for it. Has neither.
+  review.py gate       fails the job when the review did not finish (fail-on-error), or on a blocking finding when
+                       the commit status could not be set. Has neither.
 
 The agent ends its report with a fenced `ai-review-findings` block of JSON; everything taken from it is
 validated, because the repository under review can steer what the agent writes.
@@ -49,6 +49,7 @@ DISMISSED_START, DISMISSED_END = '<!-- ai-review-dismissed -->', '<!-- /ai-revie
 HEADING = '### Algorithmic Intelligence review\n\n'
 FOOTER_START = '\n\n---\n<sub>Written by Claude'
 COMMAND = '/perf-review'
+STATUS_CONTEXT = 'Algorithmic Intelligence'   # the commit status a branch rule can require
 CONFIG_LIMIT = 8000            # characters of the base branch's configuration file given to the agent
 STATE_TAG = 'algorithmic-intelligence-ci-state'
 FINDINGS_TAG = 'ai-review-findings'
@@ -271,6 +272,61 @@ def api(method, url, token, payload=None):
 
 def api_base():
     return f'{env("GITHUB_API_URL", "https://api.github.com")}/repos/{env("GITHUB_REPOSITORY")}'
+
+
+def run_url():
+    return f'{env("GITHUB_SERVER_URL", "https://github.com")}/{env("GITHUB_REPOSITORY")}/actions/runs/{env("GITHUB_RUN_ID")}'
+
+
+def block_threshold():
+    """block-on-severity as a severity, or None when nothing blocks. Unset means high; empty means never."""
+    wanted = env('INPUT_BLOCK_ON_SEVERITY', 'high').lower()
+    if not wanted:
+        return None
+    if wanted not in SEVERITIES:
+        notice('warning', f'block-on-severity is "{wanted}", not high, medium, low, or empty; using high.')
+        return 'high'
+    return wanted
+
+
+def blocking(findings, wanted):
+    """The findings at or above the threshold, highest first."""
+    if not wanted:
+        return []
+    rank = {s: i for i, s in enumerate(SEVERITIES)}
+    return sorted((f for f in findings if rank.get(f.get('severity'), 9) <= rank[wanted]),
+                  key=lambda f: rank[f['severity']])
+
+
+def set_status(sha, state, description, token, quiet=False):
+    """Set this action's commit status on a commit. Returns whether it was set."""
+    if not (sha and token and env('GITHUB_REPOSITORY')):
+        return False
+    try:
+        api('POST', f'{api_base()}/statuses/{sha}', token, {'state': state, 'context': STATUS_CONTEXT,
+                                                            'description': description[:140], 'target_url': run_url()})
+        return True
+    except NET_ERRORS as e:
+        if not quiet:
+            notice('warning', f'Could not set the "{STATUS_CONTEXT}" commit status ({e}). Add "statuses: write" to the '
+                              'workflow\'s permissions; until then a blocking finding fails the job instead.')
+        return False
+
+
+def report_status(sha, findings, token, ok=True):
+    """The commit status for a review's findings: failure when any is at or above block-on-severity."""
+    if not ok:
+        if (env('INPUT_FAIL_ON_ERROR') or 'true').lower() == 'false':
+            return set_status(sha, 'success', 'The review did not finish; not blocking (fail-on-error is false).', token)
+        return set_status(sha, 'error', 'The review did not finish; re-run the job.', token)
+    wanted = block_threshold()
+    over = blocking(findings, wanted)
+    if over:
+        ids = ', '.join(f.get('id') or '?' for f in over[:5])
+        return set_status(sha, 'failure', f'{len(over)} finding(s) at or above {wanted} ({ids}). Fix, or comment '
+                                          f'"{COMMAND} dismiss {over[0].get("id") or "P1"}".', token)
+    what = f'No findings at or above {wanted}' if wanted else 'Not blocking (block-on-severity is empty)'
+    return set_status(sha, 'success', f'{what}. Advice only; see the review comment.' if findings else f'{what}.', token)
 
 
 def paged(url, token):
@@ -682,6 +738,13 @@ def command_event(event, name, token):
         commands = dismissal_commands([c], inline_ids, []) if not c.get('in_reply_to_id') else \
             dismissal_commands([], inline_ids, [c])
         moved = record_dismissals(number, token, prior, state, commands)
+        if moved:
+            try:
+                head = ((api('GET', f'{api_base()}/pulls/{number}', token) or {}).get('head') or {}).get('sha')
+            except NET_ERRORS:
+                head = None
+            if head and head == state.get('sha'):     # a newer push has its own review coming
+                set_output('status-set', 'true' if report_status(head, state['findings'], token) else 'false')
         return None, (f'dismissed {", ".join(moved)}' if moved else
                       'nothing to dismiss: name the findings by id ("/perf-review dismiss P3"), or reply on a review comment')
     try:
@@ -711,6 +774,7 @@ def prepare():
     head_sha = (pr.get('head') or {}).get('sha', '')
     has_credentials = env('AI_HAS_CREDENTIALS') == 'true'
     set_output('number', number)
+    set_output('head', head_sha)
     changed = []
     if pr:
         if leaked_credentials():
@@ -732,6 +796,7 @@ def prepare():
         changed = [p for p in git('diff', '--name-only', f'{base}...HEAD').splitlines() if p and not excluded(p, patterns)]
     reason = skip_reason(event, changed, has_credentials, requested)
     if reason:
+        set_status(head_sha, 'success', f'Not reviewed: {reason}'[:140], token, quiet=True)
         return skip(reason)
 
     instructions = '\n\n'.join(t for t in (base_config(base), env('INPUT_INSTRUCTIONS')) if t)
@@ -744,6 +809,7 @@ def prepare():
     previous, dismissed = valid_findings((state or {}).get('findings')), valid_findings((state or {}).get('dismissed'))
     if state and state.get('fingerprint') == fingerprint and state.get('ok') and not requested:
         output_counts(previous, 'unchanged', not previous)
+        set_output('status-set', 'true' if report_status(head_sha, previous, token) else 'false')
         return skip(f'the code is unchanged since the review of {str(state.get("sha", ""))[:12]}; its comment still '
                     f'applies (comment "{COMMAND}" to review it again)', 'unchanged')
     if not prior and not requested and env('AI_QUIET'):
@@ -751,6 +817,7 @@ def prepare():
         settings = f'{env("INPUT_COMMENT_MIN_SEVERITY", "medium")}-{env("INPUT_COMMENT_ON_CLEAN", "false")}'.lower()
         set_output('cache-key', f'algorithmic-intelligence-quiet-{number}-{fingerprint}-{settings}')
 
+    set_status(head_sha, 'pending', 'Reviewing the changes.', token, quiet=True)
     diff = filter_diff(git('diff', f'{base}...HEAD'), exclude_patterns())
     diff, cut = truncate_diff(diff, number_input('INPUT_MAX_DIFF_KB', 200, low=1) * 1024)
     (work / 'pr.diff').write_text(diff)
@@ -781,6 +848,7 @@ def unchanged():
     state = read_json(Path(env('AI_QUIET')) / 'quiet.json', {})
     findings = valid_findings(state.get('findings'))
     output_counts(findings, 'unchanged', not findings)
+    set_output('status-set', 'true' if report_status(env('AI_HEAD'), findings, env('GITHUB_TOKEN')) else 'false')
     notice('notice', f'Algorithmic Intelligence review skipped: the code is unchanged since the review of '
                      f'{str(state.get("sha", ""))[:12]}, which posted no comment.')
     return 0
@@ -1087,7 +1155,7 @@ def post():
     context = read_json(work / 'context.json', {})
     previous, dismissed = context.get('previous') or [], context.get('dismissed') or []
     number, token = env('AI_NUMBER'), env('GITHUB_TOKEN')
-    run_url = f'{env("GITHUB_SERVER_URL", "https://github.com")}/{env("GITHUB_REPOSITORY")}/actions/runs/{env("GITHUB_RUN_ID")}'
+    link = run_url()
 
     data = None
     if result['ok']:
@@ -1113,8 +1181,13 @@ def post():
     set_output('clean', 'true' if clean else 'false')
     resolved = resolved_ids(previous, data)
     set_output('resolved', len(resolved) if data else 0)
+    if result['ok'] and data is None:
+        status_set = set_status(context.get('sha'), 'success', 'No machine-readable findings; see the review comment.', token)
+    else:
+        status_set = report_status(context.get('sha'), findings, token, ok=result['ok'])
+    set_output('status-set', 'true' if status_set else 'false')
 
-    body = comment_body(result, run_url, data, previous, state, bool(context.get('instructions')))
+    body = comment_body(result, link, data, previous, state, bool(context.get('instructions')))
     summary = env('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary, 'a') as f:
@@ -1130,7 +1203,7 @@ def post():
         if not result['ok'] and existing:
             # keep the last report that finished, with a note, instead of replacing it with the failure
             api('PATCH', f'{base}/comments/{existing["id"]}', token,
-                {'body': with_failure_note(existing.get('body') or '', result['error'], run_url)})
+                {'body': with_failure_note(existing.get('body') or '', result['error'], link)})
         elif quiet and not existing and not flag('INPUT_COMMENT_ON_CLEAN'):
             what = 'No findings' if clean else 'No findings at or above comment-min-severity'
             notice('notice', f'{what}; no comment posted (comment-on-clean is false). The job summary has the report.')
@@ -1140,7 +1213,7 @@ def post():
                 set_output('save-quiet', 'true')
         elif clean and existing and not flag('INPUT_COMMENT_ON_CLEAN'):
             # an earlier comment listed findings that are gone now: say so instead of leaving them
-            api('PATCH', f'{base}/comments/{existing["id"]}', token, {'body': clean_body(run_url, data, previous, state)})
+            api('PATCH', f'{base}/comments/{existing["id"]}', token, {'body': clean_body(link, data, previous, state)})
         elif existing:
             api('PATCH', f'{base}/comments/{existing["id"]}', token, {'body': body})
         else:
@@ -1172,8 +1245,8 @@ def post():
 
 
 def gate():
-    """The last step: fail the job when the review did not finish (fail-on-error, on by default), or when it has a
-    finding at or above fail-on-severity (off by default). A skipped review never fails it."""
+    """The last step: fail the job when the review did not finish (fail-on-error, on by default). Findings at or
+    above block-on-severity block through the commit status; only when it could not be set do they fail the job."""
     status = env('AI_STATUS')
     if status == 'failed':
         error = read_json(Path(env('AI_WORK') or '.') / 'result.json', {}).get('error') or 'unknown error'
@@ -1183,20 +1256,16 @@ def gate():
             return 1
         notice('warning', f'The review did not finish ({error[:300]}); passing because fail-on-error is false.')
         return 0
-    wanted = env('INPUT_FAIL_ON_SEVERITY').lower()
-    if not wanted:
-        return 0
-    if wanted not in SEVERITIES:
-        notice('error', f'fail-on-severity is "{wanted}"; it must be high, medium, low, or empty.')
-        return 1
-    if status not in ('reviewed', 'unchanged') or env('AI_HIGH') == '':
-        notice('notice', f'fail-on-severity not applied: the review {status or "did not run"}'
-                         f'{" without machine-readable findings" if status in ("reviewed", "unchanged") else ""}.')
+    wanted = block_threshold()
+    if not wanted or status not in ('reviewed', 'unchanged') or env('AI_HIGH') == '':
+        set_output('blocked', 'false')
         return 0
     over = sum(int(env(f'AI_{s.upper()}') or 0) for s in SEVERITIES[:SEVERITIES.index(wanted) + 1])
-    if over:
-        notice('error', f'{over} finding(s) at or above {wanted} severity (fail-on-severity); see the review comment. '
-                        'Each is an estimate read from the code, not a measurement.')
+    set_output('blocked', 'true' if over else 'false')
+    if over and env('AI_STATUS_SET') != 'true':
+        notice('error', f'{over} finding(s) at or above {wanted} severity (block-on-severity), and the "{STATUS_CONTEXT}" '
+                        'commit status could not be set to show it, so the job fails instead. Each finding is an estimate '
+                        'read from the code; dismiss one with a "/perf-review dismiss" comment.')
         return 1
     return 0
 
