@@ -517,6 +517,29 @@ class CommandEvent(unittest.TestCase):
         self.assertIn('Dismissed by maintainers', patch['body'])
 
 
+class DismissReruns(CommandEvent):
+    def test_dismiss_reruns_the_failed_review(self):
+        self.comment['body'] = review.replace_state(self.comment['body'], {
+            'sha': 'h1', 'head': 'h1', 'run': '99', 'next': 2,
+            'findings': [{'id': 'P1', 'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 'join'}]})
+        original = self.fake_api
+
+        def fake(method, url, token, payload=None):
+            if method == 'GET' and url.endswith('/pulls/7'):
+                self.calls.append((method, url, payload))
+                return {'number': 7, 'head': {'sha': 'h1'}}
+            if method == 'GET' and url.endswith('/actions/runs/99'):
+                return {'conclusion': 'failure'}
+            return original(method, url, token, payload)
+        self.fake_api = fake
+        with mock.patch('builtins.print'):
+            pr, reason = self.run_command('/perf-review dismiss P1')
+        self.assertIsNone(pr)
+        self.assertIn('dismissed P1', reason)
+        self.assertIn(('POST', 'https://api/repos/o/r/actions/runs/99/rerun-failed-jobs', None),
+                      [(m, u, p) for m, u, p in self.calls])
+
+
 class Exclusions(unittest.TestCase):
     DIFF = ('diff --git a/src/a.py b/src/a.py\n--- a/src/a.py\n+++ b/src/a.py\n@@ -1 +1 @@\n-x\n+y\n'
             'diff --git a/vendor/lib.js b/vendor/lib.js\n--- a/vendor/lib.js\n+++ b/vendor/lib.js\n@@ -1 +1 @@\n-x\n+y\n'
@@ -708,21 +731,22 @@ class PostMore(PostEndToEnd):
 
 class Gate(unittest.TestCase):
     def gate(self, **kw):
-        environ = {'AI_STATUS': 'reviewed', 'AI_HIGH': '0', 'AI_MEDIUM': '0', 'AI_LOW': '0', 'AI_STATUS_SET': 'false'}
+        environ = {'AI_STATUS': 'reviewed', 'AI_HIGH': '0', 'AI_MEDIUM': '0', 'AI_LOW': '0'}
         environ.update({k: str(v) for k, v in kw.items()})
         with mock.patch.dict(os.environ, environ), mock.patch('builtins.print'), \
                 mock.patch.object(review, 'set_output') as out:
-            os.environ.pop('INPUT_BLOCK_ON_SEVERITY', None) if 'INPUT_BLOCK_ON_SEVERITY' not in kw else None
+            if 'INPUT_BLOCK_ON_SEVERITY' not in kw:
+                os.environ.pop('INPUT_BLOCK_ON_SEVERITY', None)
             code = review.gate()
         return code, dict(c.args for c in out.call_args_list).get('blocked')
 
-    def test_blocking_fails_the_job_only_without_a_status(self):
+    def test_blocking_findings_fail_the_job(self):
         self.assertEqual(self.gate(AI_HIGH=1), (1, 'true'))                                   # high by default
-        self.assertEqual(self.gate(AI_HIGH=1, AI_STATUS_SET='true'), (0, 'true'))             # the status blocks
         self.assertEqual(self.gate(AI_MEDIUM=4), (0, 'false'))
         self.assertEqual(self.gate(INPUT_BLOCK_ON_SEVERITY='medium', AI_MEDIUM=1), (1, 'true'))
         self.assertEqual(self.gate(INPUT_BLOCK_ON_SEVERITY='', AI_HIGH=3), (0, 'false'))      # empty never blocks
         self.assertEqual(self.gate(AI_STATUS='unchanged', AI_HIGH=1), (1, 'true'))
+        self.assertEqual(self.gate(AI_STATUS='unchanged', AI_HIGH=0), (0, 'false'))           # after a dismissal
         self.assertEqual(self.gate(AI_STATUS='skipped', AI_HIGH=''), (0, 'false'))
         self.assertEqual(self.gate(AI_HIGH=''), (0, 'false'))                                 # no machine-readable findings
 
@@ -737,69 +761,44 @@ class Gate(unittest.TestCase):
                     self.assertEqual(review.gate(), 0)
 
 
-class Status(unittest.TestCase):
-    def statuses(self, fn, **environ):
+class Rerun(unittest.TestCase):
+    def run_rerun(self, state, head='h1', conclusion='failure', refuse=False):
         calls = []
-        fake = lambda method, url, token, payload=None: calls.append((url.rsplit('/', 1)[-1], payload)) or {}
-        with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r', 'GITHUB_API_URL': 'https://api', **environ}), \
-                mock.patch.object(review, 'api', fake):
-            result = fn()
-        return result, [(sha, p['state'], p['description']) for sha, p in calls]
-
-    def test_threshold_and_descriptions(self):
-        f = [{'id': 'P1', 'severity': 'high'}, {'id': 'P2', 'severity': 'medium'}, {'id': 'P3', 'severity': 'low'}]
-        ok, calls = self.statuses(lambda: review.report_status('abc', f, 't'))
-        self.assertTrue(ok)
-        self.assertEqual(calls[0][:2], ('abc', 'failure'))
-        self.assertIn('dismiss P1', calls[0][2])
-        _, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='medium')
-        self.assertIn('2 finding(s)', calls[0][2])
-        _, calls = self.statuses(lambda: review.report_status('abc', f[1:], 't'))
-        self.assertEqual(calls[0][1], 'success')
-        ok, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='')
-        self.assertEqual((ok, calls), (False, []))                   # never blocking: no status, no permission needed
-        _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False))
-        self.assertEqual(calls[0][1], 'error')
-        _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False), INPUT_FAIL_ON_ERROR='false')
-        self.assertEqual(calls[0][1], 'success')
-        self.assertTrue(all(len(c[2]) <= 140 for c in calls))
-
-    def test_missing_permission_is_reported_not_raised(self):
-        import urllib.error
-        def refuse(*a, **k):
-            raise urllib.error.HTTPError('u', 403, 'Resource not accessible by integration', {}, None)
-        with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r'}), mock.patch.object(review, 'api', refuse), \
-                mock.patch('builtins.print') as p:
-            self.assertFalse(review.set_status('abc', 'failure', 'x', 't'))
-            self.assertTrue(p.call_args[0][0].startswith('::warning::'))
-            self.assertIn('statuses: write', p.call_args[0][0])
-            self.assertFalse(review.set_status('abc', 'success', 'x', 't'))      # nothing blocked: a notice only
-            self.assertTrue(p.call_args[0][0].startswith('::notice::'))
-
-    def test_post_sets_the_status_on_the_reviewed_commit(self):
-        text = 'R.\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 't', 'detail': 'd'}]})
-        _, outputs, _ = PostEndToEnd.run_post(self, text)
-        self.assertEqual((self.status_calls, outputs['status-set']), ([('/statuses/h1', 'failure')], 'true'))
-        PostEndToEnd.run_post(self, text, result={'ok': False, 'text': '', 'cost': None, 'error': 'timed out'})
-        self.assertEqual(self.status_calls, [('/statuses/h1', 'error')])
-
-    def test_dismissal_turns_the_status_green(self):
-        t = CommandEvent()
-        t.setUp()
-        original = t.fake_api
 
         def fake(method, url, token, payload=None):
-            if method == 'GET' and url.endswith('/pulls/7'):
-                t.calls.append((method, url, payload))
-                return {'number': 7, 'head': {'sha': 'h1'}}
-            return original(method, url, token, payload)
-        t.comment['body'] = review.replace_state(t.comment['body'], {
-            'sha': 'h1', 'next': 2, 'findings': [{'id': 'P1', 'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 'join'}]})
-        t.fake_api = fake
-        with mock.patch('builtins.print'), mock.patch.object(review, 'set_output'):
-            t.run_command('/perf-review dismiss P1')
-        status = [(u.rsplit('/', 1)[-1], p['state']) for m, u, p in t.calls if '/statuses/' in u]
-        self.assertEqual(status, [('h1', 'success')])
+            calls.append((method, url.split('/repos/o/r')[-1]))
+            if url.endswith('/pulls/7'):
+                return {'head': {'sha': head}}
+            if url.endswith('/actions/runs/99'):
+                return {'conclusion': conclusion}
+            if refuse:
+                import urllib.error
+                raise urllib.error.HTTPError(url, 403, 'Resource not accessible by integration', {}, None)
+            return None
+        with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r', 'GITHUB_API_URL': 'https://api'}), \
+                mock.patch.object(review, 'api', fake), mock.patch('builtins.print') as p:
+            started = review.rerun_review(state, 7, 't')
+        return started, [u for m, u in calls if m == 'POST'], p
+
+    def test_reruns_the_failed_job_for_the_current_head_only(self):
+        state = {'run': '99', 'head': 'h1', 'sha': 'h0'}
+        self.assertEqual(self.run_rerun(state)[:2], (True, ['/actions/runs/99/rerun-failed-jobs']))
+        self.assertEqual(self.run_rerun(state, head='h2')[:2], (False, []))            # a newer push reviews itself
+        self.assertEqual(self.run_rerun(state, conclusion='success')[:2], (False, []))  # nothing blocked
+        self.assertEqual(self.run_rerun({'sha': 'h1'})[:2], (False, []))               # no run recorded
+        started, _, p = self.run_rerun(state, refuse=True)
+        self.assertFalse(started)
+        self.assertIn('actions: write', p.call_args[0][0])
+
+    def test_post_records_the_run_and_a_blocking_finding_always_gets_a_comment(self):
+        t = PostMore()
+        text = 'R.\n' + block({'findings': [{'severity': 'low', 'file': 'a.py', 'line': 2, 'title': 't', 'detail': 'd'}]})
+        calls, _, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99', 'INPUT_BLOCK_ON_SEVERITY': 'low'})
+        comment = next(p for m, u, p in calls if m == 'POST' and u == '/issues/7/comments')['body']
+        self.assertEqual((review.decode_state(comment)['run'], review.decode_state(comment)['head']), ('99', 'h1'))
+        calls, outputs, _ = t.run_post(text, extra_env={'GITHUB_RUN_ID': '99'})               # low does not block: quiet
+        self.assertFalse(any(m == 'POST' and u == '/issues/7/comments' for m, u, p in calls))
+        self.assertEqual(outputs.get('save-quiet'), 'true')
 
 
 class PrepareMore(unittest.TestCase):

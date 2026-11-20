@@ -69,7 +69,7 @@ inputs:
     required: false
     default: 'true'
   block-on-severity:
-    description: A finding at or above this severity (high, medium, or low) sets the "Algorithmic Intelligence" commit status to failure until it is fixed or dismissed; require that status in a branch rule to block merging. Empty never blocks. Needs statuses write permission; without it, a blocking finding fails the job instead.
+    description: Fail the job when the review has a finding at or above this severity (high, medium, or low), so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A "/perf-review dismiss" comment re-runs the failed job, which then passes without a new review. Empty never fails it on findings.
     required: false
     default: high
   fail-on-error:
@@ -177,7 +177,6 @@ runs:
         INPUT_REQUIRE_LABEL: ${{ inputs.require-label }}
         INPUT_COMMAND_AUTHORS: ${{ inputs.command-authors }}
         INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
-        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
         INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
@@ -202,9 +201,6 @@ runs:
       shell: bash
       env:
         AI_QUIET: ${{ runner.temp }}/algorithmic-intelligence-quiet
-        AI_HEAD: ${{ steps.prepare.outputs.head }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" unchanged
 
     - name: Install Claude Code (lockfile with integrity hashes)
@@ -274,7 +270,6 @@ runs:
         INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
         INPUT_SARIF: ${{ inputs.sarif }}
         INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
-        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
 
     - name: Remember a quiet review of this code
@@ -292,7 +287,6 @@ runs:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
         INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
         INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
-        AI_STATUS_SET: ${{ steps.post.outputs.status-set || steps.unchanged.outputs.status-set || steps.prepare.outputs.status-set }}
         AI_STATUS: ${{ steps.post.outputs.status || steps.unchanged.outputs.status || steps.prepare.outputs.status }}
         AI_HIGH: ${{ steps.post.outputs.high || steps.unchanged.outputs.high || steps.prepare.outputs.high }}
         AI_MEDIUM: ${{ steps.post.outputs.medium || steps.unchanged.outputs.medium || steps.prepare.outputs.medium }}
