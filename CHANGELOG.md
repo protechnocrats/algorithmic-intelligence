@@ -15,7 +15,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 - Pull request review: an "Algorithmic Intelligence" commit status, failing while the review has a finding at or above `block-on-severity` (`high` by default; empty never blocks) and turning green as soon as such findings are fixed or dismissed. Require it in a branch rule to block merging. Needs `statuses: write`; without it, a blocking finding fails the job instead.
 - Pull request review: `sarif` writes the findings as SARIF for code scanning (`sarif-file` output).
 - Pull request review: Amazon Bedrock and Google Vertex AI (`provider`, `aws-region`, `vertex-project-id`, `vertex-region`). A cloud credentials file inside the checkout is moved out of the agent's reach while it runs.
-- Pull request review: when the reviewer had to assume production sizes, the findings say so and the comment says where to state them.
+- Pull request review: when the reviewer has to assume production sizes, the report says which ones.
 
 ### Changed
 

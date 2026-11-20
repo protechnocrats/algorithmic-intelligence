@@ -176,8 +176,7 @@ def extract_findings(text):
         })
     resolved = [r for r in raw.get('resolved', []) if isinstance(r, str) and re.fullmatch(r'P\d{1,3}', r)] \
         if isinstance(raw.get('resolved', []), list) else []
-    return report, {'findings': findings, 'resolved': sorted(set(resolved), key=lambda r: int(r[1:])),
-                    'sizes': raw.get('sizes') if raw.get('sizes') in ('stated', 'assumed') else None}
+    return report, {'findings': findings, 'resolved': sorted(set(resolved), key=lambda r: int(r[1:]))}
 
 
 def counts(findings):
@@ -648,9 +647,7 @@ def build_prompt(number, work, cut, extra, docs=(), has_description=False, previ
         'this pull request changes when there is one; null if none fits>, "title": "<one line>", "detail": "<the cost '
         'with sizes, the fix, and the test or benchmark that would confirm it; under 800 characters>", "previous": '
         '"<earlier id or null>", "code": "<the exact text of that line, copied from the file>"}], "resolved": '
-        '["<earlier ids now fixed>"], "sizes": "stated|assumed"}. "sizes" is "stated" when the production sizes you '
-        'judged severity by come from the maintainers\' notes, the repository, or the pull request, and "assumed" when '
-        'you had to assume any of them; when assumed, say in the report which sizes you assumed. '
+        '["<earlier ids now fixed>"]}. If you had to assume any production size, say in the report which ones. '
         'Take line numbers from reading the file itself: line numbers in pr.diff are '
         'positions in the diff, not in the file. Severity: high when it would miss the '
         'stated targets or degrade badly at production sizes; medium when it costs measurable time or memory on a hot '
@@ -844,7 +841,7 @@ def prepare():
     next_id = (state or {}).get('next')
     (work / 'context.json').write_text(json.dumps({
         'fingerprint': fingerprint, 'sha': head_sha, 'previous': previous, 'dismissed': dismissed,
-        'next': next_id if isinstance(next_id, int) else None, 'instructions': bool(instructions)}))
+        'next': next_id if isinstance(next_id, int) else None}))
     docs = doc_files()
     (work / 'prompt.txt').write_text(build_prompt(number, work, cut, instructions, docs, bool(title or body), bool(previous),
                                                   readme_excerpt(docs), bool(dismissed)))
@@ -1010,18 +1007,11 @@ def since_last(previous, data):
     return '\n'.join(rows) + '\n\n'
 
 
-SIZES_TIP = ('\n\n> **Sizes were assumed.** The reviewer found no production sizes for this code, so severities rest on '
-             'its assumptions (named above). State the sizes and latency targets in `.github/performance-review.md` on '
-             'the base branch, or in the action\'s `instructions`, and later reviews will judge by them.')
-
-
-def comment_body(result, run_url, data=None, previous=None, state=None, configured=False):
+def comment_body(result, run_url, data=None, previous=None, state=None):
     head = f'{MARKER}\n{HEADING}'
     if result['ok']:
         report = result.get('report', result['text'])
         body = since_last(previous, data) + sanitize(report)
-        if data and data.get('sizes') == 'assumed' and not configured:
-            body += SIZES_TIP
     else:
         body = f'The review did not finish ({sanitize(result["error"])[:500]}). Nothing in this pull request was judged.'
     body += dismissed_section((state or {}).get('dismissed'))
@@ -1197,7 +1187,7 @@ def post():
         status_set = report_status(context.get('sha'), findings, token, ok=result['ok'])
     set_output('status-set', 'true' if status_set else 'false')
 
-    body = comment_body(result, link, data, previous, state, bool(context.get('instructions')))
+    body = comment_body(result, link, data, previous, state)
     summary = env('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary, 'a') as f:

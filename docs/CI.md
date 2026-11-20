@@ -10,7 +10,7 @@ Available from release 0.7.2; the AI disclosure and the report link in the comme
 2. Add a workflow to your repository, for example as performance-review.yml in .github/workflows:
 
 ```yaml
-name: performance review
+name: Algorithmic Intelligence
 
 on:
   pull_request:
@@ -22,11 +22,12 @@ permissions:
   statuses: write        # the "Algorithmic Intelligence" commit status
 
 concurrency:
-  group: performance-review-${{ github.event.pull_request.number }}
+  group: algorithmic-intelligence-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   review:
+    name: Algorithmic Intelligence - checks
     if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -51,7 +52,7 @@ Production sizes: orders table about 5M rows, 2,000 requests per second on /orde
 Batch import files up to 2 GB. Internal tools under tools/ run by hand, rarely.
 ```
 
-The file is read from the base commit, never from the pull request, so a pull request cannot change what the reviewer is told; an edit to it takes effect once merged. Its text and `instructions` are both given to the reviewer. When a review had to assume sizes, its comment says so and points here.
+The file is read from the base commit, never from the pull request, so a pull request cannot change what the reviewer is told; an edit to it takes effect once merged. Its text and `instructions` are both given to the reviewer.
 
 ## Inputs
 
@@ -108,7 +109,7 @@ Besides its job, the action sets a commit status named **Algorithmic Intelligenc
 - **pending** while a review runs, and **error** when it does not finish (success instead with `fail-on-error: false`).
 - **success** with the reason when a pull request is not reviewed (documentation only, a draft, excluded files).
 
-Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it.
+Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it. Require the status **Algorithmic Intelligence**, not the job **Algorithmic Intelligence - checks**: the job stays green on findings (it fails only when the review does not finish), so requiring it alone blocks nothing. Keep the job's name different from the status's name, as in the examples; with the same name a rule cannot tell them apart.
 
 Setting a status needs `statuses: write` in the workflow's permissions, as in the examples here; with `block-on-severity` empty, no status is set and the permission is not needed. Without it the action notes it in the log (a warning only when something would have blocked) and fails the job on a blocking finding instead, so a block is never silently lost; that job does not turn green on a dismissal until it is re-run. Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
 
@@ -124,7 +125,7 @@ Maintainers (authors whose association is in `command-authors`) can steer the re
 Dismissals are read from the pull request's comments at the start of every review, so they work with the workflow above, taking effect on the next push. To have commands act at once, add a second workflow for comments; it runs from your default branch with your secrets, like `pull_request_target`, so it follows the same rules (read the pull request's code, never run it):
 
 ```yaml
-name: performance review command
+name: Algorithmic Intelligence - command
 
 on:
   issue_comment:
@@ -139,11 +140,12 @@ permissions:
 
 jobs:
   review:
+    name: Algorithmic Intelligence - command
     if: startsWith(github.event.comment.body, '/perf-review') && (github.event.issue.pull_request || github.event.pull_request)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
-      group: performance-review-${{ github.event.issue.number || github.event.pull_request.number }}
+      group: algorithmic-intelligence-${{ github.event.issue.number || github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -172,7 +174,7 @@ A review that does not finish (Claude Code fails to start, an authentication or 
 Reviewing a fork's pull request needs the `pull_request_target` trigger, which runs the workflow from your base branch with your secrets and a write token. That trigger is dangerous when a workflow runs the pull request's code: a build, a test, an install script. This action runs none of it: the scripts it runs come from the action's own pinned release, and the agent can only read files. Even so, set it up exactly like this, in a workflow of its own, with no other steps:
 
 ```yaml
-name: performance review
+name: Algorithmic Intelligence
 
 on:
   pull_request_target:
@@ -184,11 +186,12 @@ permissions:
   statuses: write        # the "Algorithmic Intelligence" commit status
 
 concurrency:
-  group: performance-review-${{ github.event.pull_request.number }}
+  group: algorithmic-intelligence-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   review:
+    name: Algorithmic Intelligence - checks
     if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30

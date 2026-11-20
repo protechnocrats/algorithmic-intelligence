@@ -573,7 +573,7 @@ class BaseConfig(unittest.TestCase):
 
     def test_prompt_mentions_dismissed_and_sizes(self):
         p = review.build_prompt(7, Path('/w'), False, 'sizes', dismissed=True)
-        for needle in ('/w/dismissed-findings.json', 'do not report them', '"sizes"', 'assumed', 'set outside this pull request'):
+        for needle in ('/w/dismissed-findings.json', 'do not report them', 'which ones', 'set outside this pull request'):
             self.assertIn(needle, p)
 
 
@@ -697,14 +697,6 @@ class PostMore(PostEndToEnd):
         calls, _, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=threads,
                                     extra_env={'INPUT_REPLY_TO_THREADS': 'false'})
         self.assertFalse(any(u.endswith('/graphql') for m, u, p in calls))
-
-    def test_assumed_sizes_add_a_tip_unless_configured(self):
-        text = 'R (assumed 1M rows).\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 't',
-                                                                'detail': 'd'}], 'sizes': 'assumed'})
-        calls, _, _ = self.run_post(text)
-        self.assertIn('Sizes were assumed', next(p for m, u, p in calls if m == 'POST')['body'])
-        calls, _, _ = self.run_post(text, context={'instructions': True})
-        self.assertNotIn('Sizes were assumed', next(p for m, u, p in calls if m == 'POST')['body'])
 
     def test_sarif(self):
         keep = {}
