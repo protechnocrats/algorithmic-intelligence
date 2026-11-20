@@ -70,7 +70,7 @@ The file is read from the base commit, never from the pull request, so a pull re
 | `exclude-paths` | | Glob patterns of files not to review (generated, vendored), one per line or comma separated. `*` matches across directories; a directory pattern such as `vendor/` covers everything under it. |
 | `require-label` | | Review only pull requests carrying this label. Add `labeled` to the workflow's `pull_request` types. |
 | `command-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose `/perf-review` comments are obeyed. |
-| `resolve-threads` | `true` | Resolve this action's review threads when their finding is fixed or dismissed. |
+| `reply-to-threads` | `true` | Reply on this action's review threads when their finding is fixed or dismissed; the developer resolves them. |
 | `fail-on-error` | `true` | Fail the job when the review does not finish. `false` lets such a run pass. |
 | `fail-on-severity` | | Fail the job when the review has a finding at or above this severity. Empty never fails it on findings. |
 | `sarif` | `false` | Also write the findings as SARIF for code scanning (see "Code scanning"). |
@@ -92,7 +92,7 @@ The file is read from the base commit, never from the pull request, so a pull re
 - **One comment, updated on each push.** The report, with a line at the top comparing it with the previous review: how many findings are new, still present, and resolved, and which were resolved.
 - **Review comments on the changed lines.** Each new finding of at least `inline-min-severity` (medium by default) that points at a line the pull request changes is also posted on that line, highest severity first, up to `max-inline-comments`. Findings repeated from an earlier review are not posted again.
 - **Quiet when there is nothing to say.** A review that finds nothing, or only findings below `comment-min-severity` (medium by default), posts no new comment unless `comment-on-clean` is `true`; the job summary and the outputs still have its findings. If an earlier comment exists, it is updated: to say its findings are gone, or with the new report.
-- **Threads that close themselves.** When a push fixes a finding, the review comment on its line gets a short reply and is resolved (`resolve-threads`). A dismissed finding's thread is resolved the same way.
+- **Threads that say when they are done.** When a push fixes a finding, its review comment gets a reply saying so, and a dismissed finding's comment gets one naming who dismissed it (`reply-to-threads`). The action leaves the conversation open for the developer to resolve, so resolving it records that a person read the outcome; it needs no more than `pull-requests: write`.
 - **A failed run keeps the last report.** When a review does not finish (budget, timeout, an API error), the comment keeps the last report that did, with a note on top saying the latest run failed, so a transient error never wipes useful findings.
 - **Outputs for the rest of your workflow.** `status` (`reviewed`, `failed`, `skipped`, or `unchanged`), `findings`, `high`, `medium`, `low`, `clean`, `resolved`, and `sarif-file`. The counts are empty when the review gave no machine-readable findings.
 - **An opt-in gate.** `fail-on-severity: high` fails the job when the review has a high-severity finding (`medium` or `low` include those too); dismissed findings do not count. A skipped review never fails it on findings, and a push of unchanged code fails it again if the last review did.
@@ -106,7 +106,7 @@ The reviewer is given the pull request's title and description (as the author's 
 Maintainers (authors whose association is in `command-authors`) can steer the review from the pull request:
 
 - **`/perf-review`** as a comment reviews the pull request now, including a draft, one without the `require-label` label, or code already reviewed.
-- **`/perf-review dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads are resolved, later reviews are told not to report them, and they no longer count in the outputs or the gate. Replying **`/perf-review dismiss`** on one of the action's review comments dismisses that comment's finding.
+- **`/perf-review dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads get a reply saying so (left open for you to resolve), later reviews are told not to report them, and they no longer count in the outputs or the gate. Replying **`/perf-review dismiss`** on one of the action's review comments dismisses that comment's finding.
 
 Dismissals are read from the pull request's comments at the start of every review, so they work with the workflow above, taking effect on the next push. To have commands act at once, add a second workflow for comments; it runs from your default branch with your secrets, like `pull_request_target`, so it follows the same rules (read the pull request's code, never run it):
 

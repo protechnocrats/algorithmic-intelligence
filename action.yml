@@ -64,8 +64,8 @@ inputs:
     description: Author associations whose /perf-review and /perf-review dismiss comments are obeyed.
     required: false
     default: OWNER,MEMBER,COLLABORATOR
-  resolve-threads:
-    description: Resolve this action's review threads on the changed lines when the finding is fixed or dismissed.
+  reply-to-threads:
+    description: Reply on this action's review threads on the changed lines when the finding is fixed or dismissed. The threads stay open for the developer to resolve.
     required: false
     default: 'true'
   fail-on-severity:
@@ -173,7 +173,7 @@ runs:
         INPUT_EXCLUDE_PATHS: ${{ inputs.exclude-paths }}
         INPUT_REQUIRE_LABEL: ${{ inputs.require-label }}
         INPUT_COMMAND_AUTHORS: ${{ inputs.command-authors }}
-        INPUT_RESOLVE_THREADS: ${{ inputs.resolve-threads }}
+        INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
         INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
@@ -264,7 +264,7 @@ runs:
         INPUT_INLINE_COMMENTS: ${{ inputs.inline-comments }}
         INPUT_MAX_INLINE_COMMENTS: ${{ inputs.max-inline-comments }}
         INPUT_INLINE_MIN_SEVERITY: ${{ inputs.inline-min-severity }}
-        INPUT_RESOLVE_THREADS: ${{ inputs.resolve-threads }}
+        INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
         INPUT_SARIF: ${{ inputs.sarif }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
 

@@ -672,21 +672,26 @@ class PostMore(PostEndToEnd):
         self.assertEqual(state['dismissed'][0]['id'], 'P1')
         self.assertIn('Dismissed by maintainers', comment)
 
-    def test_resolved_findings_close_their_threads(self):
+    def test_fixed_findings_get_a_reply_and_stay_open(self):
         threads = [{'id': 'T1', 'isResolved': False, 'comments': {'nodes': [
                        {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'Bot'}}]}},
                    {'id': 'T2', 'isResolved': False, 'comments': {'nodes': [
                        {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'User'}}]}},
                    {'id': 'T3', 'isResolved': False, 'comments': {'nodes': [
-                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P2 -->\nx', 'author': {'__typename': 'Bot'}}]}}]
+                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P2 -->\nx', 'author': {'__typename': 'Bot'}}]}},
+                   {'id': 'T4', 'isResolved': True, 'comments': {'nodes': [
+                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'Bot'}}]}}]
         text = 'Fixed.\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 'still', 'detail': 'd',
                                                  'previous': 'P2'}], 'resolved': ['P1', 'P2']})
         prev = [{'id': 'P1', 'title': 'join', 'file': 'a.py'}, {'id': 'P2', 'title': 'still', 'file': 'a.py'}]
         calls, outputs, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=threads)
-        mutations = [p['variables']['thread'] for m, u, p in calls if u.endswith('/graphql') and 'resolveReviewThread' in p['query']]
-        self.assertEqual((mutations, outputs['resolved']), (['T1'], '1'))
+        graph = [p for m, u, p in calls if u.endswith('/graphql')]
+        replies = [p['variables'] for p in graph if 'addPullRequestReviewThreadReply' in p['query']]
+        self.assertEqual(([r['thread'] for r in replies], outputs['resolved']), (['T1'], '1'))
+        self.assertIn('Resolve this conversation', replies[0]['body'])
+        self.assertFalse(any('resolveReviewThread' in p['query'] for p in graph))   # the developer resolves it
         calls, _, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=threads,
-                                    extra_env={'INPUT_RESOLVE_THREADS': 'false'})
+                                    extra_env={'INPUT_REPLY_TO_THREADS': 'false'})
         self.assertFalse(any(u.endswith('/graphql') for m, u, p in calls))
 
     def test_assumed_sizes_add_a_tip_unless_configured(self):

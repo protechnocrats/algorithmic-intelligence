@@ -18,8 +18,8 @@ process:
                        model credentials, not the GitHub token.
   review.py post       turns the agent's final message into one pull request comment, updated in place on later
                        pushes, review comments on the changed lines, the job summary, step outputs, and SARIF when
-                       asked; resolves the review threads of findings the push fixed. Has the GitHub token, not the
-                       model credentials.
+                       asked; replies on the review threads of findings the push fixed, for the developer to
+                       resolve. Has the GitHub token, not the model credentials.
   review.py gate       fails the job when the review did not finish (fail-on-error) or when fail-on-severity
                        asks for it. Has neither.
 
@@ -305,13 +305,11 @@ THREADS = '''query($owner: String!, $name: String!, $number: Int!, $after: Strin
       nodes { id isResolved comments(first: 1) { nodes { body author { __typename } } } } } } } }'''
 REPLY = '''mutation($thread: ID!, $body: String!) {
   addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $thread, body: $body}) { clientMutationId } }'''
-RESOLVE = 'mutation($thread: ID!) { resolveReviewThread(input: {threadId: $thread}) { clientMutationId } }'
-
-
-def resolve_threads(number, token, ids, why):
-    """Reply to and resolve the open review threads this action started about the findings with these ids.
-    Returns how many it resolved; never raises."""
-    if not (ids and token and number and flag('INPUT_RESOLVE_THREADS', 'true')):
+def reply_to_threads(number, token, ids, why):
+    """Reply on the open review threads this action started about the findings with these ids. The threads are left
+    open: the developer resolves them, which records that a person read the outcome. Returns how many it replied
+    on; never raises."""
+    if not (ids and token and number and flag('INPUT_REPLY_TO_THREADS', 'true')):
         return 0
     owner, _, name = env('GITHUB_REPOSITORY').partition('/')
     done, after = 0, None
@@ -327,13 +325,12 @@ def resolve_threads(number, token, ids, why):
                         or (first[0].get('author') or {}).get('__typename') != 'Bot'):
                     continue
                 graphql(REPLY, {'thread': t['id'], 'body': f'{INLINE_MARKER}\n{why}'}, token)
-                graphql(RESOLVE, {'thread': t['id']}, token)
                 done += 1
             if not threads['pageInfo']['hasNextPage']:
                 return done
             after = threads['pageInfo']['endCursor']
     except (NET_ERRORS + (KeyError, TypeError)) as e:
-        notice('warning', f'Could not resolve the review threads of fixed findings ({e}).')
+        notice('warning', f'Could not reply on the review threads of fixed or dismissed findings ({e}).')
         return done
 
 
@@ -651,7 +648,9 @@ def record_dismissals(number, token, prior, state, commands):
         prior['body'] = body
     except NET_ERRORS as e:
         notice('warning', f'Could not record the dismissal of {", ".join(moved)} in the review comment ({e}).')
-    resolve_threads(number, token, set(moved), 'Dismissed by a maintainer; not reported again on this pull request.')
+    reply_to_threads(number, token, set(moved), f'Dismissed by {", ".join(sorted({by for _, by in commands if by})) or "a maintainer"}; '
+                                                 'not reported again on this pull request. Resolve this conversation when '
+                                                 'you are done with it.')
     return moved
 
 
@@ -1152,8 +1151,9 @@ def post():
         return 0
 
     if resolved:
-        resolve_threads(number, token, set(resolved), f'Resolved: the review of {str(context.get("sha") or "")[:12]} no '
-                                                      'longer finds this.')
+        reply_to_threads(number, token, set(resolved), f'Fixed: the review of {str(context.get("sha") or "")[:12]} no '
+                                                       'longer finds this. Resolve this conversation once you have checked '
+                                                       'the fix.')
     limit = number_input('INPUT_MAX_INLINE_COMMENTS', 10)
     imap = read_json(work / 'inline.json', {})
     if flag('INPUT_INLINE_COMMENTS', 'true') and findings and limit > 0 and imap.get('commit'):
