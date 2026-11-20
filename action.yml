@@ -215,6 +215,11 @@ runs:
           echo "::warning::claude-code-version $VERSION is not the version this release locks ($locked): installing it without the lockfile's integrity check."
           npm install --prefix "$DEST" --ignore-scripts --no-audit --no-fund --no-save "@anthropic-ai/claude-code@${VERSION}"
         fi
+        # Install scripts stay off for every package; Claude Code's own postinstall, from the checked tarball, puts
+        # the native binary for this platform in place of its placeholder.
+        pkg="$DEST/node_modules/@anthropic-ai/claude-code"
+        if [ -f "$pkg/install.cjs" ]; then (cd "$pkg" && node install.cjs); fi
+        "$DEST/node_modules/.bin/claude" --version
         echo "claude=$DEST/node_modules/.bin/claude" >> "$GITHUB_OUTPUT"
 
     - name: Review (read-only tools, no GitHub token)
