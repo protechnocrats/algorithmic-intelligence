@@ -771,8 +771,8 @@ class Status(unittest.TestCase):
         self.assertIn('2 finding(s)', calls[0][2])
         _, calls = self.statuses(lambda: review.report_status('abc', f[1:], 't'))
         self.assertEqual(calls[0][1], 'success')
-        _, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='')
-        self.assertEqual(calls[0][1], 'success')
+        ok, calls = self.statuses(lambda: review.report_status('abc', f, 't'), INPUT_BLOCK_ON_SEVERITY='')
+        self.assertEqual((ok, calls), (False, []))                   # never blocking: no status, no permission needed
         _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False))
         self.assertEqual(calls[0][1], 'error')
         _, calls = self.statuses(lambda: review.report_status('abc', [], 't', ok=False), INPUT_FAIL_ON_ERROR='false')
@@ -786,7 +786,10 @@ class Status(unittest.TestCase):
         with mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': 'o/r'}), mock.patch.object(review, 'api', refuse), \
                 mock.patch('builtins.print') as p:
             self.assertFalse(review.set_status('abc', 'failure', 'x', 't'))
+            self.assertTrue(p.call_args[0][0].startswith('::warning::'))
             self.assertIn('statuses: write', p.call_args[0][0])
+            self.assertFalse(review.set_status('abc', 'success', 'x', 't'))      # nothing blocked: a notice only
+            self.assertTrue(p.call_args[0][0].startswith('::notice::'))
 
     def test_post_sets_the_status_on_the_reviewed_commit(self):
         text = 'R.\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 't', 'detail': 'd'}]})

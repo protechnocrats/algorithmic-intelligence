@@ -27,6 +27,7 @@ concurrency:
 
 jobs:
   review:
+    if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -109,7 +110,7 @@ Besides its job, the action sets a commit status named **Algorithmic Intelligenc
 
 Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it.
 
-Setting a status needs `statuses: write` in the workflow's permissions, as in the examples here. Without it the action says so in the log and fails the job on a blocking finding instead, so a block is never silently lost; that job does not turn green on a dismissal until it is re-run. Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
+Setting a status needs `statuses: write` in the workflow's permissions, as in the examples here; with `block-on-severity` empty, no status is set and the permission is not needed. Without it the action notes it in the log (a warning only when something would have blocked) and fails the job on a blocking finding instead, so a block is never silently lost; that job does not turn green on a dismissal until it is re-run. Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
 
 The reviewer is given the pull request's title and description (as the author's claims, checked against the code), its commit list, the start of the top-level README, the repository's documentation files by name, and the maintainers' `instructions`, so it can find production sizes before estimating any.
 
@@ -159,7 +160,7 @@ A dismissal needs no model and is recorded without a review. A comment from anyo
 ## What it skips
 
 - Pull requests that change only documentation, images, licenses, or lock files, or only files matching `exclude-paths`.
-- Draft pull requests, unless `review-drafts` is `true` or a maintainer comments `/perf-review`.
+- Draft pull requests. The example workflows do not run on them at all (the job's `if:`), so a draft shows the check as skipped rather than as a green pass; marking the pull request ready for review reviews it. A maintainer can still review a draft on demand with `/perf-review`. Without that `if:` the job runs, sees the draft, and stops without a review (`review-drafts: true` reviews drafts instead).
 - Pull requests without the `require-label` label, when it is set.
 - Pushes that leave the code unchanged since the last review: documentation edits, a clean rebase, or a re-run. The comment records a fingerprint of the pull request's code changes, the `instructions` and configuration file, and the action version, and a push with the same fingerprint is not reviewed again (the `status` output is `unchanged`, and the counts repeat the last review's). A quiet review, which posts no comment, keeps its fingerprint in the Actions cache instead, so a clean pull request is not paid for again either; where the cache is unavailable, its next push is reviewed again.
 - Pull requests from forks, unless you set them up as described below. GitHub does not give workflows triggered by a fork's pull request (`pull_request`) the repository's secrets, so there are no model credentials; the run says so and passes.
@@ -188,6 +189,7 @@ concurrency:
 
 jobs:
   review:
+    if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

@@ -307,14 +307,22 @@ def set_status(sha, state, description, token, quiet=False):
                                                             'description': description[:140], 'target_url': run_url()})
         return True
     except NET_ERRORS as e:
-        if not quiet:
-            notice('warning', f'Could not set the "{STATUS_CONTEXT}" commit status ({e}). Add "statuses: write" to the '
-                              'workflow\'s permissions; until then a blocking finding fails the job instead.')
+        if quiet:
+            return False
+        if state in ('failure', 'error'):
+            notice('warning', f'Could not set the "{STATUS_CONTEXT}" commit status to {state} ({e}). Add "statuses: write" '
+                              'to the workflow\'s permissions; until then a blocking finding fails the job instead.')
+        else:
+            notice('notice', f'The "{STATUS_CONTEXT}" commit status was not set ({e}); nothing blocks this time. To show '
+                             'blocking findings in the merge box, add "statuses: write" to the workflow\'s permissions.')
         return False
 
 
 def report_status(sha, findings, token, ok=True):
-    """The commit status for a review's findings: failure when any is at or above block-on-severity."""
+    """The commit status for a review's findings: failure when any is at or above block-on-severity. With
+    block-on-severity empty no status is set, so a team that never blocks needs no statuses permission."""
+    if not env('INPUT_BLOCK_ON_SEVERITY', 'high'):
+        return False
     if not ok:
         if (env('INPUT_FAIL_ON_ERROR') or 'true').lower() == 'false':
             return set_status(sha, 'success', 'The review did not finish; not blocking (fail-on-error is false).', token)
@@ -325,7 +333,7 @@ def report_status(sha, findings, token, ok=True):
         ids = ', '.join(f.get('id') or '?' for f in over[:5])
         return set_status(sha, 'failure', f'{len(over)} finding(s) at or above {wanted} ({ids}). Fix, or comment '
                                           f'"{COMMAND} dismiss {over[0].get("id") or "P1"}".', token)
-    what = f'No findings at or above {wanted}' if wanted else 'Not blocking (block-on-severity is empty)'
+    what = f'No findings at or above {wanted}'
     return set_status(sha, 'success', f'{what}. Advice only; see the review comment.' if findings else f'{what}.', token)
 
 
@@ -796,7 +804,8 @@ def prepare():
         changed = [p for p in git('diff', '--name-only', f'{base}...HEAD').splitlines() if p and not excluded(p, patterns)]
     reason = skip_reason(event, changed, has_credentials, requested)
     if reason:
-        set_status(head_sha, 'success', f'Not reviewed: {reason}'[:140], token, quiet=True)
+        if env('INPUT_BLOCK_ON_SEVERITY', 'high'):
+            set_status(head_sha, 'success', f'Not reviewed: {reason}'[:140], token, quiet=True)
         return skip(reason)
 
     instructions = '\n\n'.join(t for t in (base_config(base), env('INPUT_INSTRUCTIONS')) if t)
@@ -817,7 +826,8 @@ def prepare():
         settings = f'{env("INPUT_COMMENT_MIN_SEVERITY", "medium")}-{env("INPUT_COMMENT_ON_CLEAN", "false")}'.lower()
         set_output('cache-key', f'algorithmic-intelligence-quiet-{number}-{fingerprint}-{settings}')
 
-    set_status(head_sha, 'pending', 'Reviewing the changes.', token, quiet=True)
+    if env('INPUT_BLOCK_ON_SEVERITY', 'high'):
+        set_status(head_sha, 'pending', 'Reviewing the changes.', token, quiet=True)
     diff = filter_diff(git('diff', f'{base}...HEAD'), exclude_patterns())
     diff, cut = truncate_diff(diff, number_input('INPUT_MAX_DIFF_KB', 200, low=1) * 1024)
     (work / 'pr.diff').write_text(diff)
