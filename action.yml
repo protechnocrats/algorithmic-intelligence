@@ -12,6 +12,22 @@ inputs:
   claude-code-oauth-token:
     description: Claude Code OAuth token from `claude setup-token`, for a Claude subscription instead of an API key.
     required: false
+  provider:
+    description: Where the model runs. anthropic (an API key or OAuth token), bedrock (Amazon Bedrock, with AWS credentials set up earlier in the job), or vertex (Google Vertex AI, with Google credentials set up earlier in the job).
+    required: false
+    default: anthropic
+  aws-region:
+    description: AWS region for provider bedrock (empty uses AWS_REGION from the job).
+    required: false
+    default: ''
+  vertex-project-id:
+    description: Google Cloud project for provider vertex.
+    required: false
+    default: ''
+  vertex-region:
+    description: Vertex AI region for provider vertex, such as us-east5 or global.
+    required: false
+    default: ''
   model:
     description: Model alias or full name (empty uses Claude Code's default).
     required: false
@@ -32,6 +48,38 @@ inputs:
     description: Extra context for the reviewer, such as production input sizes and latency targets.
     required: false
     default: ''
+  config-file:
+    description: A file of production sizes, targets, and constraints for the reviewer, read from the base branch so a pull request cannot change it (empty disables). Added to instructions.
+    required: false
+    default: .github/algorithmic-intelligence.md
+  exclude-paths:
+    description: Glob patterns of files not to review, one per line or comma separated, such as generated or vendored code. `*` matches across directories, and a directory pattern covers everything under it.
+    required: false
+    default: ''
+  require-label:
+    description: Review only pull requests carrying this label (empty reviews every pull request). Add `labeled` to the workflow's pull_request types.
+    required: false
+    default: ''
+  command-authors:
+    description: Author associations whose /algo-intelligence and /algo-intelligence dismiss comments are obeyed.
+    required: false
+    default: OWNER,MEMBER,COLLABORATOR
+  reply-to-threads:
+    description: Reply on this action's review threads on the changed lines when the finding is fixed or dismissed. The threads stay open for the developer to resolve.
+    required: false
+    default: 'true'
+  block-on-severity:
+    description: Fail the job when the review has a finding at or above this severity (high, medium, or low), so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A "/algo-intelligence dismiss" comment re-runs the failed job, which then passes without a new review. Empty never fails it on findings.
+    required: false
+    default: high
+  fail-on-error:
+    description: Fail the job when the review does not finish (Claude Code fails to start, an authentication or API error, the budget or time limit reached). The comment still says why. false lets such a run pass, as before 0.7.6.
+    required: false
+    default: 'true'
+  sarif:
+    description: Also write the findings as SARIF, for github/codeql-action/upload-sarif (the sarif-file output gives its path).
+    required: false
+    default: 'false'
   comment:
     description: Post (and update) a pull request comment. When false, the report goes only to the job summary.
     required: false
@@ -73,7 +121,7 @@ inputs:
     required: false
     default: ''
   claude-code-version:
-    description: Claude Code version to install from npm. Pinned; change it deliberately.
+    description: Claude Code version to install from npm. The release's version is installed from a lockfile that checks every download's integrity hash; another version is installed without that check.
     required: false
     default: '2.1.327'
   github-token:
@@ -84,25 +132,31 @@ inputs:
 outputs:
   status:
     description: reviewed, failed, skipped, or unchanged (the code is the same as at the last review, whose findings the counts repeat).
-    value: ${{ steps.post.outputs.status || steps.prepare.outputs.status }}
+    value: ${{ steps.post.outputs.status || steps.unchanged.outputs.status || steps.prepare.outputs.status }}
   findings:
     description: Number of findings (empty when the review gave no machine-readable findings).
-    value: ${{ steps.post.outputs.findings || steps.prepare.outputs.findings }}
+    value: ${{ steps.post.outputs.findings || steps.unchanged.outputs.findings || steps.prepare.outputs.findings }}
   high:
     description: Number of high-severity findings.
-    value: ${{ steps.post.outputs.high || steps.prepare.outputs.high }}
+    value: ${{ steps.post.outputs.high || steps.unchanged.outputs.high || steps.prepare.outputs.high }}
   medium:
     description: Number of medium-severity findings.
-    value: ${{ steps.post.outputs.medium || steps.prepare.outputs.medium }}
+    value: ${{ steps.post.outputs.medium || steps.unchanged.outputs.medium || steps.prepare.outputs.medium }}
   low:
     description: Number of low-severity findings.
-    value: ${{ steps.post.outputs.low || steps.prepare.outputs.low }}
+    value: ${{ steps.post.outputs.low || steps.unchanged.outputs.low || steps.prepare.outputs.low }}
   clean:
     description: true when the review finished and found nothing.
-    value: ${{ steps.post.outputs.clean || steps.prepare.outputs.clean }}
+    value: ${{ steps.post.outputs.clean || steps.unchanged.outputs.clean || steps.prepare.outputs.clean }}
   resolved:
     description: Number of findings from the previous review that this push resolved.
     value: ${{ steps.post.outputs.resolved }}
+  sarif-file:
+    description: Path of the SARIF file when sarif is true and the review gave machine-readable findings; empty otherwise.
+    value: ${{ steps.post.outputs.sarif-file }}
+  blocked:
+    description: true when the review has a finding at or above block-on-severity.
+    value: ${{ steps.check.outputs.blocked }}
 
 runs:
   using: composite
@@ -112,34 +166,85 @@ runs:
       shell: bash
       env:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
-        AI_HAS_CREDENTIALS: ${{ (inputs.anthropic-api-key != '' || inputs.claude-code-oauth-token != '') && 'true' || 'false' }}
+        AI_QUIET: ${{ runner.temp }}/algorithmic-intelligence-quiet
+        AI_HAS_CREDENTIALS: ${{ (inputs.anthropic-api-key != '' || inputs.claude-code-oauth-token != '' || inputs.provider == 'bedrock' || inputs.provider == 'vertex') && 'true' || 'false' }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_PROVIDER: ${{ inputs.provider }}
         INPUT_MAX_DIFF_KB: ${{ inputs.max-diff-kb }}
         INPUT_INSTRUCTIONS: ${{ inputs.instructions }}
+        INPUT_CONFIG_FILE: ${{ inputs.config-file }}
+        INPUT_EXCLUDE_PATHS: ${{ inputs.exclude-paths }}
+        INPUT_REQUIRE_LABEL: ${{ inputs.require-label }}
+        INPUT_COMMAND_AUTHORS: ${{ inputs.command-authors }}
+        INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
+        INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
+        INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_REVIEW_DRAFTS: ${{ inputs.review-drafts }}
         INPUT_ALLOW_FORKS: ${{ inputs.allow-forks }}
         INPUT_FORK_AUTHORS: ${{ inputs.fork-authors }}
         INPUT_FORK_LABEL: ${{ inputs.fork-label }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" prepare
 
-    - name: Install Claude Code
-      if: steps.prepare.outputs.skip == 'false'
+    # A quiet review (no comment) has no comment to carry its fingerprint, so the cache keeps it.
+    - name: Look for an earlier quiet review of the same code
+      id: quiet
+      if: steps.prepare.outputs.skip == 'false' && steps.prepare.outputs.cache-key != ''
+      continue-on-error: true
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25  # v5.1.0
+      with:
+        path: ${{ runner.temp }}/algorithmic-intelligence-quiet
+        key: ${{ steps.prepare.outputs.cache-key }}
+
+    - name: Code unchanged since a quiet review
+      id: unchanged
+      if: steps.quiet.outputs.cache-hit == 'true'
+      shell: bash
+      env:
+        AI_QUIET: ${{ runner.temp }}/algorithmic-intelligence-quiet
+      run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" unchanged
+
+    - name: Install Claude Code (lockfile with integrity hashes)
+      id: install
+      if: steps.prepare.outputs.skip == 'false' && steps.quiet.outputs.cache-hit != 'true'
       shell: bash
       env:
         VERSION: ${{ inputs.claude-code-version }}
-      run: npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${VERSION}"
+        DEST: ${{ runner.temp }}/algorithmic-intelligence-tools
+      run: |
+        set -euo pipefail
+        lock="$GITHUB_ACTION_PATH/ci/npm"
+        locked=$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["dependencies"]["@anthropic-ai/claude-code"])' "$lock/package.json")
+        rm -rf "$DEST" && mkdir -p "$DEST"
+        if [ "$VERSION" = "$locked" ]; then
+          cp "$lock/package.json" "$lock/package-lock.json" "$DEST/"
+          npm ci --prefix "$DEST" --ignore-scripts --no-audit --no-fund
+        else
+          echo "::warning::claude-code-version $VERSION is not the version this release locks ($locked): installing it without the lockfile's integrity check."
+          npm install --prefix "$DEST" --ignore-scripts --no-audit --no-fund --no-save "@anthropic-ai/claude-code@${VERSION}"
+        fi
+        # Install scripts stay off for every package; Claude Code's own postinstall, from the checked tarball, puts
+        # the native binary for this platform in place of its placeholder.
+        pkg="$DEST/node_modules/@anthropic-ai/claude-code"
+        if [ -f "$pkg/install.cjs" ]; then (cd "$pkg" && node install.cjs); fi
+        "$DEST/node_modules/.bin/claude" --version
+        echo "claude=$DEST/node_modules/.bin/claude" >> "$GITHUB_OUTPUT"
 
     - name: Review (read-only tools, no GitHub token)
-      if: steps.prepare.outputs.skip == 'false'
+      if: steps.prepare.outputs.skip == 'false' && steps.quiet.outputs.cache-hit != 'true'
       shell: bash
       env:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        AI_CLAUDE: ${{ steps.install.outputs.claude }}
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
         GITHUB_TOKEN: ''
         GH_TOKEN: ''
         ACTIONS_RUNTIME_TOKEN: ''
         ACTIONS_ID_TOKEN_REQUEST_TOKEN: ''
+        INPUT_PROVIDER: ${{ inputs.provider }}
+        INPUT_AWS_REGION: ${{ inputs.aws-region }}
+        INPUT_VERTEX_PROJECT_ID: ${{ inputs.vertex-project-id }}
+        INPUT_VERTEX_REGION: ${{ inputs.vertex-region }}
         INPUT_MODEL: ${{ inputs.model }}
         INPUT_MAX_BUDGET_USD: ${{ inputs.max-budget-usd }}
         INPUT_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
@@ -147,16 +252,43 @@ runs:
 
     - name: Post the report (no model credentials)
       id: post
-      if: steps.prepare.outputs.skip == 'false'
+      if: steps.prepare.outputs.skip == 'false' && steps.quiet.outputs.cache-hit != 'true'
       shell: bash
       env:
         AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        AI_QUIET: ${{ steps.prepare.outputs.cache-key != '' && format('{0}/algorithmic-intelligence-quiet', runner.temp) || '' }}
         AI_NUMBER: ${{ steps.prepare.outputs.number }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        ANTHROPIC_API_KEY: ''
+        CLAUDE_CODE_OAUTH_TOKEN: ''
         INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_COMMENT_ON_CLEAN: ${{ inputs.comment-on-clean }}
         INPUT_COMMENT_MIN_SEVERITY: ${{ inputs.comment-min-severity }}
         INPUT_INLINE_COMMENTS: ${{ inputs.inline-comments }}
         INPUT_MAX_INLINE_COMMENTS: ${{ inputs.max-inline-comments }}
         INPUT_INLINE_MIN_SEVERITY: ${{ inputs.inline-min-severity }}
+        INPUT_REPLY_TO_THREADS: ${{ inputs.reply-to-threads }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
       run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" post
+
+    - name: Remember a quiet review of this code
+      if: steps.post.outputs.save-quiet == 'true' && steps.prepare.outputs.cache-key != ''
+      continue-on-error: true
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25  # v5.1.0
+      with:
+        path: ${{ runner.temp }}/algorithmic-intelligence-quiet
+        key: ${{ steps.prepare.outputs.cache-key }}
+
+    - name: Check the result (fail-on-error, block-on-severity)
+      id: check
+      shell: bash
+      env:
+        AI_WORK: ${{ runner.temp }}/algorithmic-intelligence
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        INPUT_BLOCK_ON_SEVERITY: ${{ inputs.block-on-severity }}
+        AI_STATUS: ${{ steps.post.outputs.status || steps.unchanged.outputs.status || steps.prepare.outputs.status }}
+        AI_HIGH: ${{ steps.post.outputs.high || steps.unchanged.outputs.high || steps.prepare.outputs.high }}
+        AI_MEDIUM: ${{ steps.post.outputs.medium || steps.unchanged.outputs.medium || steps.prepare.outputs.medium }}
+        AI_LOW: ${{ steps.post.outputs.low || steps.unchanged.outputs.low || steps.prepare.outputs.low }}
+      run: python3 -I "$GITHUB_ACTION_PATH/ci/review.py" gate

@@ -1,0 +1,8 @@
+{
+  "name": "algorithmic-intelligence-ci-tools",
+  "private": true,
+  "description": "Pins the Claude Code version the pull request review installs; package-lock.json holds the integrity hash of every file npm downloads.",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "2.1.327"
+  }
+}
