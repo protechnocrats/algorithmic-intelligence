@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   review:
-    name: Algorithmic Intelligence - checks
+    name: Algorithmic Intelligence - review
     if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -109,7 +109,7 @@ Besides its job, the action sets a commit status named **Algorithmic Intelligenc
 - **pending** while a review runs, and **error** when it does not finish (success instead with `fail-on-error: false`).
 - **success** with the reason when a pull request is not reviewed (documentation only, a draft, excluded files).
 
-Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it. Require the status **Algorithmic Intelligence**, not the job **Algorithmic Intelligence - checks**: the job stays green on findings (it fails only when the review does not finish), so requiring it alone blocks nothing. Keep the job's name different from the status's name, as in the examples; with the same name a rule cannot tell them apart.
+Choose the severity that blocks with `block-on-severity`: `high` blocks only findings that would miss the stated targets or degrade badly at production sizes, `medium` and `low` block more, and an empty value never blocks. On its own a failing status is a red mark that anyone can merge past. To make it a real block, add **Algorithmic Intelligence** as a required status check in a branch rule (Settings → Rules, or branch protection), so a pull request with a blocking finding cannot merge until the finding is fixed or a maintainer dismisses it. Require the status **Algorithmic Intelligence**, not the job **Algorithmic Intelligence - review**: the job stays green on findings (it fails only when the review does not finish), so requiring it alone blocks nothing. Keep the job's name different from the status's name, as in the examples; with the same name a rule cannot tell them apart.
 
 Setting a status needs `statuses: write` in the workflow's permissions, as in the examples here; with `block-on-severity` empty, no status is set and the permission is not needed. Without it the action notes it in the log (a warning only when something would have blocked) and fails the job on a blocking finding instead, so a block is never silently lost; that job does not turn green on a dismissal until it is re-run. Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
 
@@ -191,7 +191,7 @@ concurrency:
 
 jobs:
   review:
-    name: Algorithmic Intelligence - checks
+    name: Algorithmic Intelligence - review
     if: github.event.pull_request.draft == false   # drafts are not reviewed; marking one ready reviews it
     runs-on: ubuntu-latest
     timeout-minutes: 30
