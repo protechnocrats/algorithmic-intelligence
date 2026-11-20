@@ -22,14 +22,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.5/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.6/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.7.5` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.7.6` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -103,12 +103,12 @@ If your project publishes a library or an API that other people call, an interfa
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.7.5/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.7.6/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.5/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.6/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -127,7 +127,7 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 Copy the `skills/algorithmic-intelligence/` folder (it contains `SKILL.md` and the `references/` folder it links to) into your agent's skills directory:
 
 ```bash
-git clone --branch 0.7.5 https://github.com/protechnocrats/algorithmic-intelligence.git
+git clone --branch 0.7.6 https://github.com/protechnocrats/algorithmic-intelligence.git
 cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
 ```
 
@@ -199,7 +199,7 @@ Without uv, clone the repository at a release tag and use `"command": "python3"`
 
 ### Optional: pull request review in CI (GitHub Actions)
 
-The repository is also a GitHub Action that reviews each pull request in report mode and posts one comment, updated on each push (none when it finds nothing at medium severity or above): what the change does to complexity on the paths it touches, with the decisions needed and the benchmark that would confirm each finding. The agent can only read (no shell, edits, or network) and never sees the GitHub token. Add a secret with an Anthropic API key or a Claude Code OAuth token and a workflow that checks out the pull request and runs `protechnocrats/algorithmic-intelligence@<tag>`. The comment says it was written by an AI model and links to a place to report a wrong review. New findings also go on the changed lines they concern, the comment says what changed since the last review, and the outputs give finding counts for the rest of your workflow. Pull requests from forks can be reviewed when you opt in. [docs/CI.md](docs/CI.md) has the workflow, inputs, security model, what data it sends, support, and limits. Maintainers can state production sizes in a file on the base branch, exclude generated code, review on demand with a `/algo-intelligence` comment, dismiss findings they disagree with, block merging on findings at a severity they choose, and opt into code scanning; the model can run on Anthropic's API, Amazon Bedrock, or Google Vertex AI. Available from 0.7.2; line comments, the comparison with the last review, outputs, and fork support from 0.7.4. The configuration file, commands, dismissals, blocking on findings, SARIF, and Bedrock and Vertex are in the development version.
+The repository is also a GitHub Action that reviews each pull request in report mode and posts one comment, updated on each push (none when it finds nothing at medium severity or above): what the change does to complexity on the paths it touches, with the decisions needed and the benchmark that would confirm each finding. The agent can only read (no shell, edits, or network) and never sees the GitHub token. Add a secret with an Anthropic API key or a Claude Code OAuth token and a workflow that checks out the pull request and runs `protechnocrats/algorithmic-intelligence@<tag>`. The comment says it was written by an AI model and links to a place to report a wrong review. New findings also go on the changed lines they concern, the comment says what changed since the last review, and the outputs give finding counts for the rest of your workflow. Pull requests from forks can be reviewed when you opt in. [docs/CI.md](docs/CI.md) has the workflow, inputs, security model, what data it sends, support, and limits. Maintainers can state production sizes in a file on the base branch, exclude generated code, review on demand with a `/algo-intelligence` comment, dismiss findings they disagree with, block merging on findings at a severity they choose, and opt into code scanning; the model can run on Anthropic's API, Amazon Bedrock, or Google Vertex AI. Available from 0.7.2; line comments, the comparison with the last review, outputs, and fork support from 0.7.4. The configuration file, commands, dismissals, blocking on findings, SARIF, and Bedrock and Vertex are from 0.7.6.
 
 ### Make sure it loads
 

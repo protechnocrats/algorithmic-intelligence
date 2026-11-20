@@ -2,7 +2,7 @@
 
 The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/algo-intelligence` commands and dismissals, replies on review threads, blocking on findings (`block-on-severity`), SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are unreleased (in the development version).
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/algo-intelligence` commands and dismissals, replies on review threads, blocking on findings (`block-on-severity`), `fail-on-error`, severity callouts, SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are from 0.7.6.
 
 ## Setup
 
@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0               # the review diffs against the base commit
           persist-credentials: false   # keeps the GitHub token out of .git/config, which the agent can read
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -146,7 +146,7 @@ jobs:
           ref: refs/pull/${{ github.event.issue.number || github.event.pull_request.number }}/head   # to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -194,7 +194,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}   # the pull request's code, to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           allow-forks: true
@@ -219,11 +219,11 @@ permissions:
   pull-requests: write
   id-token: write
 ...
-      - uses: aws-actions/configure-aws-credentials@<pinned SHA>
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
         with:
           role-to-assume: arn:aws:iam::123456789012:role/algorithmic-intelligence
           aws-region: us-east-1
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         with:
           provider: bedrock
           # model: a Bedrock model ID or inference profile, if the default is not enabled in your account
@@ -232,11 +232,11 @@ permissions:
 Google Vertex AI:
 
 ```yaml
-      - uses: google-github-actions/auth@<pinned SHA>
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093  # v3.0.0
         with:
           workload_identity_provider: projects/123/locations/global/workloadIdentityPools/github/providers/repo
           service_account: algorithmic-intelligence@my-project.iam.gserviceaccount.com
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         with:
           provider: vertex
           vertex-project-id: my-project
@@ -250,13 +250,13 @@ The review step passes the provider's settings to Claude Code and leaves out the
 With `sarif: true`, the action also writes the findings as SARIF and gives the path in the `sarif-file` output, for upload to code scanning, where findings get GitHub's own alert list and dismissal workflow. Code scanning on private repositories needs GitHub Advanced Security, and the upload needs `security-events: write`:
 
 ```yaml
-      - uses: protechnocrats/algorithmic-intelligence@0.7.5
+      - uses: protechnocrats/algorithmic-intelligence@0.7.6
         id: review
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           sarif: true
       - if: steps.review.outputs.sarif-file != ''
-        uses: github/codeql-action/upload-sarif@<pinned SHA>
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea  # v4.39.4
         with:
           sarif_file: ${{ steps.review.outputs.sarif-file }}
           category: algorithmic-intelligence

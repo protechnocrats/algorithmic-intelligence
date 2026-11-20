@@ -6,21 +6,25 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-11-20
+
+The pull request review can block merging, and maintainers can steer it from the pull request. **Upgrading changes what you see:** the check now fails on a high-severity finding and when a review does not finish; set `block-on-severity: ''` and `fail-on-error: false` to keep it always passing. A maintainer can overrule a finding with `/algo-intelligence dismiss P1`, which clears the failed check without a new review, or review on demand with `/algo-intelligence`. Severity is shown in color, production sizes can live in `.github/algorithmic-intelligence.md` on the base branch, and the model can run on Amazon Bedrock or Google Vertex AI. Update your workflow from the examples in docs/CI.md: they skip drafts, name the check "Algorithmic Intelligence - review", and add the command workflow. The skill's files and the plugin's behavior are the same as in 0.7.5.
+
 ### Added
 
 - Pull request review: a configuration file of production sizes and targets, `.github/algorithmic-intelligence.md` by default (`config-file`), read from the base branch so a pull request cannot change it.
 - Pull request review: `exclude-paths`, glob patterns of files not to review, such as generated or vendored code.
 - Pull request review: `/algo-intelligence` comments. A maintainer (`command-authors`) can review a pull request on demand, and dismiss findings with `/algo-intelligence dismiss P3`, or by replying `/algo-intelligence dismiss` on a review comment; dismissed findings are listed in the comment, not reported again, and not counted. `require-label` reviews only pull requests carrying a label.
 - Pull request review: when a push fixes a finding, or a maintainer dismisses it, its review thread gets a reply saying so (`reply-to-threads`). The conversation is left open for the developer to resolve.
-- Pull request review: `block-on-severity` (`high` by default; empty never) fails the job on a finding at or above it, so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A `/algo-intelligence dismiss` comment re-runs the failed job, which passes without a new review (the command workflow needs `actions: write`).
 - Pull request review: `sarif` writes the findings as SARIF for code scanning (`sarif-file` output).
 - Pull request review: Amazon Bedrock and Google Vertex AI (`provider`, `aws-region`, `vertex-project-id`, `vertex-region`). A cloud credentials file inside the checkout is moved out of the agent's reach while it runs.
 - Pull request review: when the reviewer has to assume production sizes, the report says which ones.
 
 ### Changed
 
+- Pull request review: the job now fails on a finding at or above `block-on-severity` (`high` by default; it never failed on findings before), so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A blocking finding always gets a comment. A `/algo-intelligence dismiss` comment re-runs the failed job, which passes without a new review (the command workflow needs `actions: write`). `block-on-severity: ''` restores the old behavior.
 - Pull request review: severity is shown in color. Review comments on changed lines open with GitHub's callout for their severity (red Caution for high, orange Warning for medium, blue Note for low), and the main comment opens with a count per severity (🔴 high · 🟠 medium · 🔵 low).
-- Pull request review: a cost that grows faster than linearly in an input whose size nothing states or bounds is rated at least medium, with the unknown size said, and new code is not rated lower because nothing calls it yet. A quadratic helper was rated low, and so posted no comment, when the reviewer assumed a small input.
+- Pull request review: a cost that grows faster than linearly in an input whose size nothing states or bounds is rated at least medium, with the unknown size said, and new code is not rated lower because nothing calls it yet.
 - Pull request review: the example workflows no longer run on draft pull requests (a job-level `if:`), so a draft shows the check as skipped instead of a green pass that reviewed nothing; marking it ready for review reviews it.
 - Pull request review: a review that does not finish now fails the job (it passed with a warning before), so a broken setup shows as a red check; the comment still says why. `fail-on-error: false` restores the old behavior.
 - Pull request review: a review that does not finish keeps the last report that did in the comment, with a note on top, instead of replacing it; its comparison with the last review survives too.
