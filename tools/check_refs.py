@@ -34,7 +34,7 @@ REPO_PREFIXES = ('skills/', 'plugin/', 'docs/', 'tools/', 'tests/', '.github/', 
 EXEMPT_NAMES = {'OPTIMIZATION-REPORT.md', 'BUGS-FOUND.md', 'APPLY-RESULTS.md', 'CLAUDE.md', 'AGENTS.md',
                 'GO.md', 'CPP.md', 'FSHARP.md', 'OBJECTIVEC.md', 'ERLANG.md'}
 # Files the pull request review action reads from a user's repository.
-EXEMPT_PATHS = {'.github/performance-review.md'}
+EXEMPT_PATHS = {'.github/algorithmic-intelligence.md'}
 RULE_MAX, PHASE_MAX, MOVE_MAX = 14, 6, 20
 FRONTMATTER_KEYS = {'name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools'}
 

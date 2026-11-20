@@ -51,7 +51,7 @@ inputs:
   config-file:
     description: A file of production sizes, targets, and constraints for the reviewer, read from the base branch so a pull request cannot change it (empty disables). Added to instructions.
     required: false
-    default: .github/performance-review.md
+    default: .github/algorithmic-intelligence.md
   exclude-paths:
     description: Glob patterns of files not to review, one per line or comma separated, such as generated or vendored code. `*` matches across directories, and a directory pattern covers everything under it.
     required: false
@@ -61,7 +61,7 @@ inputs:
     required: false
     default: ''
   command-authors:
-    description: Author associations whose /perf-review and /perf-review dismiss comments are obeyed.
+    description: Author associations whose /algo-intelligence and /algo-intelligence dismiss comments are obeyed.
     required: false
     default: OWNER,MEMBER,COLLABORATOR
   reply-to-threads:
@@ -69,7 +69,7 @@ inputs:
     required: false
     default: 'true'
   block-on-severity:
-    description: Fail the job when the review has a finding at or above this severity (high, medium, or low), so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A "/perf-review dismiss" comment re-runs the failed job, which then passes without a new review. Empty never fails it on findings.
+    description: Fail the job when the review has a finding at or above this severity (high, medium, or low), so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A "/algo-intelligence dismiss" comment re-runs the failed job, which then passes without a new review. Empty never fails it on findings.
     required: false
     default: high
   fail-on-error:

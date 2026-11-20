@@ -8,8 +8,8 @@ process:
                        description, the previous review's findings, the prompt, and a one-skill plugin into a work
                        directory outside the checkout. Decides whether to skip (drafts, forks, a missing required
                        label, documentation-only or excluded changes, code unchanged since the last review). Handles
-                       /perf-review comments: "/perf-review" from a trusted author reviews now, and
-                       "/perf-review dismiss P3" records the dismissal in the comment without a review. Has the
+                       /algo-intelligence comments: "/algo-intelligence" from a trusted author reviews now, and
+                       "/algo-intelligence dismiss P3" records the dismissal in the comment without a review. Has the
                        GitHub token, not the model credentials.
   review.py unchanged  sets the outputs of a quiet review (one that posted no comment) whose code is unchanged,
                        from the state the cache restored.
@@ -48,7 +48,7 @@ FAILED_START, FAILED_END = '<!-- ai-review-failed -->', '<!-- /ai-review-failed 
 DISMISSED_START, DISMISSED_END = '<!-- ai-review-dismissed -->', '<!-- /ai-review-dismissed -->'
 HEADING = '### Algorithmic Intelligence review\n\n'
 FOOTER_START = '\n\n---\n<sub>Written by Claude'
-COMMAND = '/perf-review'
+COMMAND = '/algo-intelligence'
 CONFIG_LIMIT = 8000            # characters of the base branch's configuration file given to the agent
 STATE_TAG = 'algorithmic-intelligence-ci-state'
 FINDINGS_TAG = 'ai-review-findings'
@@ -214,7 +214,7 @@ def same_problem(a, b):
 
 
 def parse_command(body):
-    """("review", []) for "/perf-review", ("dismiss", ["P3", ...]) for "/perf-review dismiss P3 ...", else None.
+    """("review", []) for "/algo-intelligence", ("dismiss", ["P3", ...]) for "/algo-intelligence dismiss P3 ...", else None.
     Only the first line of the comment counts."""
     text = (body or '').strip()
     m = re.fullmatch(re.escape(COMMAND) + r'(?:\s+(.*))?', text.splitlines()[0].strip() if text else '')
@@ -390,7 +390,7 @@ def inline_finding_ids(number, token):
 
 
 def dismissal_commands(issue_comments, inline_ids, replies):
-    """[(finding ids, login)] from "/perf-review dismiss" comments by trusted authors: on the pull request, naming
+    """[(finding ids, login)] from "/algo-intelligence dismiss" comments by trusted authors: on the pull request, naming
     ids, or as a reply on one of this action's review comments, dismissing that comment's finding."""
     trusted = authors('INPUT_COMMAND_AUTHORS')
     out = []
@@ -417,7 +417,7 @@ def is_fork(pr):
 
 def skip_reason(event, changed, has_credentials, requested=False):
     """Why this pull request should not be reviewed, or '' to review it. `changed` is already filtered by
-    exclude-paths. `requested` is a /perf-review comment from a trusted author: it reviews drafts and pull requests
+    exclude-paths. `requested` is a /algo-intelligence comment from a trusted author: it reviews drafts and pull requests
     without the required label, and stands in for fork-authors and fork-label (allow-forks is still needed)."""
     pr = event.get('pull_request')
     if not pr:
@@ -472,7 +472,7 @@ def filter_diff(diff, patterns):
 def base_config(base):
     """The maintainers' configuration file (config-file), read from the base commit so the pull request under review
     cannot change it."""
-    path = env('INPUT_CONFIG_FILE', '.github/performance-review.md')
+    path = env('INPUT_CONFIG_FILE', '.github/algorithmic-intelligence.md')
     if not path or not base:
         return ''
     try:
@@ -712,7 +712,7 @@ def command_event(event, name, token):
         if moved and rerun_review(state, number, token):
             notice('notice', 'Re-running the failed review job; it will pass if nothing else blocks.')
         return None, (f'dismissed {", ".join(moved)}' if moved else
-                      'nothing to dismiss: name the findings by id ("/perf-review dismiss P3"), or reply on a review comment')
+                      'nothing to dismiss: name the findings by id ("/algo-intelligence dismiss P3"), or reply on a review comment')
     try:
         return api('GET', f'{api_base()}/pulls/{number}', token), ''
     except NET_ERRORS as e:

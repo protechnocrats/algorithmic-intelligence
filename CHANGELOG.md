@@ -8,11 +8,11 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ### Added
 
-- Pull request review: a configuration file of production sizes and targets, `.github/performance-review.md` by default (`config-file`), read from the base branch so a pull request cannot change it.
+- Pull request review: a configuration file of production sizes and targets, `.github/algorithmic-intelligence.md` by default (`config-file`), read from the base branch so a pull request cannot change it.
 - Pull request review: `exclude-paths`, glob patterns of files not to review, such as generated or vendored code.
-- Pull request review: `/perf-review` comments. A maintainer (`command-authors`) can review a pull request on demand, and dismiss findings with `/perf-review dismiss P3`, or by replying `/perf-review dismiss` on a review comment; dismissed findings are listed in the comment, not reported again, and not counted. `require-label` reviews only pull requests carrying a label.
+- Pull request review: `/algo-intelligence` comments. A maintainer (`command-authors`) can review a pull request on demand, and dismiss findings with `/algo-intelligence dismiss P3`, or by replying `/algo-intelligence dismiss` on a review comment; dismissed findings are listed in the comment, not reported again, and not counted. `require-label` reviews only pull requests carrying a label.
 - Pull request review: when a push fixes a finding, or a maintainer dismisses it, its review thread gets a reply saying so (`reply-to-threads`). The conversation is left open for the developer to resolve.
-- Pull request review: `block-on-severity` (`high` by default; empty never) fails the job on a finding at or above it, so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A `/perf-review dismiss` comment re-runs the failed job, which passes without a new review (the command workflow needs `actions: write`).
+- Pull request review: `block-on-severity` (`high` by default; empty never) fails the job on a finding at or above it, so a branch rule requiring the job blocks merging until the finding is fixed or dismissed. A `/algo-intelligence dismiss` comment re-runs the failed job, which passes without a new review (the command workflow needs `actions: write`).
 - Pull request review: `sarif` writes the findings as SARIF for code scanning (`sarif-file` output).
 - Pull request review: Amazon Bedrock and Google Vertex AI (`provider`, `aws-region`, `vertex-project-id`, `vertex-region`). A cloud credentials file inside the checkout is moved out of the agent's reach while it runs.
 - Pull request review: when the reviewer has to assume production sizes, the report says which ones.
