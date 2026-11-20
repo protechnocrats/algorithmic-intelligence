@@ -33,6 +33,8 @@ REPO_PREFIXES = ('skills/', 'plugin/', 'docs/', 'tools/', 'tests/', '.github/', 
 # Files the skill writes into a user's project, agent instruction files, and example profile names.
 EXEMPT_NAMES = {'OPTIMIZATION-REPORT.md', 'BUGS-FOUND.md', 'APPLY-RESULTS.md', 'CLAUDE.md', 'AGENTS.md',
                 'GO.md', 'CPP.md', 'FSHARP.md', 'OBJECTIVEC.md', 'ERLANG.md'}
+# Files the pull request review action reads from a user's repository.
+EXEMPT_PATHS = {'.github/performance-review.md'}
 RULE_MAX, PHASE_MAX, MOVE_MAX = 14, 6, 20
 FRONTMATTER_KEYS = {'name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools'}
 
@@ -123,7 +125,7 @@ def check_file(path: str, root: str, texts: dict) -> list:
             is_repo_path = name.startswith(REPO_PREFIXES)
             if not (is_md or is_repo_path):
                 continue
-            if os.path.basename(name) in EXEMPT_NAMES and not is_repo_path:
+            if name in EXEMPT_PATHS or (os.path.basename(name) in EXEMPT_NAMES and not is_repo_path):
                 continue
             if not resolve(name, file_dir, root):
                 report(lineno, f'missing file `{name}`')
