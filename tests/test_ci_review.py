@@ -348,11 +348,8 @@ class PostEndToEnd(unittest.TestCase):
             calls.append((method, url.split('/repos/o/r')[-1], payload))
             if fail_with and method != 'GET':
                 raise fail_with
-            if url.endswith('/graphql'):
-                if 'reviewThreads' in payload['query']:
-                    return {'data': {'repository': {'pullRequest': {'reviewThreads': {
-                        'pageInfo': {'hasNextPage': False, 'endCursor': None}, 'nodes': threads or []}}}}}
-                return {'data': {}}
+            if method == 'GET' and '/pulls/7/comments' in url:
+                return threads or []
             if method == 'GET' and '/issues/' in url:
                 return existing or []
             return [] if method == 'GET' else {}
@@ -365,7 +362,7 @@ class PostEndToEnd(unittest.TestCase):
             (work / 'inline.json').write_text(json.dumps(inline or {'commit': 'h1', 'lines': {'a.py': [1, 2, 3]}}))
             out = work / 'out'
             environ = {'AI_WORK': str(work), 'AI_NUMBER': '7', 'GITHUB_TOKEN': 't', 'GITHUB_REPOSITORY': 'o/r',
-                       'GITHUB_API_URL': 'https://api', 'GITHUB_GRAPHQL_URL': 'https://api/graphql',
+                       'GITHUB_API_URL': 'https://api',
                        'GITHUB_OUTPUT': str(out), 'GITHUB_STEP_SUMMARY': str(work / 'sum'), 'AI_QUIET': str(work / 'quiet'),
                        **(extra_env or {})}
             with mock.patch.dict(os.environ, environ), mock.patch.object(review, 'api', fake_api):
@@ -484,9 +481,6 @@ class CommandEvent(unittest.TestCase):
 
     def fake_api(self, method, url, token, payload=None):
         self.calls.append((method, url, payload))
-        if url.endswith('/graphql'):
-            return {'data': {'repository': {'pullRequest': {'reviewThreads': {
-                'pageInfo': {'hasNextPage': False}, 'nodes': []}}}}}
         if method == 'GET' and url.endswith('/issues/7/comments?per_page=100&page=1'):
             return [self.comment]
         if method == 'GET' and '/pulls/7/comments' in url:
@@ -500,7 +494,7 @@ class CommandEvent(unittest.TestCase):
                                                                         'user': {'login': 'ann', 'type': 'User'}}}
 
     def run_command(self, body, assoc='MEMBER'):
-        env = {'GITHUB_REPOSITORY': 'o/r', 'GITHUB_API_URL': 'https://api', 'GITHUB_GRAPHQL_URL': 'https://api/graphql'}
+        env = {'GITHUB_REPOSITORY': 'o/r', 'GITHUB_API_URL': 'https://api'}
         with mock.patch.dict(os.environ, env), mock.patch.object(review, 'api', self.fake_api):
             return review.command_event(self.event(body, assoc), 'issue_comment', 't')
 
@@ -677,26 +671,25 @@ class PostMore(PostEndToEnd):
         self.assertIn('Dismissed by maintainers', comment)
 
     def test_fixed_findings_get_a_reply_and_stay_open(self):
-        threads = [{'id': 'T1', 'isResolved': False, 'comments': {'nodes': [
-                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'Bot'}}]}},
-                   {'id': 'T2', 'isResolved': False, 'comments': {'nodes': [
-                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'User'}}]}},
-                   {'id': 'T3', 'isResolved': False, 'comments': {'nodes': [
-                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P2 -->\nx', 'author': {'__typename': 'Bot'}}]}},
-                   {'id': 'T4', 'isResolved': True, 'comments': {'nodes': [
-                       {'body': review.INLINE_MARKER + '\n<!-- ai-finding:P1 -->\nx', 'author': {'__typename': 'Bot'}}]}}]
+        bot, user = {'type': 'Bot'}, {'type': 'User'}
+        tag = lambda fid: review.INLINE_MARKER + f'\n<!-- ai-finding:{fid} -->\n**high · performance:** x'
+        comments = [{'id': 11, 'user': bot, 'body': tag('P1'), 'path': 'a.py', 'line': 40},
+                    {'id': 12, 'user': user, 'body': tag('P1'), 'path': 'a.py', 'line': 41},      # quoted by a person
+                    {'id': 13, 'user': bot, 'body': tag('P2'), 'path': 'a.py', 'line': 42},      # still present
+                    {'id': 14, 'user': bot, 'body': tag('P3'), 'path': 'a.py', 'line': 43},      # already replied on
+                    {'id': 15, 'user': bot, 'body': review.INLINE_MARKER + '\nFixed.', 'in_reply_to_id': 14}]
         text = 'Fixed.\n' + block({'findings': [{'severity': 'high', 'file': 'a.py', 'line': 2, 'title': 'still', 'detail': 'd',
-                                                 'previous': 'P2'}], 'resolved': ['P1', 'P2']})
-        prev = [{'id': 'P1', 'title': 'join', 'file': 'a.py'}, {'id': 'P2', 'title': 'still', 'file': 'a.py'}]
-        calls, outputs, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=threads)
-        graph = [p for m, u, p in calls if u.endswith('/graphql')]
-        replies = [p['variables'] for p in graph if 'addPullRequestReviewThreadReply' in p['query']]
-        self.assertEqual(([r['thread'] for r in replies], outputs['resolved']), (['T1'], '1'))
-        self.assertIn('Resolve this conversation', replies[0]['body'])
-        self.assertFalse(any('resolveReviewThread' in p['query'] for p in graph))   # the developer resolves it
-        calls, _, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=threads,
+                                                 'previous': 'P2'}], 'resolved': ['P1', 'P2', 'P3']})
+        prev = [{'id': 'P1', 'title': 'join', 'file': 'a.py'}, {'id': 'P2', 'title': 'still', 'file': 'a.py'},
+                {'id': 'P3', 'title': 'sort', 'file': 'a.py'}]
+        calls, outputs, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=comments)
+        replies = [(u, p['body']) for m, u, p in calls if u.endswith('/replies')]
+        self.assertEqual(([u for u, _ in replies], outputs['resolved']), (['/pulls/7/comments/11/replies'], '2'))
+        self.assertIn('Resolve this conversation', replies[0][1])
+        self.assertFalse(any('graphql' in u for m, u, p in calls))
+        calls, _, _ = self.run_post(text, previous=prev, existing=self.OLD, threads=comments,
                                     extra_env={'INPUT_REPLY_TO_THREADS': 'false'})
-        self.assertFalse(any(u.endswith('/graphql') for m, u, p in calls))
+        self.assertFalse(any(u.endswith('/replies') for m, u, p in calls))
 
     def test_sarif(self):
         keep = {}

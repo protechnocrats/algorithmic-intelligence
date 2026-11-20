@@ -354,47 +354,32 @@ def find_comment(comments):
     return None
 
 
-def graphql(query, variables, token):
-    data = api('POST', env('GITHUB_GRAPHQL_URL', 'https://api.github.com/graphql'), token,
-               {'query': query, 'variables': variables})
-    if not isinstance(data, dict) or data.get('errors'):
-        raise ValueError(str((data or {}).get('errors') if isinstance(data, dict) else data)[:300])
-    return data['data']
-
-
-THREADS = '''query($owner: String!, $name: String!, $number: Int!, $after: String) {
-  repository(owner: $owner, name: $name) { pullRequest(number: $number) {
-    reviewThreads(first: 100, after: $after) { pageInfo { hasNextPage endCursor }
-      nodes { id isResolved comments(first: 1) { nodes { body author { __typename } } } } } } } }'''
-REPLY = '''mutation($thread: ID!, $body: String!) {
-  addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $thread, body: $body}) { clientMutationId } }'''
 def reply_to_threads(number, token, ids, why):
-    """Reply on the open review threads this action started about the findings with these ids. The threads are left
-    open: the developer resolves them, which records that a person read the outcome. Returns how many it replied
-    on; never raises."""
+    """Reply on the review comments this action posted about the findings with these ids, through the REST reply
+    endpoint, once per comment. The conversations are left open: the developer resolves them, which records that a
+    person read the outcome. Returns how many it replied on; never raises."""
     if not (ids and token and number and flag('INPUT_REPLY_TO_THREADS', 'true')):
         return 0
-    owner, _, name = env('GITHUB_REPOSITORY').partition('/')
-    done, after = 0, None
     try:
-        while True:
-            page = graphql(THREADS, {'owner': owner, 'name': name, 'number': int(number), 'after': after}, token)
-            threads = page['repository']['pullRequest']['reviewThreads']
-            for t in threads['nodes']:
-                first = (t.get('comments') or {}).get('nodes') or [{}]
-                body = first[0].get('body') or ''
-                m = FINDING_ID.search(body)
-                if (t.get('isResolved') or not m or m.group(1) not in ids or INLINE_MARKER not in body
-                        or (first[0].get('author') or {}).get('__typename') != 'Bot'):
-                    continue
-                graphql(REPLY, {'thread': t['id'], 'body': f'{INLINE_MARKER}\n{why}'}, token)
-                done += 1
-            if not threads['pageInfo']['hasNextPage']:
-                return done
-            after = threads['pageInfo']['endCursor']
-    except (NET_ERRORS + (KeyError, TypeError)) as e:
-        notice('warning', f'Could not reply on the review threads of fixed or dismissed findings ({e}).')
-        return done
+        comments = list(paged(f'{api_base()}/pulls/{number}/comments', token))
+    except NET_ERRORS as e:
+        notice('warning', f'Could not read the review comments to reply on fixed or dismissed findings ({e}).')
+        return 0
+    ours = lambda c: INLINE_MARKER in (c.get('body') or '') and (c.get('user') or {}).get('type') == 'Bot'
+    replied = {c.get('in_reply_to_id') for c in comments if c.get('in_reply_to_id') and ours(c)}
+    done = 0
+    for c in comments:
+        m = FINDING_ID.search(c.get('body') or '')
+        if c.get('in_reply_to_id') or not ours(c) or not m or m.group(1) not in ids or c.get('id') in replied:
+            continue
+        try:
+            api('POST', f'{api_base()}/pulls/{number}/comments/{c["id"]}/replies', token,
+                {'body': f'{INLINE_MARKER}\n{why}'})
+            done += 1
+        except NET_ERRORS as e:
+            notice('warning', f'Could not reply on the review comment of {m.group(1)} ({e}).')
+            break
+    return done
 
 
 def previous_comment(number, token):
