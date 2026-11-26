@@ -83,6 +83,7 @@ The mode's output records these under "Request as understood".
 | When | Open |
 |---|---|
 | Report or apply mode | [WORKFLOW.md](references/WORKFLOW.md) and [REPORTING.md](references/REPORTING.md); apply mode also [APPLYING.md](references/APPLYING.md), including when a report's items are approved |
+| Continuing apply-mode work an earlier session started (asked to, or an `APPLY-PROGRESS.json` exists) | "Resuming" in [APPLYING.md](references/APPLYING.md), before any edit |
 | Write mode | [WRITING-NEW-CODE.md](references/WRITING-NEW-CODE.md) |
 | Before reading code in a language | [languages/INDEX.md](references/languages/INDEX.md), then that language's file ([C](references/languages/C.md), [C#](references/languages/CSHARP.md), [Java](references/languages/JAVA.md), [JavaScript/TypeScript](references/languages/JAVASCRIPT-TYPESCRIPT.md), [Kotlin](references/languages/KOTLIN.md), [Python](references/languages/PYTHON.md), [Rust](references/languages/RUST.md), [Swift](references/languages/SWIFT.md); others: [GENERIC.md](references/languages/GENERIC.md)) |
 | Analyzing or designing code that works on data, in every mode | [DATA-STRUCTURES.md](references/DATA-STRUCTURES.md), for the audit of each collection on a hot path |

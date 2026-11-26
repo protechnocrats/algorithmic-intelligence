@@ -287,12 +287,16 @@ def plant_difference(args):
     if not isinstance(covers, list) or not all(isinstance(c, str) for c in covers):
         raise ToolError('covers must be a list of file paths')
     covered = [_inside(root, c) for c in covers]
-    pid = 'plant-' + time.strftime('%Y%m%d-%H%M%S') + '-' + _sha(original + planted)[:8]
+    covers_sha = []
+    for f, _ in covered:  # lets a later session's edit gate tell whether these files are still the version tested
+        with open(f, 'rb') as fh:
+            covers_sha.append(_sha(fh.read()))
+    pid ='plant-' + time.strftime('%Y%m%d-%H%M%S') + '-' + _sha(original + planted)[:8]
     d = _state_dir(root)
     with open(os.path.join(d, pid + '.orig'), 'wb') as f:
         f.write(original)
     record = {'id': pid, 'file': rel, 'file_abs': full, 'status': 'planted', 'planted_at': time.time(),
-              'covers': [r for _, r in covered], 'covers_abs': [f for f, _ in covered],
+              'covers': [r for _, r in covered], 'covers_abs': [f for f, _ in covered], 'covers_sha256': covers_sha,
               'original_sha256': _sha(original), 'planted_sha256': _sha(planted),
               'purpose': str(args.get('purpose') or '')[:500], 'tests_failed': None, 'evidence': None}
     with open(os.path.join(d, pid + '.json'), 'w', encoding='utf-8') as f:
