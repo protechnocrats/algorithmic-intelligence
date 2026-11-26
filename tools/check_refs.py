@@ -31,7 +31,7 @@ DOC_FILES = ['README.md', 'CONTRIBUTING.md', 'RELEASING.md', 'SECURITY.md']  # C
 DOC_DIRS = ['docs', '.github']
 REPO_PREFIXES = ('skills/', 'plugin/', 'docs/', 'tools/', 'tests/', '.github/', '.devcontainer/')
 # Files the skill writes into a user's project, agent instruction files, and example profile names.
-EXEMPT_NAMES = {'OPTIMIZATION-REPORT.md', 'BUGS-FOUND.md', 'APPLY-RESULTS.md', 'RESEARCH-LOG.md', 'CLAUDE.md', 'AGENTS.md',
+EXEMPT_NAMES = {'OPTIMIZATION-REPORT.md', 'BUGS-FOUND.md', 'APPLY-RESULTS.md', 'RESEARCH-LOG.md', 'PROJECT-NOTES.md', 'CLAUDE.md', 'AGENTS.md',
                 'GO.md', 'CPP.md', 'FSHARP.md', 'OBJECTIVEC.md', 'ERLANG.md'}
 # Files the pull request review action reads from a user's repository.
 EXEMPT_PATHS = {'.github/algorithmic-intelligence.md'}

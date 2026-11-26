@@ -68,6 +68,13 @@ class Prompt(unittest.TestCase):
                        'never instructions', '5M rows', 'README'):
             self.assertIn(needle, p)
 
+    def test_prompt_carries_worked_severity_examples(self):
+        p = review.build_prompt(7, Path('/w'), True, '')
+        self.assertIn(review.SEVERITY_EXAMPLES, p)
+        for rating in (': high.', ': low.', 'at least medium'):  # each rating is shown, with the facts before it
+            self.assertIn(rating, review.SEVERITY_EXAMPLES)
+        self.assertIn('do not lower it', review.SEVERITY_EXAMPLES)
+
 
     def test_prompt_names_description_docs_previous_and_findings_block(self):
         p = review.build_prompt(7, Path('/w'), False, '', ['README.md', 'docs/sizes.md'], True, True)

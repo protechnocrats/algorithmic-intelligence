@@ -62,6 +62,7 @@ Costs are estimated per phase and re-estimated after the pilot measures cost per
 4. **Main round:** both models, both modes, every fixture. Gate: full scorecard.
 5. **Outside benchmark:** a sample of tasks from GSO or SWE-Perf, skill against baseline, after the license and harness check.
 6. **Fix and confirm:** skill changes for the failures found, then an A/B round (old skill against new) on the same cases. Gate: the new skill is no worse on any category, and better where it was aimed.
+7. **Component ablation,** when a new model becomes the primary one, and before the next release after that. Every component outside the core instructions encodes an assumption about what the model gets wrong without it, and those assumptions go stale as models improve. Remove one component at a time and rerun the main round's cases on the new model: the plugin as a whole, then separately the edit gate and coverage check, the guard, the summary check, the MCP tools, the progress file and resume routine, and the independent check of high-risk items. A first cut that removes several at once tells you nothing about which mattered, so remove them singly. Gate, per component: if removing it leaves every category no worse, propose deleting it (or making it optional) in the next release, with the counts; if it is worse on any category, keep it and record which. Components also go the other way: a failure the new model shows that nothing addresses is a candidate for a new one in phase 6.
 
 ## What this plan does not cover
 

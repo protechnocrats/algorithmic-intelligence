@@ -160,7 +160,7 @@ A passing test is evidence only if it could have failed.
   - a changed exception type, a skipped side effect;
   - the tempting wrong rewrite rejected during analysis (the unstable sort, the version without wraparound).
 
-  Run each mutant under a time limit. An uncaught mutant marks a property the test cannot see: add inputs or comparisons, or report that property unverified. Delete mutants afterward and confirm with version control that only intended changes remain.
+  Run each mutant under a time limit. An uncaught mutant marks a property the test cannot see: add inputs or comparisons, or report that property unverified, never explain it away ("A problem found is resolved, never argued away" in `APPLYING.md`). Delete mutants afterward and confirm with version control that only intended changes remain.
   - With the MCP tools, put each difference back with `restore_difference`, reporting whether the tests failed, and name under `covers` every other file the same change touches.
 - **Run the original against itself (A/A), always.** It costs one run and catches nondeterminism the test did not account for: time, randomness, hash or iteration order, concurrency, external systems. It must pass. If it fails, control the source (fix the seed, inject the clock, compare as multisets where order is not part of the contract) rather than loosening the comparison.
 
@@ -191,7 +191,7 @@ For every applied item:
 - **Level reached,** with the domain and bounds for level 3 and the tool for levels 3 and 4.
 - **Coverage:** entry points pinned and collaborators kept real, assumptions pinned, edge-case categories, number of generated cases, seeds, size range, observables compared.
 - **What ran:** commands or test names and results, from this session only. A harness or result an earlier session left is reread, checked against its history, and rerun before it counts ("Untrusted content" in `SKILL.md`).
-- **Check of the check:** mutants tried and caught; A/A result.
+- **Check of the check:** mutants tried and caught; A/A result; for a high-risk item, the independent check ("An independent check for high-risk items" in `APPLYING.md`).
 - **Unverified behavior** and why.
 
 If tests could not run at all, say so; the item is unverified (rule 5) and not a confirmed win.
