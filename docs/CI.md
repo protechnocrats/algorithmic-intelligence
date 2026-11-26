@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0               # the review diffs against the base commit
           persist-credentials: false   # keeps the GitHub token out of .git/config, which the agent can read
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -146,7 +146,7 @@ jobs:
           ref: refs/pull/${{ github.event.issue.number || github.event.pull_request.number }}/head   # to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
@@ -194,7 +194,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}   # the pull request's code, to read, never to run
           fetch-depth: 0
           persist-credentials: false
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           allow-forks: true
@@ -223,7 +223,7 @@ permissions:
         with:
           role-to-assume: arn:aws:iam::123456789012:role/algorithmic-intelligence
           aws-region: us-east-1
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         with:
           provider: bedrock
           # model: a Bedrock model ID or inference profile, if the default is not enabled in your account
@@ -236,7 +236,7 @@ Google Vertex AI:
         with:
           workload_identity_provider: projects/123/locations/global/workloadIdentityPools/github/providers/repo
           service_account: algorithmic-intelligence@my-project.iam.gserviceaccount.com
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         with:
           provider: vertex
           vertex-project-id: my-project
@@ -250,7 +250,7 @@ The review step passes the provider's settings to Claude Code and leaves out the
 With `sarif: true`, the action also writes the findings as SARIF and gives the path in the `sarif-file` output, for upload to code scanning, where findings get GitHub's own alert list and dismissal workflow. Code scanning on private repositories needs GitHub Advanced Security, and the upload needs `security-events: write`:
 
 ```yaml
-      - uses: protechnocrats/algorithmic-intelligence@0.7.6
+      - uses: protechnocrats/algorithmic-intelligence@0.7.7
         id: review
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

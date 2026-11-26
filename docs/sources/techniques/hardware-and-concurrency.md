@@ -12,4 +12,6 @@ Where each claim in that file comes from, for maintainers and reviewers. Not par
 - Shimin Chen, Anastassia Ailamaki, Phillip B. Gibbons, and Todd C. Mowry, "Improving Hash Join Performance through Prefetching," ICDE 2004 (group prefetching).
 - Runtime dispatch by CPU feature (GNU `ifunc`, function multiversioning, the kernel's alternatives patching) is documented in the GCC manual ("Function Multiversioning" at gcc.gnu.org/onlinedocs/gcc/Function-Multiversioning.html, and the `ifunc` entry in "Common Function Attributes") and the Linux kernel source (`arch/x86/kernel/alternative.c`); the row states implementation practice, not a published bound.
 
+- Anthropic, "Migrating the Messages API to Rust" (2026), anthropic.com/research/migrating-api-to-rust: moving only output parsing to Rust, called from Python with each token crossing the boundary three times, cut CPU by about 8% to 10%; moving the whole request path cut CPU per request by about 70% (the language-boundary row).
+
 GPU and accelerator sources moved with their sections to `docs/sources/techniques/accelerators.md`.

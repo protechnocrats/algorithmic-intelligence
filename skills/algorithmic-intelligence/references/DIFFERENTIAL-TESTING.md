@@ -39,6 +39,8 @@ When a change relies on something established elsewhere (data already sorted, ke
 
 Give each version a fresh copy of the same fakes and inputs on every call, so one side's mutations cannot reach the other, and record every collaborator call for comparison.
 
+**Record once, replay to both.** A collaborator whose answers vary from call to call and that cannot be seeded or given an injected clock (a local process that stamps IDs or times, a library with its own random source, a model run locally) is called once per input: record its answers and replay the same recording to both versions. Calling it separately for each side compares two different conversations, and the A/A run fails for a reason that has nothing to do with the change.
+
 **The test runs the original, side effects and all.** Before the first run, read what the original and everything it calls can do.
 - Fake every effect that leaves the machine, reaches a shared system, or cannot be bounded (mail, network and service calls, writes to any database other than a throwaway local one, process launches, file writes outside a temporary directory).
 - Bound time, sizes, and output, and clean up the temporary directory, any worktree, and any mutant.
@@ -97,6 +99,13 @@ If the outcome cannot be compared this way (callers outside the project, a store
 - it is a behavior change ("When equivalence counts as verified");
 - it is the ordinary, bounded trade-off of a technique the developer asked for (rule 5, "What the request decides" in "Rule details" in `WORKFLOW.md`), such as a requested cache serving a result up to its maximum age. Then test the bound itself: the difference never goes past the stated limit (the maximum age, the error bound, a batch failing as a whole), and old and new compare exactly everywhere outside it. Report the bound tested.
 
+### Finding the cause of a disagreement
+
+"Not equal" says that something differs, not where. Make the comparison say where:
+- **The first difference.** On a mismatch, print the seed and input, the first differing position (index, byte offset, or field path), what each side has there, and both sizes. Two outputs of the same length that differ at one byte point to escaping or encoding; different lengths point to a dropped or extra element.
+- **Checkpoints.** When the change spans several steps (parse, transform, serialize; build a structure, then query it), also compare the two versions' intermediate results at each step boundary. The first step that differs is where the cause is, and later steps only carry it forward. Checkpoints live in test code, reading what each step already returns; they never change the code under test beyond the extraction "Buried hot paths" allows.
+- **Group failures by cause.** When many generated cases fail, give each a signature (the first step that differs, the kind of difference: missing, extra, reordered, changed value, a different exception, and where in the value it falls) and group the cases by it. Fix the cause behind the largest group, rerun everything, and group again: one cause usually explains many failures, and a signature that survives the fix is a separate cause. Keep the smallest input of each group (shrunk, where the library shrinks) as a regression case, and report the groups and their causes, not every failing case.
+
 ## Inputs
 
 Use hand-written edge cases and generated inputs, both always.
@@ -111,6 +120,8 @@ Use hand-written edge cases and generated inputs, both always.
 - Malformed input callers can actually pass.
 
 **Generated inputs.** Fixed seed, printed with the failing input. At least 1,000 cases when the reference is fast enough; otherwise state how many ran and why, and treat fewer than 100 as unverified. Spread sizes from 0 to the largest the reference handles quickly, under a fixed bound and a time limit. Bias toward collisions with small value ranges, since duplicates and ties are where rewrites break. Use the project's property-based testing library if it has one; a seeded hand-written generator needs no new dependency.
+
+**Inputs shaped like the real ones.** Uniform random inputs miss what real inputs have in common: their characters (emoji and other text that serializers escape, non-ASCII, the separators and quoting the format uses), field shapes and optional fields, typical sizes, and which cases are frequent. Build part of the generated inputs from the shapes the project documents (its schema, fixtures, sample files, API examples, and the sizes found in Phase 2 of `WORKFLOW.md`), with synthetic values only, never real customer data ("Untrusted content" in `SKILL.md`). A high pass rate on uniform inputs says little about how often real inputs match: one bug in the shape most real inputs take breaks most real requests while failing few generated cases.
 
 **Exhaustive inputs.** When a domain is small enough to enumerate (every array of length 0 to 6 over 0 to 3, every 16-bit input, every 32-bit input to a fast pure function), test all of it, keep generated inputs for larger sizes, and report the exact domain covered.
 
@@ -163,7 +174,15 @@ An optimization is verified (level 1 or higher) only when all of these hold for 
 4. Every trap in `BEHAVIOR-TRAPS.md` that could apply is covered by a test or ruled out in one stated sentence.
 5. For each observable compared, at least one planted difference was caught, and the A/A run passed.
 
-Anything that cannot be checked at any level (real database ordering, platform rendering, timing, hardware, interleavings without a checker) is unverified: ask the developer under rule 5, and on acceptance add the `NEEDS-TESTING` marker ("Code markers" in `APPLYING.md`). An intended difference in outputs is a behavior change, documented for review and marked `BEHAVIOR-CHANGE` only after approval, unless it is the requested trade-off tested within its bound ("What to compare").
+Anything that cannot be checked at any level (real database ordering, platform rendering, timing, hardware, interleavings without a checker) is unverified: ask the developer under rule 5, and on acceptance add the `NEEDS-TESTING` marker ("Code markers" in `APPLYING.md`).
+
+**Offer a shadow comparison for what tests cannot reach.** When an item is unverified because only the real system shows the behavior, give the developer, with the question, a plan they can run themselves; you never run it, since it uses production systems ("Untrusted content" and "Before running a command" in `SKILL.md`):
+- run the new code beside the original on live requests, serving the original's result;
+- perform every effect once (writes, messages, billing, rate limits), and give the new version the original's recorded collaborator answers instead of calling again ("Record once, replay to both");
+- compare at the checkpoints and record only the shape of each difference (the step, the kind, the position, both sizes), never the data, then group by that signature ("Finding the cause of a disagreement");
+- switch over only once the match rate reaches a threshold the developer sets, and keep the original ready to serve until then.
+
+A library the project already uses for this (GitHub's Scientist and its ports) is the natural place for it; a new one is a dependency (rule 7). An intended difference in outputs is a behavior change, documented for review and marked `BEHAVIOR-CHANGE` only after approval, unless it is the requested trade-off tested within its bound ("What to compare").
 
 ## Reporting verification
 

@@ -6,6 +6,19 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-11-26
+
+Differential tests now help find why old and new disagree, not only that they do: they report the first difference, compare at each step of a multi-step change, and group failing cases by cause. Generated inputs include the shapes real inputs take, a collaborator that cannot be seeded is recorded once and replayed to both versions, and for behavior only the real system shows, the agent offers the developer a shadow-comparison plan to run themselves. Apply mode never makes a comparison pass by special-casing test inputs, and moving hot code to native code counts the cost of each crossing between languages. The plugin's behavior is unchanged.
+
+### Added
+
+- Differential tests say where old and new disagree: the first differing position with both sizes, and, for a change spanning several steps, a comparison at each step boundary, so the first step that differs points to the cause. When many generated cases fail, they are grouped by a signature and fixed one cause at a time, and the report lists the groups instead of every case.
+- Part of the generated inputs is built from the shapes the project documents (schema, fixtures, sample files, sizes), with synthetic values, since uniform random inputs miss bugs that break most real inputs.
+- A collaborator that cannot be seeded is called once per input and its recorded answers replayed to both versions.
+- For an item only the real system can verify, the agent offers a shadow-comparison plan for the developer to run: the original serves, effects happen once, and only the shape of each difference is recorded. The agent never runs it.
+- Apply mode: a comparison is never made to pass by branching on test inputs or pasting expected outputs or reference data into the code.
+- Hardware and concurrency: moving hot code to native code across a language boundary counts the crossings, and moves the whole loop rather than its body.
+
 ### Added
 
 - Apply mode keeps `APPLY-PROGRESS.json` next to the report when a run has three or more items or is expected to span sessions: each item's status from `pending` to `done`, plus any difference planted but not yet restored. Only status fields change, and items are never removed, so a later session cannot mistake a missing item for a finished one.
