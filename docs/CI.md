@@ -2,7 +2,7 @@
 
 The repository is also a GitHub Action. On every pull request it runs the skill in report mode on the code the pull request changes and posts one comment, which it updates on each new push. The comment follows the skill's final summary: the result first, decisions needed, a table of findings with the complexity before and after, bugs and hazards noticed, and the test or benchmark that would confirm each finding. It edits nothing and runs nothing, so every number in it is an estimate read from the code, and the comment says so. The comment is written by an AI model (Claude, through Claude Code) and says that too: it can be wrong, so read it as a reviewer's suggestions, not as a verdict.
 
-Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/algo-intelligence` commands and dismissals, replies on review threads, blocking on findings (`block-on-severity`), `fail-on-error`, severity callouts, SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are from 0.7.6.
+Available from release 0.7.2; the AI disclosure and the report link in the comment are from 0.7.3. Review comments on changed lines, the comparison with the last review, quiet clean reviews, step outputs, skipping unchanged code, and fork support are from 0.7.4; `comment-min-severity` is from 0.7.5. The configuration file, `exclude-paths`, `require-label`, `/algo` commands (named `/algo-intelligence` before 0.7.7) and dismissals, replies on review threads, blocking on findings (`block-on-severity`), `fail-on-error`, severity callouts, SARIF, Amazon Bedrock and Google Vertex AI, and the integrity-checked install are from 0.7.6.
 
 ## Setup
 
@@ -71,7 +71,7 @@ The file is read from the base commit, never from the pull request, so a pull re
 | `config-file` | `.github/algorithmic-intelligence.md` | Sizes, targets, and constraints for the reviewer, read from the base branch. Empty disables. |
 | `exclude-paths` | | Glob patterns of files not to review (generated, vendored), one per line or comma separated. `*` matches across directories; a directory pattern such as `vendor/` covers everything under it. |
 | `require-label` | | Review only pull requests carrying this label. Add `labeled` to the workflow's `pull_request` types. |
-| `command-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose `/algo-intelligence` comments are obeyed. |
+| `command-authors` | `OWNER,MEMBER,COLLABORATOR` | Author associations whose `/algo` comments are obeyed. |
 | `reply-to-threads` | `true` | Reply on this action's review threads when their finding is fixed or dismissed; the developer resolves them. |
 | `fail-on-error` | `true` | Fail the job when the review does not finish. `false` lets such a run pass. |
 | `block-on-severity` | `high` | Fail the job on a finding at or above this severity (`high`, `medium`, or `low`) until it is fixed or dismissed. Empty never fails on findings. See "Blocking merges". |
@@ -105,7 +105,7 @@ The job fails when the review has a finding at or above `block-on-severity` (`hi
 
 On its own a red check is a warning anyone can merge past. To make it a real block, add **Algorithmic Intelligence - review** as a required status check in a branch rule (Settings → Rules, or branch protection).
 
-A maintainer who disagrees with a finding comments `/algo-intelligence dismiss P1`. With the command workflow above (it needs `actions: write`), the dismissal re-runs the failed job at once; the re-run finds the code unchanged, runs no model, so it costs no API usage, and passes if nothing else blocks. Without the command workflow, the dismissal is picked up by the next push, or by re-running the job yourself. A draft pull request is not reviewed, so a required check waits until it is marked ready.
+A maintainer who disagrees with a finding comments `/algo dismiss P1`. With the command workflow above (it needs `actions: write`), the dismissal re-runs the failed job at once; the re-run finds the code unchanged, runs no model, so it costs no API usage, and passes if nothing else blocks. Without the command workflow, the dismissal is picked up by the next push, or by re-running the job yourself. A draft pull request is not reviewed, so a required check waits until it is marked ready.
 
 Every finding is an estimate read from the code, so blocking is a judgment call: it stops merges on a reviewer's opinion, not on a measurement. Dismissals let a maintainer overrule a finding they disagree with.
 
@@ -113,8 +113,8 @@ Every finding is an estimate read from the code, so blocking is a judgment call:
 
 Maintainers (authors whose association is in `command-authors`) can steer the review from the pull request:
 
-- **`/algo-intelligence`** as a comment reviews the pull request now, including a draft, one without the `require-label` label, or code already reviewed.
-- **`/algo-intelligence dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads get a reply saying so (left open for you to resolve), later reviews are told not to report them, they no longer count in the outputs, and a review job that failed on them is re-run and passes if nothing else blocks. Replying **`/algo-intelligence dismiss`** on one of the action's review comments dismisses that comment's finding.
+- **`/algo`** as a comment reviews the pull request now, including a draft, one without the `require-label` label, or code already reviewed. `/algo-intelligence`, the name before 0.7.7, still works for every command.
+- **`/algo dismiss P3`** (one or more ids, from the comment's table) dismisses those findings: they move to a "Dismissed by maintainers" list in the comment, their review threads get a reply saying so (left open for you to resolve), later reviews are told not to report them, they no longer count in the outputs, and a review job that failed on them is re-run and passes if nothing else blocks. Replying **`/algo dismiss`** on one of the action's review comments dismisses that comment's finding.
 
 Dismissals are read from the pull request's comments at the start of every review, so they work with the workflow above, taking effect on the next push. To have commands act at once, add a second workflow for comments, for example as algorithmic-intelligence-command.yml in .github/workflows; it runs from your default branch with your secrets, like `pull_request_target`, so it follows the same rules (read the pull request's code, never run it):
 
@@ -135,7 +135,7 @@ permissions:
 jobs:
   review:
     name: Algorithmic Intelligence - command
-    if: startsWith(github.event.comment.body, '/algo-intelligence') && (github.event.issue.pull_request || github.event.pull_request)
+    if: startsWith(github.event.comment.body, '/algo') && (github.event.issue.pull_request || github.event.pull_request)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -156,7 +156,7 @@ A dismissal needs no model and is recorded without a review. A comment from anyo
 ## What it skips
 
 - Pull requests that change only documentation, images, licenses, or lock files, or only files matching `exclude-paths`.
-- Draft pull requests. The example workflows do not run on them at all (the job's `if:`), so a draft shows the check as skipped rather than as a green pass; marking the pull request ready for review reviews it. A maintainer can still review a draft on demand with `/algo-intelligence`. Without that `if:` the job runs, sees the draft, and stops without a review (`review-drafts: true` reviews drafts instead).
+- Draft pull requests. The example workflows do not run on them at all (the job's `if:`), so a draft shows the check as skipped rather than as a green pass; marking the pull request ready for review reviews it. A maintainer can still review a draft on demand with `/algo`. Without that `if:` the job runs, sees the draft, and stops without a review (`review-drafts: true` reviews drafts instead).
 - Pull requests without the `require-label` label, when it is set.
 - Pushes that leave the code unchanged since the last review: documentation edits, a clean rebase, or a re-run. The comment records a fingerprint of the pull request's code changes, the `instructions` and configuration file, and the action version, and a push with the same fingerprint is not reviewed again (the `status` output is `unchanged`, and the counts repeat the last review's). A quiet review, which posts no comment, keeps its fingerprint in the Actions cache instead, so a clean pull request is not paid for again either; where the cache is unavailable, its next push is reviewed again.
 - Pull requests from forks, unless you set them up as described below. GitHub does not give workflows triggered by a fork's pull request (`pull_request`) the repository's secrets, so there are no model credentials; the run says so and passes.

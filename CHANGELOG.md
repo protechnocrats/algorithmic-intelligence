@@ -8,7 +8,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [0.7.7] - 2026-11-26
 
-Apply runs can now span sessions, and differential tests help find why old and new disagree, not only that they do. Apply mode keeps a progress file of each item's status, and a resumed session finds anything left half-done, reruns the baseline, and asks again for approvals by name; the edit gate accepts a planted difference caught in a recent earlier session while the file's committed version is unchanged. Differential tests report the first difference, compare at each step of a multi-step change, and group failing cases by cause. Generated inputs include the shapes real inputs take, a collaborator that cannot be seeded is recorded once and replayed to both versions, and for behavior only the real system shows, the agent offers the developer a shadow-comparison plan to run themselves. Apply mode never makes a comparison pass by special-casing test inputs, and moving hot code to native code counts the cost of each crossing between languages.
+Apply runs can now span sessions, and differential tests help find why old and new disagree, not only that they do. Apply mode keeps a progress file of each item's status, and a resumed session finds anything left half-done, reruns the baseline, and asks again for approvals by name; the edit gate accepts a planted difference caught in a recent earlier session while the file's committed version is unchanged. Differential tests report the first difference, compare at each step of a multi-step change, and group failing cases by cause. Generated inputs include the shapes real inputs take, a collaborator that cannot be seeded is recorded once and replayed to both versions, and for behavior only the real system shows, the agent offers the developer a shadow-comparison plan to run themselves. Apply mode never makes a comparison pass by special-casing test inputs, and moving hot code to native code counts the cost of each crossing between languages. The pull request review's comment command is now the shorter `/algo`; `/algo-intelligence` still works, and a copied command workflow needs its filter updated to see the new name.
 
 ### Added
 
@@ -22,6 +22,10 @@ Apply runs can now span sessions, and differential tests help find why old and n
 - For an item only the real system can verify, the agent offers a shadow-comparison plan for the developer to run: the original serves, effects happen once, and only the shape of each difference is recorded. The agent never runs it.
 - Apply mode: a comparison is never made to pass by branching on test inputs or pasting expected outputs or reference data into the code.
 - Hardware and concurrency: moving hot code to native code across a language boundary counts the crossings, and moves the whole loop rather than its body.
+
+### Changed
+
+- Pull request review: the comment command is now `/algo` (`/algo` to review now, `/algo dismiss P3` to dismiss), and the action's messages use it. `/algo-intelligence` still works. If you copied the command workflow from docs/CI.md, change its filter to `startsWith(github.event.comment.body, '/algo')`, which matches both names; the old filter only starts the workflow for `/algo-intelligence`.
 
 ## [0.7.6] - 2026-11-20
 
