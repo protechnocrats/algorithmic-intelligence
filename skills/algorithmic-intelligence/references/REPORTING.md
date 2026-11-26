@@ -16,6 +16,10 @@ The files:
 - `OPTIMIZATION-REPORT.md` (Phase 4): ranked items, behavior changes for review, tried and rejected.
 - `BUGS-FOUND.md` (Phase 4): every bug noticed, security weaknesses included.
 - `APPLY-RESULTS.md` (end of apply mode, format in `APPLYING.md`), referring to items by their report IDs.
+- `APPLY-PROGRESS.json` (apply mode, from before the first edit: "Progress file" in `APPLYING.md`), each item's status, so a later session can resume.
+- `RESEARCH-LOG.md` (when a search in `DISCOVERY.md` runs long: "The loop" there), one line per move tried.
+
+The progress file and the research log are the only files updated as the work goes; keep their updates to the lines that changed.
 
 **Write each file once,** after Phase 3 is done for every candidate. Every later step resends what you wrote, and each edit adds another copy. Never edit `OPTIMIZATION-REPORT.md` after writing it, since the developer is deciding from it. Corrections, later answers, and decisions go in `APPLY-RESULTS.md` (or, when nothing is applied, in the conversation), each naming the item it corrects.
 

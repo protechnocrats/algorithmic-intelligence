@@ -91,9 +91,44 @@ class Gate(unittest.TestCase):
         self.assertIsNone(self.decide('src/caller.py'))
         self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
 
-    def test_records_from_an_earlier_session_do_not_count(self):
+    def later_session(self):
+        self.write_transcript(used=True, start=time.time() + 3600)  # this session began after the records
+
+    def test_earlier_plant_counts_while_head_holds_the_tested_version(self):
+        self.plant_caught('src/calc.py', covers=['src/caller.py'])
+        with open(os.path.join(self.root, 'src/calc.py'), 'a') as f:
+            f.write('# half-applied, uncommitted\n')  # resumed work: the tree changed, HEAD did not
+        self.later_session()
+        self.assertIsNone(self.decide('src/calc.py'))
+        self.assertIsNone(self.decide('src/caller.py'))
+
+    def test_earlier_plant_stops_counting_once_the_file_is_committed_anew(self):
         self.plant_caught('src/calc.py')
-        self.write_transcript(used=True, start=time.time() + 3600)  # this session began after that plant
+        with open(os.path.join(self.root, 'src/calc.py'), 'a') as f:
+            f.write('# item 1 done\n')
+        git(self.root, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', 'item 1')
+        self.later_session()
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+
+    def test_earlier_records_that_do_not_carry_over(self):
+        self.plant_caught('src/calc.py')
+        srv.declare_no_differential_test({'files': ['src/caller.py'], 'kind': 'developer-waived',
+                                          'reason': 'the developer said to skip it in that conversation'})
+        self.later_session()
+        self.assertEqual(self.decide('src/caller.py')['permissionDecision'], 'deny')  # approvals never carry over
+        os.environ['ALGORITHMIC_INTELLIGENCE_CARRY_DAYS'] = '0'
+        try:
+            self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+        finally:
+            os.environ.pop('ALGORITHMIC_INTELLIGENCE_CARRY_DAYS')
+        for name in os.listdir(os.path.join(self.root, '.git', 'algorithmic-intelligence', 'plants')):
+            if name.endswith('.json'):  # older than the window
+                path = os.path.join(self.root, '.git', 'algorithmic-intelligence', 'plants', name)
+                with open(path) as f:
+                    r = json.load(f)
+                r['restored_at'] -= 15 * 24 * 3600
+                with open(path, 'w') as f:
+                    json.dump(r, f)
         self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
 
     def test_not_gated(self):
@@ -163,6 +198,12 @@ class Coverage(Gate):
         self.assertIsNone(self.stop())
         self.change('src/calc.py')
         self.write_transcript(used=False, start=time.time() - 60)
+        self.assertIsNone(self.stop())
+
+    def test_resumed_session_is_not_sent_back_for_work_covered_earlier(self):
+        self.plant_caught('src/calc.py')
+        self.change('src/calc.py')
+        self.later_session()
         self.assertIsNone(self.stop())
 
     def test_nothing_changed(self):

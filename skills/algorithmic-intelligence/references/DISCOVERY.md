@@ -12,7 +12,7 @@ When no row in the arsenal or the domain files matches the abstract problem; whe
 
 Pin the problem down first: the abstract statement, the contract as the code implements it (outputs, order, ties, errors, edge cases), every size variable, and the lower bound (move 10). A wrong statement yields a fast algorithm for a different problem. Keep the existing code, or in write mode the simplest correct version, as the baseline that every derivation is tested against.
 
-Then try the moves, cheapest first, and keep a short research log: what each move gave (a candidate, a bound, or nothing) and what blocked it. A candidate from here still has to state its assumptions, have them confirmed from the code, and compete with the other candidates. Stop when:
+Then try the moves, cheapest first, and keep a short research log: what each move gave (a candidate, a bound, or nothing) and what blocked it. Once the search passes three moves, or the report goes to files, keep the log in `RESEARCH-LOG.md` next to the report rather than only in the conversation, where compaction can drop it: one line per move appended as you go (`<item> · move <n> · <candidate, bound, or nothing> · <what blocked it>`), never rewritten. A later session resuming the search reads it to skip what was tried, and rechecks any candidate or bound it relies on. A candidate from here still has to state its assumptions, have them confirmed from the code, and compete with the other candidates. Stop when:
 - a candidate reaches the lower bound;
 - a conditional bound (move 10) says the gap needs a breakthrough; or
 - the moves whose obstacle matches ("When a move stalls") have been tried. Record the gap and why it remains.

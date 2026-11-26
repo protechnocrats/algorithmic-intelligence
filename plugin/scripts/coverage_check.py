@@ -5,7 +5,8 @@ The edit gate (edit_gate.py) sees only the Edit and Write tools, and agents also
 shell (sed -i, a script, a heredoc). This check catches every route at the end: in a session that uses the
 algorithmic-intelligence skill, when the agent stops, each file committed in git that now differs from HEAD
 must be covered, in this session, by a planted difference the tests caught or by a declaration that it needs
-no differential test (the MCP tools; same rules as the edit gate). Otherwise the agent is sent back once to
+no differential test (the MCP tools; same rules as the edit gate, including a caught plant from a recent earlier
+session made on the version HEAD still holds, so work resumed in a new session is not sent back for it). Otherwise the agent is sent back once to
 cover or declare the files, or to say plainly in its summary that they are unverified. Tests, documentation,
 and new files are not checked. Any error lets the agent stop. Off with ALGORITHMIC_INTELLIGENCE_GUARD=off or
 ALGORITHMIC_INTELLIGENCE_GATE=off.

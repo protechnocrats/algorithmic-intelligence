@@ -6,6 +6,13 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+### Added
+
+- Apply mode keeps `APPLY-PROGRESS.json` next to the report when a run has three or more items or is expected to span sessions: each item's status from `pending` to `done`, plus any difference planted but not yet restored. Only status fields change, and items are never removed, so a later session cannot mistake a missing item for a finished one.
+- Resuming: when asked to continue earlier apply-mode work, the agent reads the progress file, the git log, and the diff; restores anything left planted; reruns the tests of an item that was interrupted halfway and restarts it if they fail; reruns the baseline; and asks again for approvals by name, since the file records progress, never approval. A run that stops early says which items remain instead of calling itself complete.
+- A long search for a new algorithm keeps `RESEARCH-LOG.md` next to the report, one line per move tried, so it survives compaction or a new session.
+- Edit gate: a planted difference caught in an earlier session (the last 14 days by default, `ALGORITHMIC_INTELLIGENCE_CARRY_DAYS`) still opens a file while its committed version is byte for byte the one the difference was planted in, so resumed work need not plant again. The end-of-task coverage check accepts it too. Declarations never carry over. `plant_difference` now records the hash of each covered file.
+
 ## [0.7.6] - 2026-11-20
 
 The pull request review can block merging, and maintainers can steer it from the pull request. **Upgrading changes what you see:** the check now fails on a high-severity finding and when a review does not finish; set `block-on-severity: ''` and `fail-on-error: false` to keep it always passing. A maintainer can overrule a finding with `/algo-intelligence dismiss P1`, which clears the failed check without a new review, or review on demand with `/algo-intelligence`. Severity is shown in color, production sizes can live in `.github/algorithmic-intelligence.md` on the base branch, and the model can run on Amazon Bedrock or Google Vertex AI. Update your workflow from the examples in docs/CI.md: they skip drafts, name the check "Algorithmic Intelligence - review", and add the command workflow. The skill's files and the plugin's behavior are the same as in 0.7.5.
