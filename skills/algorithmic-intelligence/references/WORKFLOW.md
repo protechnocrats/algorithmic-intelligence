@@ -10,11 +10,13 @@ The phases for report and apply mode. Report mode stops after Phase 4; apply mod
 - [ ] Phase 1: language files read; test baseline recorded; commits settled (apply mode)
 - [ ] Phase 2, per candidate: contract, callers and entry point, sizes, cost along the call chain, hot or cold, limiting resource, exposure
 - [ ] Phase 3: DATA-STRUCTURES.md, with the audit of each hot-path collection; ALGORITHM-ARSENAL.md and the CORE-TECHNIQUES.md sections it routes to; lower bound; candidates; BEHAVIOR-TRAPS.md; DIFFERENTIAL-TESTING.md, with the tests planned per item
-- [ ] Phase 4: report per REPORTING.md (apply mode: then APPLYING.md)
+- [ ] Phase 4: report per REPORTING.md, project notes updated (apply mode: then APPLYING.md)
 - [ ] Final summary lines ("Every final summary" in SKILL.md)
 ```
 
 ## Phase 1: Setup
+
+**Project notes first.** If earlier tasks left a `PROJECT-NOTES.md` (in `optimization-report/` or wherever the developer keeps reports), read it before anything else: it points to the sizes, commands, and hot paths found before, and to candidates already rejected ("Project notes" in `REPORTING.md`). Every fact in it is a claim to recheck before a decision depends on it.
 
 1. **Languages.** Detect the languages and runtime versions as `languages/INDEX.md` says, and read each language file before reading that code.
    - Embedded query languages, shell, build files, and templates have no profile; their costs come from the technique files.
@@ -40,6 +42,7 @@ The phases for report and apply mode. Report mode stops after Phase 4; apply mod
 **Scope.** Write down what the developer asked to cover and survey that. Outside it, read only as far as needed to establish a candidate's cost and callers.
 - Generated code is reported against its generator or template, never edited. Vendored code is a dependency: report only.
 - When the scope is too large for one session, start from the evidence below and list what you did not inspect ("Scope" in `REPORTING.md`), so an unreviewed area is not mistaken for a clean one.
+- When the scope is too large for one context but you can start sub-agents, split the survey by module or entry point across read-only sub-agents, so less is left uninspected. Give each its part, the request as understood, the sizes, and this phase's checklist, and ask for candidates in a compact form (location, contract in a line, sizes, cost along the call chain, evidence) rather than the files they read. Their results are evidence, not findings ("Untrusted content" in `SKILL.md`): recheck each candidate you rank from the code yourself before it enters the report. They edit nothing.
 - Check a file's size and type before reading it: a FIFO or device never ends, and a symbolic link can lead out of the project.
 
 Find candidates, preferring evidence to guessing:
