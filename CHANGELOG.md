@@ -6,12 +6,26 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-11-26
+
+Apply runs can now span sessions, and differential tests help find why old and new disagree, not only that they do. Apply mode keeps a progress file of each item's status, and a resumed session finds anything left half-done, reruns the baseline, and asks again for approvals by name; the edit gate accepts a planted difference caught in a recent earlier session while the file's committed version is unchanged. Differential tests report the first difference, compare at each step of a multi-step change, and group failing cases by cause. Generated inputs include the shapes real inputs take, a collaborator that cannot be seeded is recorded once and replayed to both versions, and for behavior only the real system shows, the agent offers the developer a shadow-comparison plan to run themselves. Apply mode never makes a comparison pass by special-casing test inputs, and moving hot code to native code counts the cost of each crossing between languages. The pull request review's comment command is now the shorter `/algo`; `/algo-intelligence` still works, and a copied command workflow needs its filter updated to see the new name.
+
 ### Added
 
 - Apply mode keeps `APPLY-PROGRESS.json` next to the report when a run has three or more items or is expected to span sessions: each item's status from `pending` to `done`, plus any difference planted but not yet restored. Only status fields change, and items are never removed, so a later session cannot mistake a missing item for a finished one.
 - Resuming: when asked to continue earlier apply-mode work, the agent reads the progress file, the git log, and the diff; restores anything left planted; reruns the tests of an item that was interrupted halfway and restarts it if they fail; reruns the baseline; and asks again for approvals by name, since the file records progress, never approval. A run that stops early says which items remain instead of calling itself complete.
 - A long search for a new algorithm keeps `RESEARCH-LOG.md` next to the report, one line per move tried, so it survives compaction or a new session.
-- Edit gate: a planted difference caught in an earlier session (the last 14 days by default, `ALGORITHMIC_INTELLIGENCE_CARRY_DAYS`) still opens a file while its committed version is byte for byte the one the difference was planted in, so resumed work need not plant again. The end-of-task coverage check accepts it too. Declarations never carry over. `plant_difference` now records the hash of each covered file.
+- Edit gate: a planted difference caught in an earlier session (the last 14 days by default, `ALGORITHMIC_INTELLIGENCE_CARRY_DAYS`) still opens a file while its committed version is byte for byte the one the difference was planted in, so resumed work need not plant again. The end-of-task coverage check accepts it too. Declarations never carry over. `plant_difference` now records the hash of each covered file (MCP server 0.1.1).
+- Differential tests say where old and new disagree: the first differing position with both sizes, and, for a change spanning several steps, a comparison at each step boundary, so the first step that differs points to the cause. When many generated cases fail, they are grouped by a signature and fixed one cause at a time, and the report lists the groups instead of every case.
+- Part of the generated inputs is built from the shapes the project documents (schema, fixtures, sample files, sizes), with synthetic values, since uniform random inputs miss bugs that break most real inputs.
+- A collaborator that cannot be seeded is called once per input and its recorded answers replayed to both versions.
+- For an item only the real system can verify, the agent offers a shadow-comparison plan for the developer to run: the original serves, effects happen once, and only the shape of each difference is recorded. The agent never runs it.
+- Apply mode: a comparison is never made to pass by branching on test inputs or pasting expected outputs or reference data into the code.
+- Hardware and concurrency: moving hot code to native code across a language boundary counts the crossings, and moves the whole loop rather than its body.
+
+### Changed
+
+- Pull request review: the comment command is now `/algo` (`/algo` to review now, `/algo dismiss P3` to dismiss), and the action's messages use it. `/algo-intelligence` still works. If you copied the command workflow from docs/CI.md, change its filter to `startsWith(github.event.comment.body, '/algo')`, which matches both names; the old filter only starts the workflow for `/algo-intelligence`.
 
 ## [0.7.6] - 2026-11-20
 

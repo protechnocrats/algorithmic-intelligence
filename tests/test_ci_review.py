@@ -445,15 +445,17 @@ class Inputs(unittest.TestCase):
 
 class Commands(unittest.TestCase):
     def test_parse(self):
-        self.assertEqual(review.parse_command('/algo-intelligence'), ('review', []))
-        self.assertEqual(review.parse_command('/algo-intelligence dismiss p3 P1 because\nmore'), ('dismiss', ['P1', 'P3']))
-        self.assertEqual(review.parse_command('/algo-intelligence dismiss'), ('dismiss', []))
-        for text in ('please /algo-intelligence', '/algo-intelligenceer', '/algo-intelligence now', '', None):
+        for name in ('/algo', '/algo-intelligence'):  # the short name, and the name before 0.7.7
+            self.assertEqual(review.parse_command(name), ('review', []))
+            self.assertEqual(review.parse_command(name + ' dismiss p3 P1 because\nmore'), ('dismiss', ['P1', 'P3']))
+            self.assertEqual(review.parse_command(name + ' dismiss'), ('dismiss', []))
+        for text in ('please /algo', '/algorithm', '/algo-', '/algo-intelligenceer', '/algo now', '/algo-intelligence now',
+                     '/algo-intel', '', None):
             self.assertIsNone(review.parse_command(text))
 
     def test_dismissal_commands_need_trusted_authors(self):
         c = lambda body, assoc='MEMBER', **kw: {'body': body, 'author_association': assoc, 'user': {'login': 'ann', 'type': 'User'}, **kw}
-        issue = [c('/algo-intelligence dismiss P2'), c('/algo-intelligence dismiss P5', 'NONE'), c('/algo-intelligence dismiss P6', user={'type': 'Bot'})]
+        issue = [c('/algo dismiss P2'), c('/algo-intelligence dismiss P5', 'NONE'), c('/algo-intelligence dismiss P6', user={'type': 'Bot'})]
         replies = [c('/algo-intelligence dismiss', in_reply_to_id=11), c('/algo-intelligence dismiss', 'CONTRIBUTOR', in_reply_to_id=12)]
         out = review.dismissal_commands(issue, {11: 'P7', 12: 'P8'}, replies)
         self.assertEqual(out, [({'P2'}, 'ann'), ({'P7'}, 'ann')])
@@ -504,12 +506,12 @@ class CommandEvent(unittest.TestCase):
             return review.command_event(self.event(body, assoc), 'issue_comment', 't')
 
     def test_review_command_fetches_the_pull_request(self):
-        pr, reason = self.run_command('/algo-intelligence')
+        pr, reason = self.run_command('/algo')
         self.assertEqual((pr['number'], reason), (7, ''))
 
     def test_untrusted_or_other_comments_skip(self):
         self.assertIn('command-authors', self.run_command('/algo-intelligence', 'NONE')[1])
-        self.assertIn('not a /algo-intelligence', self.run_command('looks good')[1])
+        self.assertIn('not a /algo command', self.run_command('looks good')[1])
         self.assertEqual([c for c in self.calls if c[0] != 'GET'], [])
 
     def test_dismiss_updates_the_comment_without_a_review(self):

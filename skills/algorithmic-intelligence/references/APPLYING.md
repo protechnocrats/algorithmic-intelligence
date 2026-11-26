@@ -78,6 +78,7 @@ Sometimes the named function is already as fast as its input allows and the fix 
 2. **Change the code.** Make the smallest change that implements the chosen approach, with a short comment where the technique is not obvious. Keep the outcome (rule 11).
    - When the approach changes an interface (a signature, a return type, the structure handed to callers), update every caller in the project in the same item, existing tests included. Record each change and the callers updated for "Contract changes".
    - A caller outside the project means the item was asked about first ("Rule 11" in "Rule details" in `WORKFLOW.md`). Without an answer, keep the interface.
+   - **Make the code right, not the comparison green.** Never branch on test inputs, paste expected outputs or reference data into the code, or copy what the original computes or fetches instead of computing or fetching it the same way. Matching outputs show the new code agrees with the original on the inputs that ran, not that the change is one to ship: a fix that only makes the comparison pass is a wrong fix, however the test reports it.
 3. **Verify.** In order: differential tests and contract checks; the existing suite exactly as Phase 1 ran it; any bounded or exhaustive check from the plan.
    - Walk the behavior traps again for the change as written.
    - A weakened security property ("Security-sensitive behavior" in `BEHAVIOR-TRAPS.md`) is a behavior change even when every test passes: go to step 5.

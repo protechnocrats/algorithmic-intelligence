@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algorithmic-intelligence-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for the algorithmic-intelligence skill: benchmark statistics, growth fits, and planted-difference checks. Never runs project code."
 readme = "README.md"
 requires-python = ">=3.9"
