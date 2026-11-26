@@ -14,6 +14,7 @@ Apply mode only: Phases 5 and 6, after Phases 1 to 4 in `WORKFLOW.md`, with the 
 - [ ] Differential tests and existing suite pass; behavior traps rechecked; high-risk item: independent check run, every finding resolved
 - [ ] Benchmarked against the written prediction
 - [ ] Tests rerun after the final edit; commit only if authorized
+- [ ] If three attempts failed with the same failure: item stopped, its code restored, the attempts recorded
 - [ ] Progress file updated (when one is kept)
 ```
 
@@ -112,6 +113,15 @@ Sometimes the named function is already as fast as its input allows and the fix 
 - Existing tests are not edited, skipped, loosened, or marked as expected to fail to let a change pass, even on request, because the test is the evidence. A test the developer calls wrong goes in the bug log, and changes as its own change when they ask.
 - The one exception is a caller update under rule 11. When an item changes an interface, a test that calls it is updated like any other caller: only how it calls the code changes, never its inputs, assertions, or expected values, and the edit is listed under "Contract changes" with the test's file and name. If a test cannot keep its assertions through such an update, the item changes the outcome: revert it, or list it as a behavior change for approval (rule 5).
 - If the failure shows the original behavior is a bug, follow rule 4.
+
+**Stop after three failed attempts at the same failure.** Fixing the optimization has a limit: when three attempts at an item's change fail with the same signature ("Finding the cause of a disagreement" in `DIFFERENTIAL-TESTING.md`), the approach or the analysis behind it is wrong, and more edits rarely help. Stop work on the item:
+- restore its original code (only that code), and set it to `not-applied` in the progress file, when one is kept;
+- record the failure signature, the smallest failing input, and what each attempt changed, so the developer or a later session can pick it up without repeating them;
+- go back to Phase 3 for that item only if the failure shows the analysis missed something (a contract term, a size, a trap) and a different approach follows from it; that is a new attempt, with its own limit. Otherwise move on to the next item.
+
+A different signature after a fix is progress, not a repeat. The item goes under "Tried and rejected while applying", or under "Decisions needed" when the failure raised a question only the developer can settle.
+
+**A command that fails for a reason outside the code** (a network timeout, a locked file, a missing tool, a full disk) is run once more. If it fails again the same way, stop retrying: record it under "Commands not run" with the error and what it would have shown, and continue with what does not need it. A rerun never stands in for the rule above on flaky tests: a test that fails and then passes is still a failure.
 
 ## Phase 6: Close out
 

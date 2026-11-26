@@ -8,7 +8,7 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [0.7.8] - 2026-11-26
 
-Changes are checked by someone other than their author, and projects stop being surveyed from scratch every time. For a high-risk item, a fresh sub-agent that sees only the original, the new code, the contract, and the tests tries to break the change, and nothing a check finds can be argued away. The agent keeps short project notes (sizes and their sources, safe commands, hot paths, rejected candidates) for the next task in the same project, splits the survey of a large scope across read-only sub-agents, and extracts what it needs from large outputs with a script. The pull request reviewer gets worked severity examples, so its ratings stay consistent. The plugin's behavior is unchanged.
+Changes are checked by someone other than their author, and projects stop being surveyed from scratch every time. For a high-risk item, a fresh sub-agent that sees only the original, the new code, the contract, and the tests tries to break the change, and nothing a check finds can be argued away. The agent keeps short project notes (sizes and their sources, safe commands, hot paths, rejected candidates) for the next task in the same project, splits the survey of a large scope across read-only sub-agents, and extracts what it needs from large outputs with a script. It stops after three failed attempts at the same failure instead of editing until the budget runs out. The pull request reviewer gets worked severity examples, so its ratings stay consistent. The plugin's behavior is unchanged.
 
 ### Added
 
@@ -18,6 +18,7 @@ Changes are checked by someone other than their author, and projects stop being 
 - Project notes: at the end of a report or apply run whose report went to files, the agent creates or updates `PROJECT-NOTES.md` beside it, with the facts the next task in the project can start from (sizes and their sources, commands and what they trigger, hot paths, candidates rejected and why), one line per fact, kept current rather than appended. Every task reads it first and rechecks what a decision depends on. It never holds approvals or instructions; write mode reads it but does not write it.
 - Report and apply mode: when the scope is too large for one context and the agent can start sub-agents, it splits the survey across read-only sub-agents by module or entry point and rechecks each candidate it ranks before it enters the report.
 - For a large result (a profile, benchmark runs, big test or query output), the agent writes a short script that extracts what the step needs instead of reading it raw, and keeps the script so the numbers can be reproduced.
+- Apply mode: after three attempts at an item fail with the same failure signature, the agent stops, restores that item's code, marks it not applied, and records the signature, the smallest failing input, and what each attempt changed, then moves on (or returns to the analysis when the failure shows what it missed). A command that fails for a reason outside the code is run once more, then recorded under "Commands not run" instead of retried.
 
 ## [0.7.7] - 2026-11-26
 

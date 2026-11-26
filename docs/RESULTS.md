@@ -55,7 +55,7 @@ The GitHub Action's read-only review (see [CI.md](CI.md)), evaluated separately 
 
 Limits:
 
-- 0.7.8 added an independent sub-agent check of high-risk items, project notes carried between tasks, sub-agent surveys of large scopes, and worked severity examples in the reviewer's instructions; it was not re-measured on these sets, and the reviewer change should be checked on live pull requests as 0.7.6's was.
+- 0.7.8 added an independent sub-agent check of high-risk items, project notes carried between tasks, sub-agent surveys of large scopes, a limit of three failed attempts per failure, and worked severity examples in the reviewer's instructions; it was not re-measured on these sets, and the reviewer change should be checked on live pull requests as 0.7.6's was.
 - 0.7.7 added resumable apply runs (a progress file and a resume routine), let the edit gate accept a planted difference caught in a recent earlier session, and added instructions for diagnosing differential-test failures, realistic generated inputs, replaying unseedable collaborators, shadow-comparison plans, and language-boundary costs; it was not re-measured on these sets.
 - 0.7.6 changed the reviewer's instructions (severity for unbounded inputs and new code without callers, dismissed findings) and was checked on live pull requests, not re-measured on these sets.
 - The hard set was measured with 0.7.5's instructions. The basic set was measured during 0.7.4's development, before the last changes to the instructions; it was not rerun.
