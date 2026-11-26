@@ -1,6 +1,6 @@
 # Evaluation results
 
-The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 to 0.7.6 change no skill files or plugin behavior; 0.7.7 adds differential-testing instructions, not re-measured), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
+The same coding agent with and without the current release (0.7.0, with its plugin; 0.7.1 to 0.7.6 change no skill files or plugin behavior; 0.7.7 adds resumable apply runs, differential-testing instructions, and an edit-gate change, not re-measured), on 46 cases from 13 private projects in six languages, 3 runs per case. Method: [EVAL-PLAN.md](EVAL-PLAN.md). Cases and answer keys are private, so this page reports aggregates only.
 
 | Metric | No skill | 0.7.0 | Difference (95% interval) |
 |---|---|---|---|
@@ -55,7 +55,7 @@ The GitHub Action's read-only review (see [CI.md](CI.md)), evaluated separately 
 
 Limits:
 
-- 0.7.7 added instructions for diagnosing differential-test failures, realistic generated inputs, replaying unseedable collaborators, shadow-comparison plans, and language-boundary costs; it was not re-measured on these sets.
+- 0.7.7 added resumable apply runs (a progress file and a resume routine), let the edit gate accept a planted difference caught in a recent earlier session, and added instructions for diagnosing differential-test failures, realistic generated inputs, replaying unseedable collaborators, shadow-comparison plans, and language-boundary costs; it was not re-measured on these sets.
 - 0.7.6 changed the reviewer's instructions (severity for unbounded inputs and new code without callers, dismissed findings) and was checked on live pull requests, not re-measured on these sets.
 - The hard set was measured with 0.7.5's instructions. The basic set was measured during 0.7.4's development, before the last changes to the instructions; it was not rerun.
 - With 0.7.4's instructions, 3 of the 12 hard-set reviews of pull requests adding no problem had a medium finding, all on one case: a cost paid once a day. 0.7.5 weighs how often a cost is paid, and the table is from that version.
