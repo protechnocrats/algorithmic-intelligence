@@ -66,9 +66,25 @@ class Gate(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr)
         return json.loads(p.stdout)['hookSpecificOutput'] if p.stdout.strip() else None
 
-    def plant_caught(self, file, covers=(), caught=True):
+    def shell_run(self, exit_code=1, is_error=None, text=None):
+        """Append a shell tool call and its result to the transcript, as Claude Code writes them."""
+        ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+        tid = f'toolu_{time.time_ns()}'
+        failed = exit_code != 0 if is_error is None else is_error
+        entries = [{'type': 'assistant', 'timestamp': ts, 'message': {'content': [
+                       {'type': 'tool_use', 'id': tid, 'name': 'Bash', 'input': {'command': 'python3 -m pytest -q'}}]}},
+                   {'type': 'user', 'timestamp': ts, 'message': {'content': [
+                       {'type': 'tool_result', 'tool_use_id': tid, 'is_error': failed,
+                        'content': text if text is not None else (f'Exit code {exit_code}\n1 failed' if failed else '1 passed')}]}}]
+        with open(self.transcript, 'a') as f:
+            f.write(''.join(json.dumps(e) + '\n' for e in entries))
+
+    def plant_caught(self, file, covers=(), caught=True, run=True, **shell):
         pid = srv.plant_difference({'file': file, 'find': 'sum(xs)', 'replace': 'sum(xs) + 1', 'covers': list(covers)})['id']
+        if run:
+            self.shell_run(**shell)
         srv.restore_difference({'id': pid, 'tests_failed': caught})
+        return pid
 
     def test_refuses_untested_edit_with_the_way_forward(self):
         out = self.decide('src/calc.py')
@@ -83,6 +99,38 @@ class Gate(unittest.TestCase):
 
     def test_plant_the_tests_missed_does_not_count(self):
         self.plant_caught('src/calc.py', caught=False)
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+
+    def test_caught_needs_a_failing_shell_command_while_planted(self):
+        pid = self.plant_caught('src/calc.py', run=False)
+        out = self.decide('src/calc.py')
+        self.assertEqual(out['permissionDecision'], 'deny')
+        self.assertIn(pid, out['permissionDecisionReason'])
+        self.assertIn('does not count', out['permissionDecisionReason'])
+        self.shell_run(exit_code=1)  # a failure after the restore is not evidence about the plant
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+
+    def test_passing_or_unrunnable_commands_are_not_evidence(self):
+        self.plant_caught('src/calc.py', exit_code=0)
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+        self.plant_caught('src/calc.py', exit_code=127)  # command not found
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+        self.plant_caught('src/calc.py', is_error=True, text='Permission to use Bash was denied')  # refused, never ran
+        self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
+        self.plant_caught('src/calc.py', exit_code=2)
+        self.assertIsNone(self.decide('src/calc.py'))
+
+    def test_transcript_in_another_format_takes_the_report_as_given(self):
+        with open(self.transcript, 'w') as f:
+            f.write(json.dumps({'type': 'user', 'timestamp': '2026-01-01T00:00:00Z',
+                                'message': {'content': '/algorithmic-intelligence make total faster'}}) + '\n')
+        self.plant_caught('src/calc.py', run=False)
+        self.assertIsNone(self.decide('src/calc.py'))
+
+    def test_a_later_session_respects_what_this_one_saw(self):
+        self.plant_caught('src/calc.py', run=False)
+        self.decide('src/calc.py')  # notes on the record that no failure was seen
+        self.later_session()
         self.assertEqual(self.decide('src/calc.py')['permissionDecision'], 'deny')
 
     def test_declaration_opens_the_file(self):
@@ -205,6 +253,13 @@ class Coverage(Gate):
         self.change('src/calc.py')
         self.later_session()
         self.assertIsNone(self.stop())
+
+    def test_unproven_plant_is_named(self):
+        pid = self.plant_caught('src/calc.py', run=False)
+        self.change('src/calc.py')
+        out = self.stop()
+        self.assertEqual(out['decision'], 'block')
+        self.assertIn(pid, out['reason'])
 
     def test_nothing_changed(self):
         self.assertIsNone(self.stop())

@@ -17,7 +17,7 @@ Every pull request that changes the skill adds a line to the `[Unreleased]` sect
 ## Making a release
 
 1. **Review what users will get.** Read the whole diff of `skills/` since the previous tag (`git diff <previous tag>..main -- skills/`), not only the changelog: every line is an instruction users' agents will follow. Check it as in "Reviewing changes to the skill" in [CONTRIBUTING.md](CONTRIBUTING.md), and that the changelog describes every change in behavior, above all any that touches approvals, commands, or untrusted content.
-2. **Prepare it in a pull request.** In `CHANGELOG.md`, rename `[Unreleased]` to the new version with today's date (`## [0.3.0] - YYYY-MM-DD`), add a short summary at the top of the section, and start a new empty `## [Unreleased]` section above it. Set `version` in `plugin/.claude-plugin/plugin.json` to the new version and update the release tag in the README's install commands. Merge the pull request once its checks pass.
+2. **Prepare it in a pull request.** In `CHANGELOG.md`, rename `[Unreleased]` to the new version with today's date (`## [0.3.0] - YYYY-MM-DD`), add a short summary at the top of the section, and start a new empty `## [Unreleased]` section above it. Set `version` in `plugin/.claude-plugin/plugin.json` to the new version and update the release tag in the install commands in the README and `docs/CI.md`. The `skill-checks` workflow (`tools/check_refs.py`) fails until the newest changelog version, `plugin.json`, and every pinned install agree. Merge the pull request once its checks pass.
 3. **Tag the merge commit on `main`:**
 
    ```bash
@@ -26,7 +26,7 @@ Every pull request that changes the skill adds a line to the `[Unreleased]` sect
    git push origin 0.3.0
    ```
 
-4. **The release publishes itself.** Pushing the tag runs `.github/workflows/release.yml`, which takes the tag's section from `CHANGELOG.md` and publishes a GitHub release with it as the notes. Check the release page afterward.
+4. **The release publishes itself.** Pushing the tag runs `.github/workflows/release.yml`, which refuses a tag that differs from the version in `plugin/.claude-plugin/plugin.json` at that commit, then takes the tag's section from `CHANGELOG.md` and publishes a GitHub release with it as the notes. Check the release page afterward.
 
 Release tags (bare versions, and the older `v*` tags) are protected: they cannot be moved or deleted except by a repository administrator (see `.github/rulesets/`), so a published version means the same files unless an administrator moves the tag, which the maintainer never does. If a release is wrong, publish a new patch release instead of moving the tag.
 
@@ -35,4 +35,5 @@ Release tags (bare versions, and the older `v*` tags) are protected: they cannot
 `.github/rulesets/` holds the repository's rulesets as JSON, so they are reviewed like code. To apply or update one: on GitHub, **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, and choose the file.
 
 - `main-branch.json`: changes reach `main` only through pull requests whose checks pass (`skill-checks`); review threads must be resolved; no force pushes, no deletion, linear history (squash or rebase merges). Repository administrators can bypass the rules only through a pull request (bypass mode `pull_request`): even an administrator cannot push to `main` directly, but can merge a pull request without waiting for its checks in an emergency. The required number of approvals is 0: the project has one maintainer, so review of every change (see "Reviewing changes to the skill" in [CONTRIBUTING.md](CONTRIBUTING.md)) is currently that maintainer's own review. Once there is a second maintainer, raise the required approvals from 0 to 1.
+- `stable-branch.json`: the `stable` branch cannot be deleted, force-pushed, or updated, except by repository administrators and GitHub Actions (the bypass list), so it moves only when the maintainer or a workflow moves it.
 - `release-tags.json`: release tags (`[0-9]*` and the older `v*`) cannot be deleted or moved; administrators can bypass, so immutability of a published version rests on the maintainer not doing so.

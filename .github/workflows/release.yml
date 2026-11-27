@@ -24,6 +24,15 @@ jobs:
         run: |
           set -euo pipefail
           version="${TAG#v}"
+          # A tag must name the version the release pull request prepared (plugin.json; the checks keep the
+          # changelog and the docs' pinned installs equal to it). Tags before 0.3.0 predate the plugin.
+          if [ "$TAG" = "$version" ]; then
+            declared=$(gh api "repos/$REPO/contents/plugin/.claude-plugin/plugin.json?ref=$TAG" --jq .content | base64 -d | jq -r .version)
+            if [ "$declared" != "$version" ]; then
+              echo "plugin/.claude-plugin/plugin.json at $TAG says version $declared, not $version. Tag the commit that prepared $version." >&2
+              exit 1
+            fi
+          fi
           gh api "repos/$REPO/contents/CHANGELOG.md?ref=$TAG" --jq .content | base64 -d > CHANGELOG.md
           # The section runs from "## [<version>]" to the next "## [" heading.
           awk -v head="## [$version]" '

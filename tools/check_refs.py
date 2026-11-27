@@ -19,9 +19,13 @@ SECURITY, docs/, .github/), this checks that:
 - SKILL.md's frontmatter parses as simple YAML and meets the limits: a lowercase hyphenated name
   of at most 64 characters, a description of at most 1024 characters without < or >, an optional
   compatibility of 1 to 500 characters, and plain scalars that YAML would not misread.
+- The release version agrees everywhere it is written by hand: the newest released section of
+  CHANGELOG.md, `version` in plugin/.claude-plugin/plugin.json, and every pinned install in README.md
+  and docs/CI.md (`/tree/<version>/`, `--branch <version>`, `algorithmic-intelligence@<version>`).
 
 Standard library only.
 """
+import json
 import os
 import re
 import sys
@@ -232,6 +236,39 @@ def check_frontmatter(root: str) -> list:
     return [f'{SKILL_DIR}/SKILL.md: {p}' for p in problems]
 
 
+PINS = re.compile(r'/tree/(\d+\.\d+\.\d+)/|--branch\s+(\d+\.\d+\.\d+)\b|algorithmic-intelligence@(\d+\.\d+\.\d+)\b')
+PIN_FILES = ['README.md', os.path.join('docs', 'CI.md')]
+
+
+def check_versions(root: str) -> list:
+    """The newest released CHANGELOG version, plugin.json's version, and the pinned installs in the docs agree.
+    Skipped when CHANGELOG.md or plugin.json is absent (a partial tree)."""
+    changelog = os.path.join(root, 'CHANGELOG.md')
+    plugin = os.path.join(root, 'plugin', '.claude-plugin', 'plugin.json')
+    if not (os.path.isfile(changelog) and os.path.isfile(plugin)):
+        return []
+    released = re.search(r'^## \[(\d+\.\d+\.\d+)\]', open(changelog, encoding='utf-8').read(), re.M)
+    if not released:
+        return ['CHANGELOG.md has no released version section (## [X.Y.Z])']
+    version, problems = released.group(1), []
+    try:
+        declared = json.load(open(plugin, encoding='utf-8')).get('version')
+    except ValueError as e:
+        return [f'plugin/.claude-plugin/plugin.json does not parse: {e}']
+    if declared != version:
+        problems.append(f'plugin/.claude-plugin/plugin.json: version is {declared}, but the newest release in CHANGELOG.md is {version}')
+    for rel in PIN_FILES:
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            continue
+        for n, line in enumerate(open(path, encoding='utf-8'), 1):
+            for m in PINS.finditer(line):
+                pinned = next(g for g in m.groups() if g)
+                if pinned != version:
+                    problems.append(f'{rel.replace(os.sep, "/")}:{n}: pins {pinned}, but the newest release in CHANGELOG.md is {version}')
+    return problems
+
+
 def check(root: str) -> list:
     files = md_files(root)
     texts = {f: open(f, encoding='utf-8').read() for f in files}
@@ -239,6 +276,7 @@ def check(root: str) -> list:
     for f in files:
         problems += check_file(f, root, texts)
     problems += check_frontmatter(root)
+    problems += check_versions(root)
     return problems
 
 
@@ -247,7 +285,7 @@ def main(argv: list) -> int:
     problems = check(root)
     for p in problems:
         print(p)
-    print(f'{len(problems)} problem(s)' if problems else 'cross-references and frontmatter: clean')
+    print(f'{len(problems)} problem(s)' if problems else 'cross-references, frontmatter, and versions: clean')
     return 1 if problems else 0
 
 

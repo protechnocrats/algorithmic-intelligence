@@ -1,5 +1,6 @@
 """Tests for the skill's optional scripts and the repository's reference checker:
 python3 -m unittest discover -s tests"""
+import json
 import os
 import subprocess
 import sys
@@ -111,6 +112,22 @@ class CheckRefs(unittest.TestCase):
             self.assertIn('`name` must be lowercase', out.stdout)
             self.assertIn('holds ": " or " #"', out.stdout)
             self.assertNotIn('`metadata`', out.stdout)
+
+    def test_versions_must_agree(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.write(root, 'skills/algorithmic-intelligence/SKILL.md', '---\nname: algorithmic-intelligence\ndescription: Does things.\n---\n# Skill\n')
+            self.write(root, 'CHANGELOG.md', '# Changelog\n\n## [Unreleased]\n\n## [1.2.3] - 2026-01-01\n\n## [1.2.2] - 2025-12-01\n')
+            self.write(root, 'plugin/.claude-plugin/plugin.json', json.dumps({'name': 'x', 'version': '1.2.3'}))
+            self.write(root, 'README.md', '# R\n\n`npx skills add https://github.com/o/r/tree/1.2.3/skills`\n')
+            self.assertEqual(run(CHECK_REFS, root).returncode, 0)
+            self.write(root, 'plugin/.claude-plugin/plugin.json', json.dumps({'name': 'x', 'version': '1.2.2'}))
+            self.write(root, 'README.md', '# R\n\n`git clone --branch 1.2.2 https://x`\n')
+            self.write(root, 'docs/CI.md', '# CI\n\n`uses: o/algorithmic-intelligence@1.2.0`\n')
+            out = run(CHECK_REFS, root)
+            self.assertEqual(out.returncode, 1)
+            self.assertIn('plugin.json: version is 1.2.2', out.stdout)
+            self.assertIn('README.md:3: pins 1.2.2', out.stdout)
+            self.assertIn('docs/CI.md:3: pins 1.2.0', out.stdout)
 
 
 if __name__ == '__main__':

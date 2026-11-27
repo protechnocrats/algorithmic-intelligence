@@ -2,9 +2,11 @@
 """PreToolUse guard for the algorithmic-intelligence skill.
 
 Asks the developer before a tool call does something the skill says needs their say:
-committing or pushing, discarding uncommitted work, running as root, changing ownership or
-risky permissions, piping a download into an interpreter, deleting outside the project or a
-temporary directory (or the repository's own `.git`), running a project script whose own text
+committing or pushing (or merging, opening a pull request, or publishing a release with gh),
+discarding uncommitted work (including git checkout of paths and forced checkouts or switches),
+running as root, changing ownership or risky permissions, piping a download into an interpreter,
+deleting outside the project or a temporary directory (or the repository's own `.git`) with rm,
+find -delete, or a one-line python -c / node -e program, running a project script whose own text
 deletes recursively through a variable nothing sets, installing software outside the project,
 reading a secret file, or editing an existing test. It never blocks outright: the developer can
 approve, and in an unattended run (nobody to answer) the call is refused with the reason, which
@@ -224,9 +226,81 @@ def check_scripts(cmd: str, code: str, cwd: str) -> None:
                 f'({name}=<scratch dir> {m.group(1)}) or run the steps you need by hand.')
 
 
+DISCARDS = ('this discards uncommitted work in the working tree or the stash. The skill restores only the code '
+            'it changed itself, never the developer\'s own uncommitted changes. Approve only if you asked for it.')
+
+
+def check_checkout(code: str, cwd: str) -> None:
+    """git checkout and git switch forms that overwrite uncommitted changes: forced switches, and checking out
+    paths (after "--", a second argument after the tree-ish, or a single argument naming an existing path)."""
+    for m in re.finditer(GIT + r'(checkout|switch)\b([^;&|)\n]*)', code, re.M):
+        sub, args = m.group(1), m.group(2).split()
+        flags = [a for a in args if a.startswith('-') and a != '--']
+        if '-f' in flags or '--force' in flags or '--discard-changes' in flags \
+                or any(re.fullmatch(r'-[a-zA-Z]*f[a-zA-Z]*', f) for f in flags if not f.startswith('--')):
+            ask(DISCARDS)
+        if sub != 'checkout' or any(f in ('-b', '-B', '--orphan', '-p', '--patch') for f in flags):
+            continue
+        if '--' in args:
+            ask(DISCARDS)
+        rest = [a for a in args if not a.startswith('-')]
+        if len(rest) >= 2 or (len(rest) == 1 and os.path.exists(os.path.join(cwd, rest[0]))):
+            ask(DISCARDS)
+
+
+FIND = re.compile(AT_START + r'find\s+([^;&|)\n]*)', re.M)
+
+
+def check_find(code: str, cwd: str) -> None:
+    """find with -delete or an -exec/-execdir rm, or piped into xargs rm, starting outside the project or in .git."""
+    for m in FIND.finditer(code):
+        args = m.group(1).split()
+        tail = code[m.end():m.end() + 200]
+        deletes = '-delete' in args or re.search(r'-exec(?:dir)?\s+(?:sudo\s+)?rm\b', m.group(1)) \
+            or re.match(r'\s*\|\s*xargs\s+(?:-\S+\s+)*(?:sudo\s+)?rm\b', tail)
+        if not deletes:
+            continue
+        starts = []
+        for a in args:
+            if a.startswith(('-', '(', '!', '\\(')):
+                break
+            starts.append(a)
+        starts = starts or ['.']
+        bad = [s for s in starts if outside(s, cwd)]
+        if bad:
+            ask(f'find deletes under {", ".join(bad[:3])}, which is outside the project and temporary directories '
+                'or depends on a variable that may be empty.')
+        if any(git_metadata(s, cwd) for s in starts):
+            ask('find deletes inside version-control metadata (.git), which loses history and uncommitted work.')
+
+
+INLINE = re.compile(r'\b(?:python[23]?|node|perl|ruby|bun|deno)\b(?:\s+-\S+)*?\s+-[ce]\b')
+INLINE_DELETE = re.compile(r'\b(?:rmtree|remove_tree|rm_rf|rm_r|rmSync|rmdirSync|removeSync|emptyDirSync)\s*\(\s*'
+                           r'(?:(?P<q>[\'"])(?P<path>[^\'"]*)(?P=q)\s*[,)]|(?P<other>))')
+
+
+def check_inline_deletes(cmd: str, cwd: str) -> None:
+    """A one-line program (python -c, node -e) that deletes a directory tree. Quoted text is blanked for the other
+    checks, so this reads the raw command. A literal path inside the project is fine; any other target asks."""
+    if not INLINE.search(cmd):
+        return
+    for m in INLINE_DELETE.finditer(cmd):
+        path = m.group('path')
+        if path is None or not path or outside(path, cwd) or git_metadata(path, cwd):
+            ask('this one-line program deletes a directory tree at '
+                f'{repr(path) if path else "a path computed at run time"}, which may be outside the project, in '
+                '.git, or empty. Delete with rm on a path inside the project instead, or approve if you asked for it.')
+
+
 def check_bash(cmd: str, cwd: str) -> None:
     code = expand_git_aliases(shell_code(cmd), cwd)
     check_scripts(cmd, code, cwd)
+    check_checkout(code, cwd)
+    check_find(code, cwd)
+    check_inline_deletes(cmd, cwd)
+    if re.search(AT_START + r'gh\s+(?:-\S+\s+(?:\S+\s+)?)*(?:pr\s+(?:merge|create)|release\s+create|repo\s+sync)\b', code, re.M):
+        ask('this changes the remote repository (it merges, opens a pull request, pushes, or publishes a release). '
+            'Like a commit or push, it is opt-in: approve only if the developer authorized it for this task.')
     if re.search(GIT + r'(commit|push)\b', code, re.M):
         ask('a commit or push. Commits are opt-in: the developer authorizes them in this conversation, or the '
             'project\'s agent-instruction files may authorize them, but this hook cannot see those files, so it asks '
@@ -235,8 +309,7 @@ def check_bash(cmd: str, cwd: str) -> None:
             'committed, or reverted on their own.')
     if re.search(GIT + r'(?:reset\s+(?:\S+\s+)*--hard\b|clean\s+(?:-\S*[fdx]|--force)|stash\s+(?:drop|clear)\b'
                  r'|checkout\s+(?:--\s|\.(?:\s|$))|restore\b(?![^;&|\n]*--staged))', code, re.M):
-        ask('this discards uncommitted work in the working tree or the stash. The skill restores only the code '
-            'it changed itself, never the developer\'s own uncommitted changes. Approve only if you asked for it.')
+        ask(DISCARDS)
     if re.search(AT_START + r'(sudo|doas|su)\b', code, re.M):
         ask('this command runs as root or another user. The skill never needs root; if the work truly does, '
             'the developer should run the command themselves.')
@@ -248,7 +321,10 @@ def check_bash(cmd: str, cwd: str) -> None:
             or re.search(AT_START + r'(npm|pnpm|yarn)\s+(-\S+\s+)*(i|install|add)\s+(.*\s)?(-g|--global)\b', code, re.M) \
             or re.search(AT_START + r'yarn\s+global\s+add\b', code, re.M) \
             or re.search(AT_START + r'pip3?\s+install\s+(.*\s)?(--user|--break-system-packages)\b', code, re.M) \
-            or re.search(AT_START + r'(pipx|cargo|gem)\s+install\b', code, re.M) \
+            or re.search(AT_START + r'(pipx|cargo|gem|go)\s+install\b', code, re.M) \
+            or re.search(AT_START + r'uv\s+(-\S+\s+)*tool\s+install\b', code, re.M) \
+            or re.search(AT_START + r'uv\s+(-\S+\s+)*pip\s+install\s+(.*\s)?--system\b', code, re.M) \
+            or re.search(AT_START + r'bun\s+(-\S+\s+)*(i|install|add)\s+(.*\s)?(-g|--global)\b', code, re.M) \
             or re.search(AT_START + r'dotnet\s+tool\s+install\s+(.*\s)?(-g|--global)\b', code, re.M):
         ask('this installs software outside the project. Installing the project\'s own locked dependencies '
             'into the project is fine; system-wide and user-wide installs need the developer.')

@@ -6,6 +6,22 @@ Versions follow [semantic versioning](https://semver.org): while the major versi
 
 ## [Unreleased]
 
+## [0.7.9] - 2026-11-26
+
+The guard plugin's checks get harder to slip past, and the release and review machinery gets checks of its own. No skill files change. The guard hook now also asks before checking out paths over uncommitted work, forced checkouts and switches, remote changes through the GitHub CLI, deletes through `find` and one-line programs, and a few more installs outside the project. The edit gate no longer takes the agent's word that its tests caught a planted difference: the session's transcript must show a shell command failing while the difference was planted. The pull request review retries GitHub API calls that a retry can fix, never posting twice, and the repository's checks now run the action's steps end to end and keep the release version the same everywhere it is written.
+
+### Changed
+
+- Guard hook: now also asks before `git checkout` of paths (`checkout <ref> <path>`, `checkout <ref> -- <path>`, or a single argument naming an existing path), forced checkouts and switches (`checkout -f`, `switch -f`, `switch --discard-changes`), remote changes through the GitHub CLI (`gh pr merge`, `gh pr create`, `gh release create`, `gh repo sync`), `find -delete`, `find -exec rm`, or `find … | xargs rm` starting outside the project or in `.git`, one-line programs that delete a directory tree (`python3 -c "…shutil.rmtree(…)"`, `node -e "…rmSync(…)"`) unless the path is a literal inside the project, and installs outside the project through `uv tool install`, `uv pip install --system`, `go install`, and `bun add -g`. The README now says plainly that the guard checks command text with patterns and is a safety net, not a sandbox.
+- Edit gate and the end-of-task coverage check: a planted difference reported caught (`restore_difference` with `tests_failed: true`) counts only when the session's transcript shows a shell command failing (an exit code other than 126 or 127) while the difference was planted. `tests_failed` was the agent's own report; this is the evidence behind it. A transcript in another host's format is taken at its word, as before. What the transcript showed is noted on the plant's record, so a later session that resumes the work honors it.
+- Pull request review: GitHub API calls are retried with backoff when another try can succeed: rate limits for every call (waiting as long as GitHub asks, up to a minute), and server errors and network failures for reads and comment edits. A new comment or review is never sent twice, since a failed one may already have been posted.
+
+### Added
+
+- Repository checks: `tools/check_refs.py` fails when the newest released version in `CHANGELOG.md`, `version` in `plugin/.claude-plugin/plugin.json`, and the pinned installs in the README and `docs/CI.md` disagree, and the release workflow refuses a tag that differs from `plugin.json`'s version.
+- Repository checks: `tests/test_action.py` runs `action.yml`'s composite steps in order with a stub Claude Code and a local fake GitHub API, so a renamed variable, an undeclared input, a step output nobody writes, or a token reaching the agent fails the checks.
+- `.github/rulesets/stable-branch.json`: the `stable` branch cannot be deleted, force-pushed, or updated except by repository administrators and GitHub Actions.
+
 ## [0.7.8] - 2026-11-26
 
 Changes are checked by someone other than their author, and projects stop being surveyed from scratch every time. For a high-risk item, a fresh sub-agent that sees only the original, the new code, the contract, and the tests tries to break the change, and nothing a check finds can be argued away. The agent keeps short project notes (sizes and their sources, safe commands, hot paths, rejected candidates) for the next task in the same project, splits the survey of a large scope across read-only sub-agents, and extracts what it needs from large outputs with a script. It stops after three failed attempts at the same failure instead of editing until the budget runs out. The pull request reviewer gets worked severity examples, so its ratings stay consistent. The plugin's behavior is unchanged.

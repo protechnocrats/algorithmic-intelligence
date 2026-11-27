@@ -22,14 +22,14 @@ An optional plugin adds guard hooks for Claude Code and Grok Build that ask you 
 ```bash
 # 1. Install the latest release into the project you want to optimize
 cd path/to/your-project
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.8/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.9/skills \
   --skill algorithmic-intelligence
 
 # 2. Start your coding agent in that project and ask:
 #    "find time complexity problems in this project"
 ```
 
-Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.7.8` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
+Replace `<pinned version>` with the Skills CLI version you have reviewed (`npm view skills version` shows the latest), and `0.7.9` with the release you want (see [Releases](https://github.com/protechnocrats/algorithmic-intelligence/releases)). The skill's files are instructions your agent follows, so install a tagged release whose notes you have read, not whatever the development branch holds today (see "Installation" and "Safety").
 
 The agent returns a ranked report and changes no source code until you approve specific items. In report mode it runs your test suite and, unless the result is small, asks where to write its report files (see "What you get").
 
@@ -103,12 +103,12 @@ If your project publishes a library or an API that other people call, an interfa
 
 ### Option 1: Skills CLI (recommended)
 
-The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.7.8/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
+The [Skills CLI](https://skills.sh) installs the skill into the right place for your agent; it requires Node.js. The command in "Quick start" installs the skill for the current project only (the installed folder can be committed so your team gets it too). Pin both the CLI and the skill: `npx skills@<pinned version>` runs a reviewed version of the CLI instead of whatever npm serves today, and the `/tree/0.7.9/skills` form installs a tagged release whose notes are in the [changelog](CHANGELOG.md). The CLI documents folder URLs like this, not tags as such; it installed a tagged release correctly when tested.
 
 For your user account (active in every project), add `--global`:
 
 ```bash
-npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.8/skills \
+npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-intelligence/tree/0.7.9/skills \
   --skill algorithmic-intelligence \
   --global
 ```
@@ -127,7 +127,7 @@ npx skills@<pinned version> add https://github.com/protechnocrats/algorithmic-in
 Copy the `skills/algorithmic-intelligence/` folder (it contains `SKILL.md` and the `references/` folder it links to) into your agent's skills directory:
 
 ```bash
-git clone --branch 0.7.8 https://github.com/protechnocrats/algorithmic-intelligence.git
+git clone --branch 0.7.9 https://github.com/protechnocrats/algorithmic-intelligence.git
 cp -r algorithmic-intelligence/skills/algorithmic-intelligence <your-agent-skills-dir>/
 ```
 
@@ -145,15 +145,17 @@ For performance, time complexity, or data-structure work, or when something is l
 
 The skill's rules are instructions, and an agent can still slip, especially late in a long session. The guard plugin in [`plugin/`](plugin/) backs the rules that must hold every time with hooks, which the agent cannot skip. Before the agent does one of these, you are asked to approve it:
 
-- a `git commit` or `git push`, or a git command that discards uncommitted work (`reset --hard`, `clean -f`, `checkout --`, `restore`, `stash drop`, `stash clear`); a git alias is checked as the command it runs;
+- a `git commit` or `git push`, a remote change through the GitHub CLI (`gh pr merge`, `gh pr create`, `gh release create`, `gh repo sync`), or a git command that discards uncommitted work (`reset --hard`, `clean -f`, `checkout --`, `checkout <ref> <path>`, `checkout -f`, `switch --discard-changes`, `restore`, `stash drop`, `stash clear`); a git alias is checked as the command it runs;
 - a command that runs as root or another user (`sudo`, `su`, `doas`), or pipes a download into a shell or interpreter (`curl … | sh`, `curl … | python3 -`, `bash <(curl …)`);
 - a permission change an optimization never needs: `chown`, `chgrp`, `setfacl`, or `chattr`, or a `chmod` that sets setuid, setgid, or the sticky bit, makes files writable by everyone, is recursive, or reaches outside the project (a plain `chmod +x` on a project file is not asked about);
-- an install outside the project: a system package manager (`apt`, `dnf`, `brew`, `winget`, and others) or a global or user-wide install (`npm install -g`, `pip install --user`, `pipx install`, `cargo install`, `gem install`, `yarn global add`, `dotnet tool install -g`); the project's own locked dependencies are not asked about;
-- a recursive delete outside the project and temporary directories, one whose path depends on a variable that may be empty, or one that removes a `.git` directory, including one inside a project shell script the command runs, when nothing sets the variable it deletes through;
+- an install outside the project: a system package manager (`apt`, `dnf`, `brew`, `winget`, and others) or a global or user-wide install (`npm install -g`, `pip install --user`, `pipx install`, `uv tool install`, `uv pip install --system`, `cargo install`, `go install`, `gem install`, `yarn global add`, `bun add -g`, `dotnet tool install -g`); the project's own locked dependencies are not asked about;
+- a recursive delete outside the project and temporary directories, one whose path depends on a variable that may be empty, or one that removes a `.git` directory, whether by `rm`, by `find -delete` or `find -exec rm`, or by a one-line program (`python3 -c "…shutil.rmtree(…)"`, `node -e "…rmSync(…)"`), including one inside a project shell script the command runs, when nothing sets the variable it deletes through;
 - reading a file that looks like a secret (`.env`, key and certificate files, credentials, `*.tfvars`, `*-secrets.yaml`), by the Read tool or a shell command; `.example` and `.template` variants are not asked about;
 - editing a test file already tracked in the repository; new test files are not asked about.
 
-**The edit gate.** While the skill is in use, the plugin also enforces its central rule, "differential tests come before the edit". An edit to code already committed in git is refused, with instructions, until in this session a difference planted in that file (or in another file of the same change) was caught by the tests, using the MCP tools below (a caught difference from a session in the last 14 days also counts while the file's committed version is still the one it was planted in, so resumed work need not plant again; `ALGORITHMIC_INTELLIGENCE_CARRY_DAYS` sets the window, 0 turns it off), or the file was declared to need no differential test (new code such as a declared stub, a behavior change you approved, no runtime effect, or you telling the agent to go ahead without one), with the reason listed in the final summary. It refuses instead of asking you because the agent can meet the condition itself: in an unattended run a question nobody answers reaches the agent only as a bare refusal, while a refusal carries its instructions. Agents also change files through the shell, which the gate cannot see, so when the agent finishes, every committed file that changed is checked the same way, and the agent is sent back once to cover or declare any file without evidence, or to list it as unverified. New files, tests, documentation, and sessions that do not use the skill are not gated; set `ALGORITHMIC_INTELLIGENCE_GATE=off` to turn off only the gate and this check.
+These checks read the command's text with patterns. They catch the usual ways an agent does these things, not every way: a command can still reach the same effect in a form no pattern covers, so treat the guard as a safety net, not a sandbox.
+
+**The edit gate.** While the skill is in use, the plugin also enforces its central rule, "differential tests come before the edit". An edit to code already committed in git is refused, with instructions, until in this session a difference planted in that file (or in another file of the same change) was caught by the tests, using the MCP tools below (whether the tests failed is the agent's own report, so it counts only when the session's transcript shows a shell command failing while the difference was planted; a caught difference from a session in the last 14 days also counts while the file's committed version is still the one it was planted in, so resumed work need not plant again; `ALGORITHMIC_INTELLIGENCE_CARRY_DAYS` sets the window, 0 turns it off), or the file was declared to need no differential test (new code such as a declared stub, a behavior change you approved, no runtime effect, or you telling the agent to go ahead without one), with the reason listed in the final summary. It refuses instead of asking you because the agent can meet the condition itself: in an unattended run a question nobody answers reaches the agent only as a bare refusal, while a refusal carries its instructions. Agents also change files through the shell, which the gate cannot see, so when the agent finishes, every committed file that changed is checked the same way, and the agent is sent back once to cover or declare any file without evidence, or to list it as unverified. New files, tests, documentation, and sessions that do not use the skill are not gated; set `ALGORITHMIC_INTELLIGENCE_GATE=off` to turn off only the gate and this check.
 
 When the agent finishes a task that used the skill, the plugin also checks that its final message has the required lines ("Complexity", "Data structures", "Contract changes", "Bugs noticed", "Hazards noticed", "Commands not run"), each at the start of a line, and asks it once to add any that are missing. A message that ends in a question, where the agent is waiting for you, is left alone, and the agent is told to stop as it is when its reply does not end a piece of work done with the skill.
 
@@ -375,7 +377,7 @@ The skill lives in `skills/algorithmic-intelligence/`. Its knowledge base is mod
 | `REPORTING.md` | Report mode's formats: where reports go, the opening brief (result, decisions needed, top items), report header (request as understood, test baseline, scope, text addressed to AI assistants, hazards, language profile), item format, tried and rejected, bug log, behavior changes for review, final summary |
 | `languages/INDEX.md`, `languages/*.md` | Which companion file to load for which project, the per-language companions (structures and their costs, verified maintained packages, hidden costs, traps, and tooling), and `languages/GENERIC.md` for building and saving a profile for any other language |
 
-Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the file's path relative to `references/` (`docs/sources/languages/KOTLIN.md` for `references/languages/KOTLIN.md`), for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, `scripts/edit_gate.py`, `scripts/coverage_check.py`, the hook registration in `hooks/hooks.json`), the MCP server (`mcp/server.py`, registered for Claude Code in `.mcp.json`), and their tests in `tests/`, listed for installation in `.claude-plugin/marketplace.json`. [`action.yml`](action.yml) and [`ci/review.py`](ci/review.py) are the pull request review action (see [docs/CI.md](docs/CI.md)), tested in `tests/test_ci_review.py`.
+Outside `skills/`, [`docs/sources/`](docs/sources/) holds the sources behind each skill file's claims, at the file's path relative to `references/` (`docs/sources/languages/KOTLIN.md` for `references/languages/KOTLIN.md`), for contributors and reviewers; they are not installed with the skill. [`plugin/`](plugin/) holds the optional guard hooks for Claude Code and Grok Build (`scripts/guard.py`, `scripts/summary_check.py`, `scripts/edit_gate.py`, `scripts/coverage_check.py`, the hook registration in `hooks/hooks.json`), the MCP server (`mcp/server.py`, registered for Claude Code in `.mcp.json`), and their tests in `tests/`, listed for installation in `.claude-plugin/marketplace.json`. [`action.yml`](action.yml) and [`ci/review.py`](ci/review.py) are the pull request review action (see [docs/CI.md](docs/CI.md)), tested in `tests/test_ci_review.py` and `tests/test_action.py`.
 
 ## Releases and security
 

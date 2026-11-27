@@ -37,6 +37,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -279,12 +280,55 @@ def with_dismissed(body, dismissed):
 
 # ---------------------------------------------------------------- GitHub API
 
+API_ATTEMPTS = 4
+API_MAX_WAIT = 60  # seconds; a longer wait is not sat out: the error goes to the step's own handling
+
+
+def _rate_limited(e):
+    """GitHub refused the request before acting on it: 429, or 403 for a primary or secondary rate limit."""
+    if e.code == 429:
+        return True
+    headers = e.headers or {}
+    return e.code == 403 and (headers.get('Retry-After') is not None or headers.get('X-RateLimit-Remaining') == '0')
+
+
+def _retry_wait(e, attempt):
+    """Seconds before the next attempt: Retry-After or X-RateLimit-Reset when GitHub gives one, else backoff."""
+    headers = getattr(e, 'headers', None) or {}
+    try:
+        if headers.get('Retry-After') is not None:
+            return float(headers['Retry-After'])
+        if headers.get('X-RateLimit-Remaining') == '0' and headers.get('X-RateLimit-Reset'):
+            return max(0.0, float(headers['X-RateLimit-Reset']) - time.time()) + 1
+    except (TypeError, ValueError):
+        pass
+    return 2.0 ** attempt
+
+
 def api(method, url, token, payload=None):
-    req = urllib.request.Request(url, method=method, data=None if payload is None else json.dumps(payload).encode(),
-                                 headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json',
-                                          'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'algorithmic-intelligence-ci'})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read() or b'null')
+    """One GitHub REST call, retried a few times when it failed in a way another try can fix. A request GitHub
+    rejected before acting on it (a rate limit) is retried for every method. Server errors and network failures
+    are retried only for GET and PATCH, which are safe to repeat: a POST that failed in transit may have created
+    its comment, and repeating it would post a duplicate."""
+    data = None if payload is None else json.dumps(payload).encode()
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json',
+               'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'algorithmic-intelligence-ci'}
+    repeatable = method in ('GET', 'PATCH')
+    for attempt in range(API_ATTEMPTS):
+        try:
+            req = urllib.request.Request(url, method=method, data=data, headers=headers)
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read() or b'null')
+        except urllib.error.HTTPError as e:
+            retry = _rate_limited(e) or (repeatable and e.code in (500, 502, 503, 504))
+            wait = _retry_wait(e, attempt)
+            if not retry or attempt == API_ATTEMPTS - 1 or wait > API_MAX_WAIT:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+            wait = _retry_wait(e, attempt)
+            if not repeatable or attempt == API_ATTEMPTS - 1:
+                raise
+        time.sleep(wait)
 
 
 def api_base():
