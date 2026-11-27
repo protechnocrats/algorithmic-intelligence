@@ -853,5 +853,64 @@ class PrepareMore(unittest.TestCase):
             self.assertIn('provider', stdout)
 
 
+class ApiRetry(unittest.TestCase):
+    """GitHub calls are retried when another try can succeed, and never in a way that could post twice."""
+
+    def call(self, method, outcomes):
+        import email.message
+        import io
+        import urllib.error
+        calls = []
+
+        def fake_urlopen(req, timeout=None):
+            calls.append(req.get_method())
+            out = outcomes[min(len(calls), len(outcomes)) - 1]
+            if isinstance(out, tuple):
+                code, headers = out
+                msg = email.message.Message()
+                for k, v in headers.items():
+                    msg[k] = v
+                raise urllib.error.HTTPError(req.full_url, code, 'error', msg, None)
+            if isinstance(out, Exception):
+                raise out
+            return io.BytesIO(json.dumps(out).encode())
+
+        with mock.patch('urllib.request.urlopen', fake_urlopen), mock.patch.object(review.time, 'sleep') as sleep:
+            try:
+                return review.api(method, 'https://api.github.com/x', 't', {} if method != 'GET' else None), calls, sleep
+            except Exception as e:  # noqa: BLE001
+                return e, calls, sleep
+
+    def test_server_errors_and_network_failures_are_retried_for_get_and_patch(self):
+        import urllib.error
+        for method in ('GET', 'PATCH'):
+            result, calls, _ = self.call(method, [(502, {}), urllib.error.URLError('reset'), {'ok': 1}])
+            self.assertEqual((result, len(calls)), ({'ok': 1}, 3), method)
+
+    def test_post_is_not_repeated_after_a_failure_that_may_have_posted(self):
+        import urllib.error
+        for outcome in ((502, {}), urllib.error.URLError('reset')):
+            result, calls, _ = self.call('POST', [outcome, {'id': 1}])
+            self.assertIsInstance(result, Exception)
+            self.assertEqual(len(calls), 1)
+
+    def test_rate_limits_are_retried_for_every_method_after_the_wait_github_asks_for(self):
+        result, calls, sleep = self.call('POST', [(403, {'Retry-After': '3'}), (429, {}), {'id': 1}])
+        self.assertEqual((result, len(calls)), ({'id': 1}, 3))
+        self.assertEqual(sleep.call_args_list[0].args, (3.0,))
+
+    def test_gives_up(self):
+        import urllib.error
+        result, calls, _ = self.call('GET', [(503, {})])
+        self.assertIsInstance(result, urllib.error.HTTPError)
+        self.assertEqual(len(calls), review.API_ATTEMPTS)
+        result, calls, _ = self.call('GET', [(404, {})])  # not something another try fixes
+        self.assertEqual(len(calls), 1)
+        result, calls, _ = self.call('GET', [(403, {'Retry-After': '3600'})])  # too long to wait out
+        self.assertEqual(len(calls), 1)
+        result, calls, _ = self.call('GET', [(403, {})])  # a permission error, not a rate limit
+        self.assertEqual(len(calls), 1)
+
+
 if __name__ == '__main__':
     unittest.main()

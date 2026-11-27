@@ -50,6 +50,50 @@ class GuardBash(unittest.TestCase):
         self.allows('git checkout -b perf/orders')
         self.allows('git reset HEAD~1 --soft')
 
+    def test_checkout_and_switch_that_overwrite_changes(self):
+        with tempfile.TemporaryDirectory() as proj:
+            os.makedirs(os.path.join(proj, 'src'))
+            open(os.path.join(proj, 'src', 'a.py'), 'w').close()
+            self.asks('git checkout HEAD -- src/a.py', proj)
+            self.asks('git checkout HEAD src/a.py', proj)
+            self.asks('git checkout src/a.py', proj)        # a single argument that is a path
+            self.asks('git checkout -f main', proj)
+            self.asks('git checkout --force main', proj)
+            self.asks('git switch --discard-changes main', proj)
+            self.asks('git switch -f main', proj)
+            self.allows('git checkout main', proj)
+            self.allows('git checkout -b perf/orders origin/main', proj)
+            self.allows('git switch -c perf/orders', proj)
+            self.allows('git switch main && git log --oneline -3', proj)
+
+    def test_remote_changes_through_gh(self):
+        self.asks('gh pr merge 3 --squash')
+        self.asks('gh pr create --fill')
+        self.asks('gh release create 1.0.0')
+        self.allows('gh pr view 3 && gh pr checks 3')
+        self.allows('gh run list --limit 5')
+
+    def test_find_deletes(self):
+        with tempfile.TemporaryDirectory() as proj:
+            self.asks('find / -name x -delete', proj)
+            self.asks('find ~ -name "*.log" -exec rm -rf {} +', proj)
+            self.asks('find /srv/other -type f | xargs rm -f', proj)
+            self.asks('find "$OUT" -delete', proj)
+            self.asks('find .git -name "*.lock" -delete', proj)
+            self.allows("find . -name '*.pyc' -delete", proj)
+            self.allows('find build -type f -exec rm {} +', proj)
+            self.allows('find / -name libfoo.so 2>/dev/null', proj)
+
+    def test_one_line_programs_that_delete_trees(self):
+        with tempfile.TemporaryDirectory() as proj:
+            self.asks('python3 -c "import shutil; shutil.rmtree(\'/home\')"', proj)
+            self.asks('python3 -c "import shutil, os; shutil.rmtree(os.environ[\'OUT\'])"', proj)
+            self.asks("node -e \"require('fs').rmSync('/srv/x', {recursive: true})\"", proj)
+            self.asks('python3 -c "import shutil; shutil.rmtree(\'.git\')"', proj)
+            self.allows('python3 -c "import shutil; shutil.rmtree(\'build\')"', proj)
+            self.allows('python3 -c "print(1)"', proj)
+            self.allows("grep -rn 'rmtree(' src/", proj)
+
     def test_git_aliases(self):
         with tempfile.TemporaryDirectory() as proj:
             git = lambda *a: subprocess.run(['git', '-C', proj, *a], capture_output=True, check=True)
@@ -92,6 +136,11 @@ class GuardBash(unittest.TestCase):
         self.asks('pipx install py-spy')
         self.asks('gem install bundler')
         self.asks('dotnet tool install -g dotnet-trace')
+        self.asks('uv tool install ruff')
+        self.asks('uv pip install --system numpy')
+        self.asks('go install golang.org/x/perf/cmd/benchstat@latest')
+        self.asks('bun add -g typescript')
+        self.allows('uv sync && uv pip install -e .')
         self.allows('npm ci')
         self.allows('pip install -r requirements.txt')
         self.allows('cargo build --release && cargo test')

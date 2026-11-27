@@ -46,9 +46,10 @@ def main() -> None:
     gate, guard = _load('edit_gate'), _load('guard')
     since = gate.session_start(transcript)
     changed = [f for f in git(top, 'diff', '--name-only', '--diff-filter=MR', 'HEAD').splitlines() if f]
+    unproven = []
     uncovered = [f for f in changed
                  if not guard.TEST_PATH.search(f) and not gate.DOCS.search(f)
-                 and not gate.covered(os.path.join(top, f), git_dir, since)]
+                 and not gate.covered(os.path.join(top, f), git_dir, since, transcript, unproven)]
     if not uncovered:
         return
     shown = ', '.join(uncovered[:10]) + (f' and {len(uncovered) - 10} more' if len(uncovered) > 10 else '')
@@ -58,7 +59,8 @@ def main() -> None:
         '(MCP tools plant_difference, restore_difference with tests_failed; list other files of the same change '
         'under "covers"), or record why it needs none with declare_no_differential_test (new code such as a '
         'declared stub, a behavior change approved by name, no runtime effect). If neither is possible, list the '
-        'files as unverified in your summary. Do not undo correct work to satisfy this check.')}))
+        'files as unverified in your summary. Do not undo correct work to satisfy this check.'
+        + (' ' + gate.unproven_note(sorted(set(unproven))) if unproven else ''))}))
 
 
 if __name__ == '__main__':
